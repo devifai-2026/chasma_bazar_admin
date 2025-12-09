@@ -22,7 +22,6 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
     { name: 'Products', icon: ShoppingCartIcon, to: '/products' },
     { name: 'Category', icon: TagIcon, to: '/categories' },
     { name: 'Orders', icon: CreditCardIcon, to: '/orders' },
-    { name: 'Documents', icon: DocumentTextIcon, to: '/documents' },
     { name: 'Invoices', icon: ReceiptPercentIcon, to: '/invoices' },
     { name: 'Users', icon: UsersIcon, to: '/users' },
 
@@ -115,35 +114,7 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
             ))}
           </nav>
 
-          {/* User section */}
-          <div className="border-t p-4">
-            <div className={`flex items-center relative ${sidebarOpen ? 'justify-start' : 'justify-center'}`}>
-              <img
-                className="h-8 w-8 rounded-full shrink-0"
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
-                alt="User"
-              />
-              {sidebarOpen && (
-                <>
-                  <div className="ml-3 min-w-0">
-                    <p className="text-sm font-medium truncate">Admin User</p>
-                    <p className="text-xs text-gray-500 truncate">admin@example.com</p>
-                  </div>
-                  <button className="ml-auto text-gray-400 hover:text-gray-600 shrink-0">
-                    <ArrowRightOnRectangleIcon className="h-5 w-5" />
-                  </button>
-                </>
-              )}
-              
-              {/* Tooltip for collapsed user section */}
-              {!sidebarOpen && (
-                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                  <p>Admin User</p>
-                  <p className="text-gray-300">admin@example.com</p>
-                </div>
-              )}
-            </div>
-          </div>
+        
         </div>
       </aside>
     </>
