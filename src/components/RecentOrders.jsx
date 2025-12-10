@@ -1,10 +1,10 @@
 const RecentOrders = () => {
   const orders = [
-    { id: '#ORD-001', customer: 'John Doe', date: '2024-01-15', amount: '$125.00', status: 'Completed' },
-    { id: '#ORD-002', customer: 'Jane Smith', date: '2024-01-14', amount: '$89.99', status: 'Pending' },
-    { id: '#ORD-003', customer: 'Bob Johnson', date: '2024-01-14', amount: '$234.50', status: 'Completed' },
-    { id: '#ORD-004', customer: 'Alice Brown', date: '2024-01-13', amount: '$67.99', status: 'Processing' },
-    { id: '#ORD-005', customer: 'Charlie Wilson', date: '2024-01-13', amount: '$156.75', status: 'Completed' },
+    { id: '#ORD-001', customer: 'John Doe', date: '2024-01-15', amount: '₹125.00', status: 'Completed' },
+    { id: '#ORD-002', customer: 'Jane Smith', date: '2024-01-14', amount: '₹89.99', status: 'Pending' },
+    { id: '#ORD-003', customer: 'Bob Johnson', date: '2024-01-14', amount: '₹234.50', status: 'Completed' },
+    { id: '#ORD-004', customer: 'Alice Brown', date: '2024-01-13', amount: '₹67.99', status: 'Processing' },
+    { id: '#ORD-005', customer: 'Charlie Wilson', date: '2024-01-13', amount: '₹156.75', status: 'Completed' },
   ]
 
   const getStatusColor = (status) => {
