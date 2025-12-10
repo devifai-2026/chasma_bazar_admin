@@ -37,21 +37,21 @@ const OrderUpdate = () => {
       phone: '+1 (555) 123-4567',
       date: '2024-01-15',
       time: '14:30',
-      amount: '$125.00',
+      amount: '₹125.00',
       status: 'Completed',
       paymentMethod: 'Credit Card',
       shippingMethod: 'Express Delivery',
       shippingAddress: '123 Main St, New York, NY 10001',
       billingAddress: '123 Main St, New York, NY 10001',
       items: [
-        { id: 1, name: 'Wireless Headphones', price: '$59.99', quantity: 1, total: '$59.99' },
-        { id: 2, name: 'USB-C Cable', price: '$19.99', quantity: 2, total: '$39.98' },
-        { id: 3, name: 'Phone Case', price: '$25.03', quantity: 1, total: '$25.03' }
+        { id: 1, name: 'Wireless Headphones', price: '₹59.99', quantity: 1, total: '₹59.99' },
+        { id: 2, name: 'USB-C Cable', price: '₹19.99', quantity: 2, total: '₹39.98' },
+        { id: 3, name: 'Phone Case', price: '₹25.03', quantity: 1, total: '₹25.03' }
       ],
-      subtotal: '$124.00',
-      shipping: '$5.00',
-      tax: '$10.00',
-      total: '$139.00'
+      subtotal: '₹124.00',
+      shipping: '₹5.00',
+      tax: '₹10.00',
+      total: '₹139.00'
     },
     'ORD-002': {
       id: 'ORD-002',
@@ -60,20 +60,20 @@ const OrderUpdate = () => {
       phone: '+1 (555) 987-6543',
       date: '2024-01-15',
       time: '11:15',
-      amount: '$89.99',
+      amount: '₹89.99',
       status: 'Processing',
       paymentMethod: 'PayPal',
       shippingMethod: 'Standard Shipping',
       shippingAddress: '456 Oak Ave, Los Angeles, CA 90001',
       billingAddress: '456 Oak Ave, Los Angeles, CA 90001',
       items: [
-        { id: 1, name: 'T-shirt', price: '$24.99', quantity: 2, total: '$49.98' },
-        { id: 2, name: 'Coffee Mug', price: '$19.99', quantity: 2, total: '$39.98' }
+        { id: 1, name: 'T-shirt', price: '₹24.99', quantity: 2, total: '₹49.98' },
+        { id: 2, name: 'Coffee Mug', price: '₹19.99', quantity: 2, total: '₹39.98' }
       ],
-      subtotal: '$89.96',
-      shipping: '$0.00',
-      tax: '$8.10',
-      total: '$98.06'
+      subtotal: '₹89.96',
+      shipping: '₹0.00',
+      tax: '₹8.10',
+      total: '₹98.06'
     }
   }
 
@@ -290,8 +290,6 @@ const OrderUpdate = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
-
-                     
 
                       {/* Buttons */}
                       <div className="flex justify-end space-x-4 pt-4">

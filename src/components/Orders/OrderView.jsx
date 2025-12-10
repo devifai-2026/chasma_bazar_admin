@@ -31,21 +31,21 @@ const OrderView = () => {
       phone: '+1 (555) 123-4567',
       date: '2024-01-15',
       time: '14:30',
-      amount: '$125.00',
+      amount: '₹125.00',
       status: 'Completed',
       paymentMethod: 'Credit Card',
       shippingMethod: 'Express Delivery',
       shippingAddress: '123 Main St, New York, NY 10001',
       billingAddress: '123 Main St, New York, NY 10001',
       items: [
-        { id: 1, name: 'Wireless Headphones', price: '$59.99', quantity: 1, total: '$59.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=headphones' },
-        { id: 2, name: 'USB-C Cable', price: '$19.99', quantity: 2, total: '$39.98', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=cable' },
-        { id: 3, name: 'Phone Case', price: '$25.03', quantity: 1, total: '$25.03', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=case' }
+        { id: 1, name: 'Wireless Headphones', price: '₹59.99', quantity: 1, total: '₹59.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=headphones' },
+        { id: 2, name: 'USB-C Cable', price: '₹19.99', quantity: 2, total: '₹39.98', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=cable' },
+        { id: 3, name: 'Phone Case', price: '₹25.03', quantity: 1, total: '₹25.03', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=case' }
       ],
-      subtotal: '$124.00',
-      shipping: '$5.00',
-      tax: '$10.00',
-      total: '$139.00'
+      subtotal: '₹124.00',
+      shipping: '₹5.00',
+      tax: '₹10.00',
+      total: '₹139.00'
     },
     'ORD-002': {
       id: 'ORD-002',
@@ -54,20 +54,20 @@ const OrderView = () => {
       phone: '+1 (555) 987-6543',
       date: '2024-01-15',
       time: '11:15',
-      amount: '$89.99',
+      amount: '₹89.99',
       status: 'Processing',
       paymentMethod: 'PayPal',
       shippingMethod: 'Standard Shipping',
       shippingAddress: '456 Oak Ave, Los Angeles, CA 90001',
       billingAddress: '456 Oak Ave, Los Angeles, CA 90001',
       items: [
-        { id: 1, name: 'T-shirt', price: '$24.99', quantity: 2, total: '$49.98', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=tshirt' },
-        { id: 2, name: 'Coffee Mug', price: '$19.99', quantity: 2, total: '$39.98', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=mug' }
+        { id: 1, name: 'T-shirt', price: '₹24.99', quantity: 2, total: '₹49.98', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=tshirt' },
+        { id: 2, name: 'Coffee Mug', price: '₹19.99', quantity: 2, total: '₹39.98', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=mug' }
       ],
-      subtotal: '$89.96',
-      shipping: '$0.00',
-      tax: '$8.10',
-      total: '$98.06'
+      subtotal: '₹89.96',
+      shipping: '₹0.00',
+      tax: '₹8.10',
+      total: '₹98.06'
     },
     'ORD-003': {
       id: 'ORD-003',
@@ -76,23 +76,23 @@ const OrderView = () => {
       phone: '+1 (555) 456-7890',
       date: '2024-01-14',
       time: '09:45',
-      amount: '$234.50',
+      amount: '₹234.50',
       status: 'Shipped',
       paymentMethod: 'Credit Card',
       shippingMethod: 'Express Delivery',
       shippingAddress: '789 Pine Rd, Chicago, IL 60601',
       billingAddress: '789 Pine Rd, Chicago, IL 60601',
       items: [
-        { id: 1, name: 'Laptop', price: '$999.99', quantity: 1, total: '$999.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=laptop' },
-        { id: 2, name: 'Mouse', price: '$29.99', quantity: 1, total: '$29.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=mouse' },
-        { id: 3, name: 'Keyboard', price: '$89.99', quantity: 1, total: '$89.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=keyboard' },
-        { id: 4, name: 'Monitor', price: '$299.99', quantity: 1, total: '$299.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=monitor' },
-        { id: 5, name: 'Webcam', price: '$59.99', quantity: 1, total: '$59.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=webcam' }
+        { id: 1, name: 'Laptop', price: '₹999.99', quantity: 1, total: '₹999.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=laptop' },
+        { id: 2, name: 'Mouse', price: '₹29.99', quantity: 1, total: '₹29.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=mouse' },
+        { id: 3, name: 'Keyboard', price: '₹89.99', quantity: 1, total: '₹89.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=keyboard' },
+        { id: 4, name: 'Monitor', price: '₹299.99', quantity: 1, total: '₹299.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=monitor' },
+        { id: 5, name: 'Webcam', price: '₹59.99', quantity: 1, total: '₹59.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=webcam' }
       ],
-      subtotal: '$1479.95',
-      shipping: '$15.00',
-      tax: '$134.40',
-      total: '$1629.35'
+      subtotal: '₹1479.95',
+      shipping: '₹15.00',
+      tax: '₹134.40',
+      total: '₹1629.35'
     },
     'ORD-004': {
       id: 'ORD-004',
@@ -101,19 +101,19 @@ const OrderView = () => {
       phone: '+1 (555) 789-0123',
       date: '2024-01-14',
       time: '16:20',
-      amount: '$67.99',
+      amount: '₹67.99',
       status: 'Pending',
       paymentMethod: 'Debit Card',
       shippingMethod: 'Standard Shipping',
       shippingAddress: '321 Elm St, Miami, FL 33101',
       billingAddress: '321 Elm St, Miami, FL 33101',
       items: [
-        { id: 1, name: 'Sunglasses', price: '$67.99', quantity: 1, total: '$67.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=sunglasses' }
+        { id: 1, name: 'Sunglasses', price: '₹67.99', quantity: 1, total: '₹67.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=sunglasses' }
       ],
-      subtotal: '$67.99',
-      shipping: '$5.00',
-      tax: '$6.12',
-      total: '$79.11'
+      subtotal: '₹67.99',
+      shipping: '₹5.00',
+      tax: '₹6.12',
+      total: '₹79.11'
     },
     'ORD-005': {
       id: 'ORD-005',
@@ -122,22 +122,22 @@ const OrderView = () => {
       phone: '+1 (555) 234-5678',
       date: '2024-01-13',
       time: '13:10',
-      amount: '$156.75',
+      amount: '₹156.75',
       status: 'Completed',
       paymentMethod: 'Credit Card',
       shippingMethod: 'Express Delivery',
       shippingAddress: '654 Maple Ave, Seattle, WA 98101',
       billingAddress: '654 Maple Ave, Seattle, WA 98101',
       items: [
-        { id: 1, name: 'Smart Watch', price: '$199.99', quantity: 1, total: '$199.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=watch' },
-        { id: 2, name: 'Tablet', price: '$329.99', quantity: 1, total: '$329.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=tablet' },
-        { id: 3, name: 'Phone Charger', price: '$19.99', quantity: 2, total: '$39.98', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=charger' },
-        { id: 4, name: 'Bluetooth Speaker', price: '$89.99', quantity: 1, total: '$89.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=speaker' }
+        { id: 1, name: 'Smart Watch', price: '₹199.99', quantity: 1, total: '₹199.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=watch' },
+        { id: 2, name: 'Tablet', price: '₹329.99', quantity: 1, total: '₹329.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=tablet' },
+        { id: 3, name: 'Phone Charger', price: '₹19.99', quantity: 2, total: '₹39.98', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=charger' },
+        { id: 4, name: 'Bluetooth Speaker', price: '₹89.99', quantity: 1, total: '₹89.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=speaker' }
       ],
-      subtotal: '$659.95',
-      shipping: '$10.00',
-      tax: '$59.40',
-      total: '$729.35'
+      subtotal: '₹659.95',
+      shipping: '₹10.00',
+      tax: '₹59.40',
+      total: '₹729.35'
     },
     'ORD-006': {
       id: 'ORD-006',
@@ -146,20 +146,20 @@ const OrderView = () => {
       phone: '+1 (555) 876-5432',
       date: '2024-01-13',
       time: '10:05',
-      amount: '$299.99',
+      amount: '₹299.99',
       status: 'Cancelled',
       paymentMethod: 'PayPal',
       shippingMethod: 'Standard Shipping',
       shippingAddress: '987 Cedar Ln, Denver, CO 80201',
       billingAddress: '987 Cedar Ln, Denver, CO 80201',
       items: [
-        { id: 1, name: 'Gaming Console', price: '$499.99', quantity: 1, total: '$499.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=console' },
-        { id: 2, name: 'Game Controller', price: '$59.99', quantity: 1, total: '$59.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=controller' }
+        { id: 1, name: 'Gaming Console', price: '₹499.99', quantity: 1, total: '₹499.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=console' },
+        { id: 2, name: 'Game Controller', price: '₹59.99', quantity: 1, total: '₹59.99', image: 'https://api.dicebear.com/7.x/shapes/svg?seed=controller' }
       ],
-      subtotal: '$559.98',
-      shipping: '$0.00',
-      tax: '$50.40',
-      total: '$610.38'
+      subtotal: '₹559.98',
+      shipping: '₹0.00',
+      tax: '₹50.40',
+      total: '₹610.38'
     }
   }
 

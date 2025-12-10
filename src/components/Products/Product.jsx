@@ -23,7 +23,7 @@ const Products = () => {
       id: 1,
       name: "Wireless Headphones",
       category: "Electronics",
-      price: "$99.99",
+      price: "₹99.99",
       stock: 45,
       status: "In Stock",
       image:
@@ -34,7 +34,7 @@ const Products = () => {
       id: 2,
       name: "Running Shoes",
       category: "Sports",
-      price: "$129.99",
+      price: "₹129.99",
       stock: 23,
       status: "Low Stock",
       image:
@@ -45,7 +45,7 @@ const Products = () => {
       id: 3,
       name: "Coffee Maker",
       category: "Home & Kitchen",
-      price: "$79.99",
+      price: "₹79.99",
       stock: 0,
       status: "Out of Stock",
       image:
@@ -56,7 +56,7 @@ const Products = () => {
       id: 4,
       name: "Smart Watch",
       category: "Electronics",
-      price: "$199.99",
+      price: "₹199.99",
       stock: 67,
       status: "In Stock",
       image:
@@ -67,7 +67,7 @@ const Products = () => {
       id: 5,
       name: "Backpack",
       category: "Fashion",
-      price: "$49.99",
+      price: "₹49.99",
       stock: 89,
       status: "In Stock",
       image:
@@ -78,7 +78,7 @@ const Products = () => {
       id: 6,
       name: "Desk Lamp",
       category: "Home & Office",
-      price: "$34.99",
+      price: "₹34.99",
       stock: 12,
       status: "Low Stock",
       image:
@@ -148,9 +148,6 @@ const Products = () => {
 
   // Calculate average price (excluding dummy products if desired)
   const calculateAveragePrice = () => {
-    // Option 1: Calculate for all products (including dummies)
-    // const productsToCalculate = products
-
     // Option 2: Calculate only for user-added products (excluding dummies)
     const userProducts = products.filter((p) => !p.isDummy);
     const productsToCalculate =
@@ -159,7 +156,7 @@ const Products = () => {
     if (productsToCalculate.length === 0) return "0.00";
 
     const total = productsToCalculate.reduce((sum, p) => {
-      const price = parseFloat(p.price.replace("$", "")) || 0;
+      const price = parseFloat(p.price.replace("₹", "")) || 0;
       return sum + price;
     }, 0);
     return (total / productsToCalculate.length).toFixed(2);
@@ -198,7 +195,6 @@ const Products = () => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                 
                   <Link
                     to="/products/add"
                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -357,7 +353,6 @@ const Products = () => {
                               >
                                 <EyeIcon className="h-5 w-5" />
                               </Link>
-                              {/* In the Products component, find the edit button and update it: */}
                               <Link
                                 to={`/products/edit/${product.id}`}
                                 className={`p-1 ${
@@ -472,7 +467,7 @@ const Products = () => {
               <div className="bg-white p-6 rounded-lg shadow">
                 <div className="text-sm text-gray-600">Avg. Price</div>
                 <div className="text-2xl font-bold mt-2">
-                  ${calculateAveragePrice()}
+                  ₹{calculateAveragePrice()}
                 </div>
                 <div className="text-sm text-blue-600 mt-1">
                   +5.2% from last month

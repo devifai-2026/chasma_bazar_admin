@@ -16,7 +16,7 @@ const MainContent = ({ sidebarOpen }) => {
   const stats = [
     {
       title: 'Total Revenue',
-      value: '$45,231',
+      value: '₹45,231',
       change: '+20.1%',
       icon: CurrencyDollarIcon,
       color: 'bg-green-500'
@@ -101,7 +101,7 @@ const MainContent = ({ sidebarOpen }) => {
                   {/* Earnings info */}
                   <div className="border-l-4 border-blue-500 pl-4 py-2">
                     <p className="text-sm text-gray-700">
-                      <span className="font-semibold">You earn $3287 today</span>, it's higher than last 
+                      <span className="font-semibold">You earned ₹3287 today</span>, it's higher than last 
                       month. Keep up your good work!
                     </p>
                   </div>
@@ -110,15 +110,15 @@ const MainContent = ({ sidebarOpen }) => {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Target</span>
-                      <span className="text-sm font-medium text-gray-900">$50,000</span>
+                      <span className="text-sm font-medium text-gray-900">₹50,000</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Current Earnings</span>
-                      <span className="text-sm font-medium text-gray-900">$37,775</span>
+                      <span className="text-sm font-medium text-gray-900">₹37,775</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Remaining</span>
-                      <span className="text-sm font-medium text-gray-900">$12,225</span>
+                      <span className="text-sm font-medium text-gray-900">₹12,225</span>
                     </div>
                   </div>
                 </div>
@@ -167,11 +167,11 @@ const MainContent = ({ sidebarOpen }) => {
           <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-600">Current Month</p>
-              <p className="text-xl font-bold text-gray-900">$120,000</p>
+              <p className="text-xl font-bold text-gray-900">₹120,000</p>
             </div>
             <div className="p-4 bg-green-50 rounded-lg">
               <p className="text-sm text-gray-600">Target</p>
-              <p className="text-xl font-bold text-gray-900">$105,000</p>
+              <p className="text-xl font-bold text-gray-900">₹105,000</p>
             </div>
             <div className="p-4 bg-purple-50 rounded-lg">
               <p className="text-sm text-gray-600">Growth</p>
@@ -179,7 +179,7 @@ const MainContent = ({ sidebarOpen }) => {
             </div>
             <div className="p-4 bg-orange-50 rounded-lg">
               <p className="text-sm text-gray-600">Avg. Monthly</p>
-              <p className="text-xl font-bold text-gray-900">$78,500</p>
+              <p className="text-xl font-bold text-gray-900">₹78,500</p>
             </div>
           </div>
         </div>
