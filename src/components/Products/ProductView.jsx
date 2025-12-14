@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeftIcon,
   ShoppingCartIcon,
-  CurrencyDollarIcon,
+  CurrencyRupeeIcon,
   UserGroupIcon,
   TagIcon,
   CubeIcon,
@@ -44,8 +44,8 @@ const ProductView = () => {
           id: 1, 
           name: 'Wireless Headphones', 
           category: 'Electronics', 
-          price: '$99.99', 
-          cost: '$45.00',
+          price: '₹99.99', 
+          cost: '₹45.00',
           stock: 45, 
           minStock: 10,
           status: 'In Stock', 
@@ -65,7 +65,7 @@ const ProductView = () => {
           createdAt: '2024-01-15',
           lastRestocked: '2024-03-10',
           totalSold: 245,
-          revenue: '$24,497.55',
+          revenue: '₹24,497.55',
           margin: '55%',
           images: [
             'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=400&fit=crop',
@@ -77,8 +77,8 @@ const ProductView = () => {
           id: 2, 
           name: 'Running Shoes', 
           category: 'Sports', 
-          price: '$129.99', 
-          cost: '$65.00',
+          price: '₹129.99', 
+          cost: '₹65.00',
           stock: 23, 
           minStock: 15,
           status: 'Low Stock', 
@@ -98,7 +98,7 @@ const ProductView = () => {
           createdAt: '2024-02-10',
           lastRestocked: '2024-03-05',
           totalSold: 189,
-          revenue: '$24,568.11',
+          revenue: '₹24,568.11',
           margin: '50%',
           images: [
             'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=400&fit=crop',
@@ -110,8 +110,8 @@ const ProductView = () => {
           id: 3, 
           name: 'Coffee Maker', 
           category: 'Home & Kitchen', 
-          price: '$79.99', 
-          cost: '$35.00',
+          price: '₹79.99', 
+          cost: '₹35.00',
           stock: 0, 
           minStock: 5,
           status: 'Out of Stock', 
@@ -131,7 +131,7 @@ const ProductView = () => {
           createdAt: '2024-01-20',
           lastRestocked: '2024-02-28',
           totalSold: 156,
-          revenue: '$12,478.44',
+          revenue: '₹12,478.44',
           margin: '56%',
           images: [
             'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&h=400&fit=crop',
@@ -320,9 +320,9 @@ const ProductView = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Total Revenue</p>
-                    <p className="text-2xl font-bold mt-1">{product.revenue || '$0.00'}</p>
+                    <p className="text-2xl font-bold mt-1">{product.revenue || '₹0.00'}</p>
                   </div>
-                  <CurrencyDollarIcon className="h-8 w-8 text-green-600" />
+                  <CurrencyRupeeIcon className="h-8 w-8 text-green-600" />
                 </div>
                 <div className="mt-4">
                   <div className="flex items-center text-sm">

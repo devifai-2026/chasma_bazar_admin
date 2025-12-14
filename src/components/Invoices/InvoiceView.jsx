@@ -23,7 +23,14 @@ const InvoiceView = () => {
   const [printing, setPrinting] = useState(false);
   const invoiceRef = useRef();
 
-  // Sample invoice data - in real app, you'd fetch this based on id
+  // Helper function to format amount with rupee symbol
+  const formatRupee = (amount) => {
+    // Remove any existing dollar signs and add rupee symbol
+    const cleanAmount = amount.replace('$', '').trim();
+    return `₹${cleanAmount}`;
+  };
+
+  // Sample invoice data - updated with rupee amounts
   const sampleInvoices = [
     { 
       id: 'INV-001', 
@@ -32,13 +39,13 @@ const InvoiceView = () => {
       clientAddress: '123 Tech Street, San Francisco, CA 94107',
       date: '2024-01-15', 
       dueDate: '2024-02-15',
-      amount: '$1,250.00',
-      tax: '$112.50',
-      subtotal: '$1,137.50',
+      amount: '₹1,250.00',
+      tax: '₹112.50',
+      subtotal: '₹1,137.50',
       status: 'Paid',
       items: [
-        { description: 'Website Redesign', quantity: 1, price: '$750.00', total: '$750.00' },
-        { description: 'Monthly Maintenance', quantity: 2, price: '$250.00', total: '$500.00' },
+        { description: 'Website Redesign', quantity: 1, price: '₹750.00', total: '₹750.00' },
+        { description: 'Monthly Maintenance', quantity: 2, price: '₹250.00', total: '₹500.00' },
       ],
       notes: 'Thank you for your business. Please make payment by the due date.',
       paymentMethod: 'Credit Card',
@@ -51,13 +58,13 @@ const InvoiceView = () => {
       clientAddress: '456 Retail Ave, New York, NY 10001',
       date: '2024-01-14', 
       dueDate: '2024-02-14',
-      amount: '$890.50',
-      tax: '$80.14',
-      subtotal: '$810.36',
+      amount: '₹890.50',
+      tax: '₹80.14',
+      subtotal: '₹810.36',
       status: 'Pending',
       items: [
-        { description: 'E-commerce Setup', quantity: 1, price: '$500.00', total: '$500.00' },
-        { description: 'Payment Gateway Integration', quantity: 1, price: '$390.50', total: '$390.50' },
+        { description: 'E-commerce Setup', quantity: 1, price: '₹500.00', total: '₹500.00' },
+        { description: 'Payment Gateway Integration', quantity: 1, price: '₹390.50', total: '₹390.50' },
       ],
       notes: 'Payment due within 30 days.',
       paymentMethod: 'Bank Transfer',
@@ -70,13 +77,13 @@ const InvoiceView = () => {
       clientAddress: '789 Innovation Blvd, Austin, TX 73301',
       date: '2024-01-13', 
       dueDate: '2024-02-13',
-      amount: '$2,340.00',
-      tax: '$210.60',
-      subtotal: '$2,129.40',
+      amount: '₹2,340.00',
+      tax: '₹210.60',
+      subtotal: '₹2,129.40',
       status: 'Paid',
       items: [
-        { description: 'Mobile App Development', quantity: 1, price: '$1,800.00', total: '$1,800.00' },
-        { description: 'UI/UX Design', quantity: 1, price: '$540.00', total: '$540.00' },
+        { description: 'Mobile App Development', quantity: 1, price: '₹1,800.00', total: '₹1,800.00' },
+        { description: 'UI/UX Design', quantity: 1, price: '₹540.00', total: '₹540.00' },
       ],
       notes: 'Project completed successfully.',
       paymentMethod: 'PayPal',
@@ -89,13 +96,13 @@ const InvoiceView = () => {
       clientAddress: '101 Startup Lane, Boston, MA 02108',
       date: '2024-01-12', 
       dueDate: '2024-01-31',
-      amount: '$560.75',
-      tax: '$50.47',
-      subtotal: '$510.28',
+      amount: '₹560.75',
+      tax: '₹50.47',
+      subtotal: '₹510.28',
       status: 'Overdue',
       items: [
-        { description: 'Consulting Hours', quantity: 5, price: '$100.00', total: '$500.00' },
-        { description: 'Report Generation', quantity: 1, price: '$60.75', total: '$60.75' },
+        { description: 'Consulting Hours', quantity: 5, price: '₹100.00', total: '₹500.00' },
+        { description: 'Report Generation', quantity: 1, price: '₹60.75', total: '₹60.75' },
       ],
       notes: 'Please contact us for payment extension.',
       paymentMethod: 'Check',
@@ -108,13 +115,13 @@ const InvoiceView = () => {
       clientAddress: '222 Business Park, Chicago, IL 60601',
       date: '2024-01-11', 
       dueDate: '2024-02-11',
-      amount: '$3,780.20',
-      tax: '$340.22',
-      subtotal: '$3,439.98',
+      amount: '₹3,780.20',
+      tax: '₹340.22',
+      subtotal: '₹3,439.98',
       status: 'Paid',
       items: [
-        { description: 'ERP Implementation', quantity: 1, price: '$2,500.00', total: '$2,500.00' },
-        { description: 'Training Sessions', quantity: 4, price: '$320.05', total: '$1,280.20' },
+        { description: 'ERP Implementation', quantity: 1, price: '₹2,500.00', total: '₹2,500.00' },
+        { description: 'Training Sessions', quantity: 4, price: '₹320.05', total: '₹1,280.20' },
       ],
       notes: 'Annual maintenance contract included.',
       paymentMethod: 'Wire Transfer',
@@ -456,6 +463,9 @@ const InvoiceView = () => {
               border-top: 1px solid #e5e7eb;
               padding-top: 20px;
             }
+            .currency {
+              font-family: Arial, sans-serif;
+            }
           </style>
         </head>
         <body>
@@ -515,8 +525,8 @@ const InvoiceView = () => {
                 <tr>
                   <td>${item.description}</td>
                   <td>${item.quantity}</td>
-                  <td>${item.price}</td>
-                  <td><strong>${item.total}</strong></td>
+                  <td class="currency">${item.price}</td>
+                  <td class="currency"><strong>${item.total}</strong></td>
                 </tr>
               `).join('')}
             </tbody>
@@ -525,15 +535,15 @@ const InvoiceView = () => {
           <div class="totals">
             <div class="total-row">
               <div class="total-label">Subtotal:</div>
-              <div class="total-value">${invoice.subtotal}</div>
+              <div class="total-value currency">${invoice.subtotal}</div>
             </div>
             <div class="total-row">
               <div class="total-label">Tax (10%):</div>
-              <div class="total-value">${invoice.tax}</div>
+              <div class="total-value currency">${invoice.tax}</div>
             </div>
             <div class="total-row grand-total">
               <div class="total-label">Total Amount:</div>
-              <div class="total-value">${invoice.amount}</div>
+              <div class="total-value currency">${invoice.amount}</div>
             </div>
           </div>
           
@@ -833,7 +843,25 @@ const InvoiceView = () => {
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                 <div className="space-y-3">
-                 
+                  <button
+                    onClick={generatePDF}
+                    disabled={downloadingPDF}
+                    className={`w-full flex items-center justify-center px-4 py-3 bg-green-50 text-green-700 rounded-lg transition-colors border border-green-200 ${
+                      downloadingPDF ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-100'
+                    }`}
+                  >
+                    {downloadingPDF ? (
+                      <>
+                        <div className="animate-spin h-5 w-5 mr-2 border-2 border-green-700 border-t-transparent rounded-full"></div>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                        Download PDF
+                      </>
+                    )}
+                  </button>
                   <button
                     onClick={printInvoice}
                     className="w-full flex items-center justify-center px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
@@ -848,7 +876,6 @@ const InvoiceView = () => {
                     <ShareIcon className="h-5 w-5 mr-2" />
                     Share Invoice
                   </button>
-                
                 </div>
               </div>
             </div>

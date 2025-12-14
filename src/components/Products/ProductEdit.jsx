@@ -70,8 +70,8 @@ const ProductEdit = () => {
           id: 1, 
           name: 'Wireless Headphones', 
           category: 'Electronics', 
-          price: '$99.99', 
-          cost: '$45.00',
+          price: '₹99.99', 
+          cost: '₹45.00',
           stock: 45, 
           minStock: 10,
           status: 'In Stock', 
@@ -97,8 +97,8 @@ const ProductEdit = () => {
           id: 2, 
           name: 'Running Shoes', 
           category: 'Sports', 
-          price: '$129.99', 
-          cost: '$65.00',
+          price: '₹129.99', 
+          cost: '₹65.00',
           stock: 23, 
           minStock: 15,
           status: 'Low Stock', 
@@ -124,8 +124,8 @@ const ProductEdit = () => {
           id: 3, 
           name: 'Coffee Maker', 
           category: 'Home & Kitchen', 
-          price: '$79.99', 
-          cost: '$35.00',
+          price: '₹79.99', 
+          cost: '₹35.00',
           stock: 0, 
           minStock: 5,
           status: 'Out of Stock', 
@@ -151,8 +151,8 @@ const ProductEdit = () => {
           id: 4, 
           name: 'Smart Watch', 
           category: 'Electronics', 
-          price: '$199.99', 
-          cost: '$95.00',
+          price: '₹199.99', 
+          cost: '₹95.00',
           stock: 67, 
           minStock: 20,
           status: 'In Stock', 
@@ -178,8 +178,8 @@ const ProductEdit = () => {
           id: 5, 
           name: 'Backpack', 
           category: 'Fashion', 
-          price: '$49.99', 
-          cost: '$22.00',
+          price: '₹49.99', 
+          cost: '₹22.00',
           stock: 89, 
           minStock: 25,
           status: 'In Stock', 
@@ -205,8 +205,8 @@ const ProductEdit = () => {
           id: 6, 
           name: 'Desk Lamp', 
           category: 'Home & Office', 
-          price: '$34.99', 
-          cost: '$15.00',
+          price: '₹34.99', 
+          cost: '₹15.00',
           stock: 12, 
           minStock: 8,
           status: 'Low Stock', 
@@ -247,8 +247,8 @@ const ProductEdit = () => {
         setFormData({
           name: foundProduct.name || '',
           category: foundProduct.category || '',
-          price: foundProduct.price ? foundProduct.price.replace('$', '') : '',
-          cost: foundProduct.cost ? foundProduct.cost.replace('$', '') : '',
+          price: foundProduct.price ? foundProduct.price.replace('₹', '') : '',
+          cost: foundProduct.cost ? foundProduct.cost.replace('₹', '') : '',
           stock: foundProduct.stock?.toString() || '',
           minStock: foundProduct.minStock?.toString() || '10',
           description: foundProduct.description || '',
@@ -359,8 +359,8 @@ const ProductEdit = () => {
       }
 
       // Format price and cost
-      const formattedPrice = formData.price.startsWith('$') ? formData.price : `$${formData.price}`;
-      const formattedCost = formData.cost ? (formData.cost.startsWith('$') ? formData.cost : `$${formData.cost}`) : '';
+      const formattedPrice = formData.price.startsWith('₹') ? formData.price : `₹${formData.price}`;
+      const formattedCost = formData.cost ? (formData.cost.startsWith('₹') ? formData.cost : `₹${formData.cost}`) : '';
 
       // Calculate status based on stock
       const stockNum = parseInt(formData.stock) || 0;
@@ -547,10 +547,10 @@ const ProductEdit = () => {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Price ($) *
+                        Price (₹) *
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
                         <input
                           type="number"
                           name="price"
@@ -566,10 +566,10 @@ const ProductEdit = () => {
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Cost ($)
+                        Cost (₹)
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
                         <input
                           type="number"
                           name="cost"

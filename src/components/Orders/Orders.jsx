@@ -21,7 +21,7 @@ const Orders = () => {
       id: "ORD-001",
       customer: "John Smith",
       date: "2024-01-15",
-      amount: "$125.00",
+      amount: "₹125.00",
       status: "Completed",
       items: 3,
     },
@@ -29,7 +29,7 @@ const Orders = () => {
       id: "ORD-002",
       customer: "Emma Johnson",
       date: "2024-01-15",
-      amount: "$89.99",
+      amount: "₹89.99",
       status: "Processing",
       items: 2,
     },
@@ -37,7 +37,7 @@ const Orders = () => {
       id: "ORD-003",
       customer: "Michael Brown",
       date: "2024-01-14",
-      amount: "$234.50",
+      amount: "₹234.50",
       status: "Shipped",
       items: 5,
     },
@@ -45,7 +45,7 @@ const Orders = () => {
       id: "ORD-004",
       customer: "Sarah Davis",
       date: "2024-01-14",
-      amount: "$67.99",
+      amount: "₹67.99",
       status: "Pending",
       items: 1,
     },
@@ -53,7 +53,7 @@ const Orders = () => {
       id: "ORD-005",
       customer: "David Wilson",
       date: "2024-01-13",
-      amount: "$156.75",
+      amount: "₹156.75",
       status: "Completed",
       items: 4,
     },
@@ -61,7 +61,7 @@ const Orders = () => {
       id: "ORD-006",
       customer: "Lisa Miller",
       date: "2024-01-13",
-      amount: "$299.99",
+      amount: "₹299.99",
       status: "Cancelled",
       items: 2,
     },
@@ -277,8 +277,8 @@ const Orders = () => {
             <tr>
               <td>Sample Product 1</td>
               <td>${order.items}</td>
-              <td>$${(
-                parseFloat(order.amount.replace("$", "")) / order.items
+              <td>₹${(
+                parseFloat(order.amount.replace("₹", "")) / order.items
               ).toFixed(2)}</td>
               <td>${order.amount}</td>
             </tr>
@@ -293,24 +293,24 @@ const Orders = () => {
             </div>
             <div class="details-row">
               <span>Tax (10%):</span>
-              <span>$${(
-                parseFloat(order.amount.replace("$", "")) * 0.1
+              <span>₹${(
+                parseFloat(order.amount.replace("₹", "")) * 0.1
               ).toFixed(2)}</span>
             </div>
             <div class="details-row">
               <span>Shipping:</span>
-              <span>$5.00</span>
+              <span>₹5.00</span>
             </div>
             <div class="details-row">
               <span><strong>Total:</strong></span>
-              <span><strong>$${(
-                parseFloat(order.amount.replace("$", "")) * 1.1 +
+              <span><strong>₹${(
+                parseFloat(order.amount.replace("₹", "")) * 1.1 +
                 5
               ).toFixed(2)}</strong></span>
             </div>
             <div class="total-amount">
-              Total: $${(
-                parseFloat(order.amount.replace("$", "")) * 1.1 +
+              Total: ₹${(
+                parseFloat(order.amount.replace("₹", "")) * 1.1 +
                 5
               ).toFixed(2)}
             </div>
