@@ -11,20 +11,27 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  TagIcon, // For Category
-  ReceiptPercentIcon, // For Invoices
+  TagIcon,
+  ReceiptPercentIcon,
+  BuildingOfficeIcon, // For Company
+  Square3Stack3DIcon, // For Frame
+  TicketIcon, // For Discount
+  CubeIcon, 
+  FolderIcon 
 } from '@heroicons/react/24/outline'
 import { NavLink } from 'react-router-dom'
 
 const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
   const navigation = [
     { name: 'Dashboard', icon: HomeIcon, to: '/' },
-    { name: 'Products', icon: ShoppingCartIcon, to: '/products' },
-    { name: 'Category', icon: TagIcon, to: '/categories' },
+    { name: 'Products', icon: CubeIcon, to: '/products' }, // Changed to CubeIcon
+    { name: 'Category', icon: FolderIcon, to: '/categories' }, // Changed to FolderIcon
+    { name: 'Company', icon: BuildingOfficeIcon, to: '/company' }, // Changed to BuildingOfficeIcon
+    { name: 'Frame', icon: Square3Stack3DIcon, to: '/frame' }, // Changed to Square3Stack3DIcon
+    { name: 'Discount', icon: TicketIcon, to: '/discount' }, // Changed to TicketIcon
     { name: 'Orders', icon: CreditCardIcon, to: '/orders' },
     { name: 'Invoices', icon: ReceiptPercentIcon, to: '/invoices' },
     { name: 'Users', icon: UsersIcon, to: '/users' },
-
   ]
 
   const handleToggle = () => {
@@ -114,7 +121,20 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
             ))}
           </nav>
 
-        
+          {/* Bottom section (optional) */}
+          <div className="border-t px-4 py-4">
+            <div className="flex items-center">
+              <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+                <span className="text-gray-600 text-sm font-medium">AD</span>
+              </div>
+              {sidebarOpen && (
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-medium">Admin User</p>
+                  <p className="text-xs text-gray-500">admin@example.com</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </aside>
     </>
