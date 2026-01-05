@@ -17,6 +17,13 @@ import MyProfile from './components/MyProfile/MyProfile'
 import Login from './components/MyProfile/Login'
 import OrderView from './components/Orders/OrderView'
 import OrderUpdate from './components/Orders/OrderUpdate'
+import Company from './components/Company/Company'
+import Frame from './components/Frame/Frame'
+import AddCompany from './components/Company/AddCompany'
+import AddFrame from './components/Frame/AddFrame'
+import Discount from './components/Discount/Discount'
+import AddDiscount from './components/Discount/AddDiscount'
+import ViewDiscount from './components/Discount/ViewDiscount'
 
 function App() {
   return (
@@ -40,6 +47,13 @@ function App() {
           <Route path="/users/edit/:id" element={<UserEdit />} /> 
            <Route path="/my-profile" element={<MyProfile />} /> 
            <Route path="/login" element={<Login />} /> 
+           <Route path="/company" element={<Company />} /> 
+           <Route path="/company/add" element={<AddCompany />} /> 
+           <Route path="/frame" element={<Frame />} /> 
+           <Route path="/frame/add" element={<AddFrame />} /> 
+           <Route path="/discount" element={<Discount/>} /> 
+           <Route path="/discount/add" element={<AddDiscount/>} /> 
+           <Route path="/discount/view/:id" element={<ViewDiscount/>} /> 
         </Routes>
       </div>
     </Router>
