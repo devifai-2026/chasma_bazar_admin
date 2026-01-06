@@ -17,18 +17,23 @@ import {
   Square3Stack3DIcon, // For Frame
   TicketIcon, // For Discount
   CubeIcon, 
-  FolderIcon 
+  FolderIcon,
+  // New icons for PromoCode and Banner
+  TagIcon as PromoCodeIcon, // Using TagIcon with different name
+  PhotoIcon // For Banner
 } from '@heroicons/react/24/outline'
 import { NavLink } from 'react-router-dom'
 
 const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
   const navigation = [
     { name: 'Dashboard', icon: HomeIcon, to: '/' },
-    { name: 'Products', icon: CubeIcon, to: '/products' }, // Changed to CubeIcon
-    { name: 'Category', icon: FolderIcon, to: '/categories' }, // Changed to FolderIcon
-    { name: 'Company', icon: BuildingOfficeIcon, to: '/company' }, // Changed to BuildingOfficeIcon
-    { name: 'Frame', icon: Square3Stack3DIcon, to: '/frame' }, // Changed to Square3Stack3DIcon
-    { name: 'Discount', icon: TicketIcon, to: '/discount' }, // Changed to TicketIcon
+    { name: 'Products', icon: CubeIcon, to: '/products' },
+    { name: 'Category', icon: FolderIcon, to: '/categories' },
+    { name: 'Company', icon: BuildingOfficeIcon, to: '/company' },
+    { name: 'Frame', icon: Square3Stack3DIcon, to: '/frame' }, 
+    { name: 'Discount', icon: TicketIcon, to: '/discount' }, 
+    { name: 'PromoCode', icon: PromoCodeIcon, to: '/promoCode' }, // Changed icon
+    { name: 'Banner', icon: PhotoIcon, to: '/banner' }, // Changed icon
     { name: 'Orders', icon: CreditCardIcon, to: '/orders' },
     { name: 'Invoices', icon: ReceiptPercentIcon, to: '/invoices' },
     { name: 'Users', icon: UsersIcon, to: '/users' },

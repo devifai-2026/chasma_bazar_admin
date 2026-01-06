@@ -24,89 +24,223 @@ const Companies = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
 
-  // Dummy companies data
-  const dummyCompanies = [
-    {
-      id: 1,
-      name: "Premium Eyewear Co.",
-      description: "Premium eyewear brand specializing in designer frames",
-      pinCode: "110001",
-      email: "contact@premiumeyewear.com",
-      phone: "9876543210",
-      address: {
-        street: "123 Business Park",
-        city: "Mumbai",
-        state: "Maharashtra",
-        country: "India",
-        pinCode: "110001"
-      },
-      logo: {
-        url: "https://images.unsplash.com/photo-1567446537710-0c5ff5a6ac32?w=150&h=150&fit=crop",
-        public_id: "logo_123"
-      },
-      establishedYear: 2010,
-      rating: 4.5,
-      totalRatings: 120,
-      weblinks: [
-        { url: "https://premiumeyewear.com", label: "Website" },
-        { url: "https://facebook.com/premiumeyewear", label: "Facebook" }
-      ],
-      isDummy: true
+const dummyCompanies = [
+  {
+    id: 1,
+    name: "Premium Eyewear Co.",
+    description: "Premium eyewear brand specializing in designer frames",
+    pinCode: "110001",
+    email: "contact@premiumeyewear.com",
+    phone: "9876543210",
+    address: {
+      street: "123 Business Park",
+      city: "Mumbai",
+      state: "Maharashtra",
+      country: "India",
+      pinCode: "110001"
     },
-    {
-      id: 2,
-      name: "Urban Optics Ltd.",
-      description: "Modern eyewear for urban professionals",
-      pinCode: "400001",
-      email: "info@urbanoptics.com",
-      phone: "9123456789",
-      address: {
-        street: "456 Fashion Street",
-        city: "Delhi",
-        state: "Delhi",
-        country: "India",
-        pinCode: "400001"
-      },
-      logo: {
-        url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=150&h=150&fit=crop",
-        public_id: "logo_456"
-      },
-      establishedYear: 2015,
-      rating: 4.2,
-      totalRatings: 89,
-      weblinks: [
-        { url: "https://urbanoptics.com", label: "Website" }
-      ],
-      isDummy: true
+    logo: {
+      url: "https://picsum.photos/seed/eyewear1/150/150",
+      public_id: "logo_123"
     },
-    {
-      id: 3,
-      name: "Classic Frames Inc.",
-      description: "Traditional eyewear manufacturer since 1985",
-      pinCode: "560001",
-      email: "sales@classicframes.com",
-      phone: "9988776655",
-      address: {
-        street: "789 Heritage Road",
-        city: "Bangalore",
-        state: "Karnataka",
-        country: "India",
-        pinCode: "560001"
-      },
-      logo: {
-        url: "https://images.unsplash.com/photo-1545239351-1141bd94e1cd?w=150&h=150&fit=crop",
-        public_id: "logo_789"
-      },
-      establishedYear: 1985,
-      rating: 4.7,
-      totalRatings: 256,
-      weblinks: [
-        { url: "https://classicframes.com", label: "Website" },
-        { url: "https://instagram.com/classicframes", label: "Instagram" }
-      ],
-      isDummy: true
-    }
-  ];
+    establishedYear: 2010,
+    rating: 4.5,
+    totalRatings: 120,
+    weblinks: [
+      { url: "https://premiumeyewear.com", label: "Website" },
+      { url: "https://facebook.com/premiumeyewear", label: "Facebook" }
+    ],
+    isDummy: true
+  },
+  {
+    id: 2,
+    name: "Urban Optics Ltd.",
+    description: "Modern eyewear for urban professionals",
+    pinCode: "400001",
+    email: "info@urbanoptics.com",
+    phone: "9123456789",
+    address: {
+      street: "456 Fashion Street",
+      city: "Delhi",
+      state: "Delhi",
+      country: "India",
+      pinCode: "400001"
+    },
+    logo: {
+      url: "https://picsum.photos/seed/eyewear2/150/150",
+      public_id: "logo_456"
+    },
+    establishedYear: 2015,
+    rating: 4.2,
+    totalRatings: 89,
+    weblinks: [
+      { url: "https://urbanoptics.com", label: "Website" }
+    ],
+    isDummy: true
+  },
+  {
+    id: 3,
+    name: "Classic Frames Inc.",
+    description: "Traditional eyewear manufacturer since 1985",
+    pinCode: "560001",
+    email: "sales@classicframes.com",
+    phone: "9988776655",
+    address: {
+      street: "789 Heritage Road",
+      city: "Bangalore",
+      state: "Karnataka",
+      country: "India",
+      pinCode: "560001"
+    },
+    logo: {
+      url: "https://picsum.photos/seed/eyewear3/150/150",
+      public_id: "logo_789"
+    },
+    establishedYear: 1985,
+    rating: 4.7,
+    totalRatings: 256,
+    weblinks: [
+      { url: "https://classicframes.com", label: "Website" },
+      { url: "https://instagram.com/classicframes", label: "Instagram" }
+    ],
+    isDummy: true
+  },
+  {
+    id: 4,
+    name: "Visionary Eyewear",
+    description: "Innovative eyewear solutions with cutting-edge technology",
+    pinCode: "600001",
+    email: "info@visionaryeyewear.com",
+    phone: "9876543120",
+    address: {
+      street: "321 Tech Park",
+      city: "Chennai",
+      state: "Tamil Nadu",
+      country: "India",
+      pinCode: "600001"
+    },
+    logo: {
+      url: "https://picsum.photos/seed/eyewear4/150/150",
+      public_id: "logo_101"
+    },
+    establishedYear: 2018,
+    rating: 4.3,
+    totalRatings: 75,
+    weblinks: [
+      { url: "https://visionaryeyewear.com", label: "Website" },
+      { url: "https://twitter.com/visionaryeyewear", label: "Twitter" }
+    ],
+    isDummy: true
+  },
+  {
+    id: 5,
+    name: "SunShades International",
+    description: "World's leading sunglasses manufacturer",
+    pinCode: "700001",
+    email: "sales@sunshades.com",
+    phone: "9123456780",
+    address: {
+      street: "789 Beach Road",
+      city: "Kolkata",
+      state: "West Bengal",
+      country: "India",
+      pinCode: "700001"
+    },
+    logo: {
+      url: "https://picsum.photos/seed/eyewear5/150/150",
+      public_id: "logo_102"
+    },
+    establishedYear: 2005,
+    rating: 4.8,
+    totalRatings: 320,
+    weblinks: [
+      { url: "https://sunshades.com", label: "Website" },
+      { url: "https://instagram.com/sunshades", label: "Instagram" }
+    ],
+    isDummy: true
+  },
+  {
+    id: 6,
+    name: "Optical Precision",
+    description: "Precision optics for professionals",
+    pinCode: "380001",
+    email: "contact@opticalprecision.com",
+    phone: "9876543219",
+    address: {
+      street: "654 Science Street",
+      city: "Ahmedabad",
+      state: "Gujarat",
+      country: "India",
+      pinCode: "380001"
+    },
+    logo: {
+      url: "https://picsum.photos/seed/eyewear6/150/150",
+      public_id: "logo_103"
+    },
+    establishedYear: 1995,
+    rating: 4.6,
+    totalRatings: 189,
+    weblinks: [
+      { url: "https://opticalprecision.com", label: "Website" },
+      { url: "https://linkedin.com/company/opticalprecision", label: "LinkedIn" }
+    ],
+    isDummy: true
+  },
+  {
+    id: 7,
+    name: "Retro Frames Co.",
+    description: "Vintage and retro eyewear collections",
+    pinCode: "500001",
+    email: "info@retroframes.com",
+    phone: "9123456781",
+    address: {
+      street: "987 Vintage Lane",
+      city: "Hyderabad",
+      state: "Telangana",
+      country: "India",
+      pinCode: "500001"
+    },
+    logo: {
+      url: "https://picsum.photos/seed/eyewear7/150/150",
+      public_id: "logo_104"
+    },
+    establishedYear: 2012,
+    rating: 4.4,
+    totalRatings: 142,
+    weblinks: [
+      { url: "https://retroframes.com", label: "Website" },
+      { url: "https://pinterest.com/retroframes", label: "Pinterest" }
+    ],
+    isDummy: true
+  },
+  {
+    id: 8,
+    name: "Eco Vision Optics",
+    description: "Sustainable and eco-friendly eyewear",
+    pinCode: "411001",
+    email: "contact@ecovision.com",
+    phone: "9876543220",
+    address: {
+      street: "456 Green Avenue",
+      city: "Pune",
+      state: "Maharashtra",
+      country: "India",
+      pinCode: "411001"
+    },
+    logo: {
+      url: "https://picsum.photos/seed/eyewear8/150/150",
+      public_id: "logo_105"
+    },
+    establishedYear: 2019,
+    rating: 4.7,
+    totalRatings: 96,
+    weblinks: [
+      { url: "https://ecovision.com", label: "Website" },
+      { url: "https://facebook.com/ecovision", label: "Facebook" }
+    ],
+    isDummy: true
+  }
+];
 
   // Load companies from localStorage
   useEffect(() => {
@@ -154,12 +288,11 @@ const Companies = () => {
     if (window.confirm("Are you sure you want to delete this company?")) {
       const companyToDelete = companies.find((c) => c.id === id);
 
-      // Prevent deletion of dummy companies
+      // Show extra warning for demo companies
       if (companyToDelete?.isDummy) {
-        alert(
-          "Cannot delete demo companies. Add your own companies to manage them."
-        );
-        return;
+        if (!window.confirm("This is a demo company. Are you sure you want to delete it?")) {
+          return;
+        }
       }
 
       const updatedCompanies = companies.filter((company) => company.id !== id);
@@ -316,15 +449,17 @@ const Companies = () => {
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-center">
-                              <img
-                                className="h-12 w-12 rounded-lg object-cover border"
-                                src={company.logo.url}
-                                alt={company.name}
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = "https://via.placeholder.com/150?text=Logo";
-                                }}
-                              />
+                              <div className="flex-shrink-0">
+                                <img
+                                  className="h-12 w-12 rounded-lg object-cover border shadow-sm"
+                                  src={company.logo.url}
+                                  alt={company.name}
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.src = "https://images.unsplash.com/photo-1567446537710-0c5ff5a6ac32?w=150&h=150&fit=crop&crop=face";
+                                  }}
+                                />
+                              </div>
                               <div className="ml-4">
                                 <div className="text-sm font-medium text-gray-900">
                                   {company.name}
@@ -344,7 +479,7 @@ const Companies = () => {
                                       href={link.url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-xs text-blue-600 hover:text-blue-800"
+                                      className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
                                     >
                                       {link.label}
                                     </a>
@@ -417,44 +552,23 @@ const Companies = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
                               <Link
-                                to={`/companies/view/${company.id}`}
-                                className="p-1 text-blue-600 hover:text-blue-800"
+                                to={`/company/view/${company.id}`}
+                                className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
                                 title="View"
                               >
                                 <EyeIcon className="h-5 w-5" />
                               </Link>
                               <Link
-                                to={`/companies/edit/${company.id}`}
-                                className={`p-1 ${
-                                  company.isDummy
-                                    ? "text-gray-400 cursor-not-allowed pointer-events-none"
-                                    : "text-green-600 hover:text-green-800"
-                                }`}
-                                title={
-                                  company.isDummy
-                                    ? "Cannot edit demo companies"
-                                    : "Edit"
-                                }
+                                to={`/company/update/${company.id}`}
+                                className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded"
+                                title="Edit"
                               >
                                 <PencilIcon className="h-5 w-5" />
                               </Link>
                               <button
-                                className={`p-1 ${
-                                  company.isDummy
-                                    ? "text-gray-400 cursor-not-allowed"
-                                    : "text-red-600 hover:text-red-800"
-                                }`}
-                                title={
-                                  company.isDummy
-                                    ? "Cannot delete demo companies"
-                                    : "Delete"
-                                }
-                                onClick={
-                                  company.isDummy
-                                    ? undefined
-                                    : () => deleteCompany(company.id)
-                                }
-                                disabled={company.isDummy}
+                                className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
+                                title="Delete"
+                                onClick={() => deleteCompany(company.id)}
                               >
                                 <TrashIcon className="h-5 w-5" />
                               </button>
@@ -472,15 +586,15 @@ const Companies = () => {
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-gray-700">
                 Showing <span className="font-medium">1</span> to{" "}
-                <span className="font-medium">{filteredCompanies.length}</span> of{" "}
-                <span className="font-medium">{companies.length}</span> companies
+                <span className="font-medium">{Math.min(10, filteredCompanies.length)}</span> of{" "}
+                <span className="font-medium">{filteredCompanies.length}</span> companies
                 <span className="ml-2 text-gray-500">
                   ({companies.filter((c) => !c.isDummy).length} user-added)
                 </span>
               </div>
               <div className="flex space-x-2">
                 <button
-                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled
                 >
                   Previous
@@ -488,19 +602,21 @@ const Companies = () => {
                 <button className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                   1
                 </button>
-                {companies.length > 10 && (
+                {filteredCompanies.length > 10 && (
                   <>
                     <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">
                       2
                     </button>
-                    <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">
-                      3
-                    </button>
+                    {filteredCompanies.length > 20 && (
+                      <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        3
+                      </button>
+                    )}
                   </>
                 )}
                 <button
-                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  disabled={companies.length <= 10}
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={filteredCompanies.length <= 10}
                 >
                   Next
                 </button>
@@ -563,6 +679,9 @@ const Companies = () => {
                 </div>
               </div>
             </div>
+
+          
+           
           </div>
         </main>
       </div>

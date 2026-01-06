@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   PlusIcon,
   PencilIcon,
@@ -13,7 +13,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   BoltIcon,
-  StarIcon
+  StarIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
@@ -22,8 +22,8 @@ import Navbar from "../Navbar";
 const Discount = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [discounts, setDiscounts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState("all");
 
   // Dummy discounts data
   const dummyDiscounts = [
@@ -42,7 +42,7 @@ const Discount = () => {
       endDate: "2024-12-31T23:59:59Z",
       isActive: true,
       isAutoApplied: false,
-      isDummy: true
+      isDummy: true,
     },
     {
       id: 2,
@@ -59,7 +59,7 @@ const Discount = () => {
       endDate: "2024-12-15T23:59:59Z",
       isActive: true,
       isAutoApplied: true,
-      isDummy: true
+      isDummy: true,
     },
     {
       id: 3,
@@ -76,7 +76,7 @@ const Discount = () => {
       endDate: "2024-10-31T23:59:59Z",
       isActive: false,
       isAutoApplied: false,
-      isDummy: true
+      isDummy: true,
     },
     {
       id: 4,
@@ -93,8 +93,8 @@ const Discount = () => {
       endDate: "2024-12-31T23:59:59Z",
       isActive: true,
       isAutoApplied: true,
-      isDummy: true
-    }
+      isDummy: true,
+    },
   ];
 
   // Load discounts from localStorage
@@ -109,7 +109,9 @@ const Discount = () => {
       );
 
       // Filter out any dummy discounts that might have been saved previously
-      const userDiscounts = savedDiscounts.filter((discount) => !discount.isDummy);
+      const userDiscounts = savedDiscounts.filter(
+        (discount) => !discount.isDummy
+      );
 
       // Combine dummy discounts with user's discounts (dummy first, then user's)
       const allDiscounts = [...dummyDiscounts, ...userDiscounts];
@@ -143,84 +145,101 @@ const Discount = () => {
     if (window.confirm("Are you sure you want to delete this discount?")) {
       const discountToDelete = discounts.find((d) => d.id === id);
 
-      // Prevent deletion of dummy discounts
+      // Show extra warning for demo discounts
       if (discountToDelete?.isDummy) {
-        alert(
-          "Cannot delete demo discounts. Add your own discounts to manage them."
-        );
-        return;
+        if (
+          !window.confirm(
+            "This is a demo discount. Are you sure you want to delete it?"
+          )
+        ) {
+          return;
+        }
       }
 
-      const updatedDiscounts = discounts.filter((discount) => discount.id !== id);
+      const updatedDiscounts = discounts.filter(
+        (discount) => discount.id !== id
+      );
       setDiscounts(updatedDiscounts);
     }
   };
 
   // Filter discounts based on search and filter
-  const filteredDiscounts = discounts.filter(discount => {
-    const matchesSearch = discount.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         discount.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = filter === 'all' || 
-                         (filter === 'active' && discount.isActive) ||
-                         (filter === 'inactive' && !discount.isActive) ||
-                         (filter === 'expired' && new Date(discount.endDate) < new Date()) ||
-                         (filter === 'percentage' && discount.discountType === 'percentage');
-    
+  const filteredDiscounts = discounts.filter((discount) => {
+    const matchesSearch =
+      discount.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      discount.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesFilter =
+      filter === "all" ||
+      (filter === "active" && discount.isActive) ||
+      (filter === "inactive" && !discount.isActive) ||
+      (filter === "expired" && new Date(discount.endDate) < new Date()) ||
+      (filter === "percentage" && discount.discountType === "percentage");
+
     return matchesSearch && matchesFilter;
   });
 
   // Calculate statistics
   const calculateStats = () => {
-    const userDiscounts = discounts.filter(d => !d.isDummy);
+    const userDiscounts = discounts.filter((d) => !d.isDummy);
     const totalDiscounts = discounts.length;
     const userAdded = userDiscounts.length;
-    const activeDiscounts = discounts.filter(d => d.isActive).length;
-    const expiredDiscounts = discounts.filter(d => new Date(d.endDate) < new Date()).length;
-    const percentageDiscounts = discounts.filter(d => d.discountType === 'percentage').length;
+    const activeDiscounts = discounts.filter((d) => d.isActive).length;
+    const expiredDiscounts = discounts.filter(
+      (d) => new Date(d.endDate) < new Date()
+    ).length;
+    const percentageDiscounts = discounts.filter(
+      (d) => d.discountType === "percentage"
+    ).length;
 
-    return { totalDiscounts, userAdded, activeDiscounts, expiredDiscounts, percentageDiscounts };
+    return {
+      totalDiscounts,
+      userAdded,
+      activeDiscounts,
+      expiredDiscounts,
+      percentageDiscounts,
+    };
   };
 
   const stats = calculateStats();
 
   const getDiscountTypeColor = (type) => {
     const colors = {
-      'percentage': 'bg-blue-100 text-blue-800',
-      'fixed': 'bg-green-100 text-green-800',
-      'buy_x_get_y': 'bg-purple-100 text-purple-800',
-      'free_shipping': 'bg-amber-100 text-amber-800'
+      percentage: "bg-blue-100 text-blue-800",
+      fixed: "bg-green-100 text-green-800",
+      buy_x_get_y: "bg-purple-100 text-purple-800",
+      free_shipping: "bg-amber-100 text-amber-800",
     };
-    return colors[type] || 'bg-gray-100 text-gray-800';
+    return colors[type] || "bg-gray-100 text-gray-800";
   };
 
   const getDiscountTypeLabel = (type) => {
     const labels = {
-      'percentage': '%',
-      'fixed': '₹',
-      'buy_x_get_y': 'B1G1',
-      'free_shipping': 'Free Ship'
+      percentage: "%",
+      fixed: "₹",
+      buy_x_get_y: "B1G1",
+      free_shipping: "Free Ship",
     };
     return labels[type] || type;
   };
 
   const getApplicableOnColor = (applicableOn) => {
     const colors = {
-      'global': 'bg-gray-100 text-gray-800',
-      'category': 'bg-indigo-100 text-indigo-800',
-      'product': 'bg-teal-100 text-teal-800',
-      'company': 'bg-cyan-100 text-cyan-800',
-      'frame': 'bg-orange-100 text-orange-800'
+      global: "bg-gray-100 text-gray-800",
+      category: "bg-indigo-100 text-indigo-800",
+      product: "bg-teal-100 text-teal-800",
+      company: "bg-cyan-100 text-cyan-800",
+      frame: "bg-orange-100 text-orange-800",
     };
-    return colors[applicableOn] || 'bg-gray-100 text-gray-800';
+    return colors[applicableOn] || "bg-gray-100 text-gray-800";
   };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -257,7 +276,9 @@ const Discount = () => {
             <div className="mb-8">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Discounts</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Discounts
+                  </h1>
                   <p className="text-gray-600">
                     Manage discount rules and promotions
                   </p>
@@ -294,7 +315,7 @@ const Discount = () => {
                   />
                 </div>
               </div>
-              <select 
+              <select
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value)}
@@ -340,25 +361,34 @@ const Discount = () => {
                       <tr>
                         <td colSpan="5" className="px-6 py-12 text-center">
                           <div className="text-gray-500">
-                            No discounts found. Click "Add Discount" to get started.
+                            No discounts found. Click "Add Discount" to get
+                            started.
                           </div>
                         </td>
                       </tr>
                     ) : (
                       filteredDiscounts.map((discount) => {
                         const expired = isExpired(discount.endDate);
-                        const daysRemaining = getDaysRemaining(discount.endDate);
-                        
+                        const daysRemaining = getDaysRemaining(
+                          discount.endDate
+                        );
+
                         return (
                           <tr
                             key={discount.id}
                             className={`hover:bg-gray-50 ${
-                              discount.isDummy ? "border-l-4 border-blue-500" : ""
+                              discount.isDummy
+                                ? "border-l-4 border-blue-500"
+                                : ""
                             }`}
                           >
                             <td className="px-6 py-4">
                               <div className="flex items-center">
-                                <div className={`h-12 w-12 rounded-lg flex items-center justify-center ${getDiscountTypeColor(discount.discountType)}`}>
+                                <div
+                                  className={`h-12 w-12 rounded-lg flex items-center justify-center ${getDiscountTypeColor(
+                                    discount.discountType
+                                  )}`}
+                                >
                                   <TagIcon className="h-6 w-6" />
                                 </div>
                                 <div className="ml-4">
@@ -376,10 +406,20 @@ const Discount = () => {
                                     {discount.description}
                                   </div>
                                   <div className="mt-1 flex flex-wrap gap-2">
-                                    <span className={`text-xs px-2 py-1 rounded-full ${getDiscountTypeColor(discount.discountType)}`}>
-                                      {getDiscountTypeLabel(discount.discountType)}
+                                    <span
+                                      className={`text-xs px-2 py-1 rounded-full ${getDiscountTypeColor(
+                                        discount.discountType
+                                      )}`}
+                                    >
+                                      {getDiscountTypeLabel(
+                                        discount.discountType
+                                      )}
                                     </span>
-                                    <span className={`text-xs px-2 py-1 rounded-full ${getApplicableOnColor(discount.applicableOn)}`}>
+                                    <span
+                                      className={`text-xs px-2 py-1 rounded-full ${getApplicableOnColor(
+                                        discount.applicableOn
+                                      )}`}
+                                    >
                                       {discount.applicableOn}
                                     </span>
                                     <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
@@ -392,7 +432,7 @@ const Discount = () => {
                             <td className="px-6 py-4">
                               <div className="space-y-1">
                                 <div className="flex items-center text-lg font-semibold text-gray-900">
-                                  {discount.discountType === 'percentage' ? (
+                                  {discount.discountType === "percentage" ? (
                                     <>
                                       {discount.discountValue}%
                                       {discount.maxDiscount && (
@@ -401,19 +441,23 @@ const Discount = () => {
                                         </span>
                                       )}
                                     </>
-                                  ) : discount.discountType === 'fixed' ? (
+                                  ) : discount.discountType === "fixed" ? (
                                     <>₹{discount.discountValue}</>
-                                  ) : discount.discountType === 'buy_x_get_y' ? (
+                                  ) : discount.discountType ===
+                                    "buy_x_get_y" ? (
                                     <>Buy 1 Get 1 Free</>
                                   ) : (
                                     <>Free Shipping</>
                                   )}
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  {discount.discountType === 'percentage' ? 'Percentage Discount' :
-                                   discount.discountType === 'fixed' ? 'Fixed Amount Discount' :
-                                   discount.discountType === 'buy_x_get_y' ? 'Buy X Get Y Offer' :
-                                   'Free Shipping Offer'}
+                                  {discount.discountType === "percentage"
+                                    ? "Percentage Discount"
+                                    : discount.discountType === "fixed"
+                                    ? "Fixed Amount Discount"
+                                    : discount.discountType === "buy_x_get_y"
+                                    ? "Buy X Get Y Offer"
+                                    : "Free Shipping Offer"}
                                 </div>
                                 <div className="flex items-center text-sm text-gray-500 mt-2">
                                   {discount.canStackWithOther ? (
@@ -446,11 +490,15 @@ const Discount = () => {
                                   <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
                                   {formatDate(discount.endDate)}
                                 </div>
-                                <div className={`text-sm font-medium ${
-                                  expired ? 'text-red-600' : 
-                                  daysRemaining <= 7 ? 'text-amber-600' : 
-                                  'text-green-600'
-                                }`}>
+                                <div
+                                  className={`text-sm font-medium ${
+                                    expired
+                                      ? "text-red-600"
+                                      : daysRemaining <= 7
+                                      ? "text-amber-600"
+                                      : "text-green-600"
+                                  }`}
+                                >
                                   {expired ? (
                                     <span className="inline-flex items-center">
                                       <XCircleIcon className="h-4 w-4 mr-1" />
@@ -499,37 +547,16 @@ const Discount = () => {
                                   <EyeIcon className="h-5 w-5" />
                                 </Link>
                                 <Link
-                                  to={`/discount/edit/${discount.id}`}
-                                  className={`p-1 ${
-                                    discount.isDummy
-                                      ? "text-gray-400 cursor-not-allowed pointer-events-none"
-                                      : "text-green-600 hover:text-green-800"
-                                  }`}
-                                  title={
-                                    discount.isDummy
-                                      ? "Cannot edit demo discounts"
-                                      : "Edit"
-                                  }
+                                  to={`/discount/update/${discount.id}`}
+                                  className="p-1 text-green-600 hover:text-green-800"
+                                  title="Edit Discount"
                                 >
                                   <PencilIcon className="h-5 w-5" />
                                 </Link>
                                 <button
-                                  className={`p-1 ${
-                                    discount.isDummy
-                                      ? "text-gray-400 cursor-not-allowed"
-                                      : "text-red-600 hover:text-red-800"
-                                  }`}
-                                  title={
-                                    discount.isDummy
-                                      ? "Cannot delete demo discounts"
-                                      : "Delete"
-                                  }
-                                  onClick={
-                                    discount.isDummy
-                                      ? undefined
-                                      : () => deleteDiscount(discount.id)
-                                  }
-                                  disabled={discount.isDummy}
+                                  onClick={() => deleteDiscount(discount.id)}
+                                  className="p-1 text-red-600 hover:text-red-800"
+                                  title="Delete Discount"
                                 >
                                   <TrashIcon className="h-5 w-5" />
                                 </button>
@@ -548,8 +575,9 @@ const Discount = () => {
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-gray-700">
                 Showing <span className="font-medium">1</span> to{" "}
-                <span className="font-medium">{filteredDiscounts.length}</span> of{" "}
-                <span className="font-medium">{discounts.length}</span> discounts
+                <span className="font-medium">{filteredDiscounts.length}</span>{" "}
+                of <span className="font-medium">{discounts.length}</span>{" "}
+                discounts
                 <span className="ml-2 text-gray-500">
                   ({discounts.filter((d) => !d.isDummy).length} user-added)
                 </span>
@@ -590,46 +618,54 @@ const Discount = () => {
                   <TagIcon className="h-8 w-8 text-blue-500 mr-3" />
                   <div>
                     <div className="text-sm text-gray-600">Total Discounts</div>
-                    <div className="text-2xl font-bold mt-1">{stats.totalDiscounts}</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.totalDiscounts}
+                    </div>
                   </div>
                 </div>
                 <div className="text-sm text-green-600 mt-2">
                   {stats.userAdded} user-added
                 </div>
               </div>
-              
+
               <div className="bg-white p-6 rounded-lg shadow">
                 <div className="flex items-center">
                   <CheckCircleIcon className="h-8 w-8 text-green-500 mr-3" />
                   <div>
                     <div className="text-sm text-gray-600">Active</div>
-                    <div className="text-2xl font-bold mt-1">{stats.activeDiscounts}</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.activeDiscounts}
+                    </div>
                   </div>
                 </div>
                 <div className="text-sm text-green-600 mt-2">
                   Currently active
                 </div>
               </div>
-              
+
               <div className="bg-white p-6 rounded-lg shadow">
                 <div className="flex items-center">
                   <XCircleIcon className="h-8 w-8 text-red-500 mr-3" />
                   <div>
                     <div className="text-sm text-gray-600">Expired</div>
-                    <div className="text-2xl font-bold mt-1">{stats.expiredDiscounts}</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.expiredDiscounts}
+                    </div>
                   </div>
                 </div>
                 <div className="text-sm text-gray-600 mt-2">
                   Past validity date
                 </div>
               </div>
-              
+
               <div className="bg-white p-6 rounded-lg shadow">
                 <div className="flex items-center">
                   <CurrencyDollarIcon className="h-8 w-8 text-yellow-500 mr-3" />
                   <div>
                     <div className="text-sm text-gray-600">Percentage</div>
-                    <div className="text-2xl font-bold mt-1">{stats.percentageDiscounts}</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.percentageDiscounts}
+                    </div>
                   </div>
                 </div>
                 <div className="text-sm text-gray-600 mt-2">
