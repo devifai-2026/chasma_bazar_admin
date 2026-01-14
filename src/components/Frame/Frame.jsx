@@ -133,22 +133,21 @@ const Frame = () => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
 
-  const deleteFrame = (id) => {
-    if (window.confirm("Are you sure you want to delete this frame?")) {
-      const frameToDelete = frames.find((f) => f.id === id);
+const deleteFrame = (id) => {
+  if (window.confirm("Are you sure you want to delete this frame?")) {
+    const frameToDelete = frames.find((f) => f.id === id);
 
-      // Prevent deletion of dummy frames
-      if (frameToDelete?.isDummy) {
-        alert(
-          "Cannot delete demo frames. Add your own frames to manage them."
-        );
+    // Show extra warning for demo frames
+    if (frameToDelete?.isDummy) {
+      if (!window.confirm("This is a demo frame. Are you sure you want to delete it?")) {
         return;
       }
-
-      const updatedFrames = frames.filter((frame) => frame.id !== id);
-      setFrames(updatedFrames);
     }
-  };
+
+    const updatedFrames = frames.filter((frame) => frame.id !== id);
+    setFrames(updatedFrames);
+  }
+};
 
   // Filter frames based on search and filter
   const filteredFrames = frames.filter(frame => {
@@ -419,52 +418,31 @@ const Frame = () => {
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex items-center space-x-2">
-                              <Link
-                                to={`/frame/view/${frame.id}`}
-                                className="p-1 text-blue-600 hover:text-blue-800"
-                                title="View"
-                              >
-                                <EyeIcon className="h-5 w-5" />
-                              </Link>
-                              <Link
-                                to={`/frame/edit/${frame.id}`}
-                                className={`p-1 ${
-                                  frame.isDummy
-                                    ? "text-gray-400 cursor-not-allowed pointer-events-none"
-                                    : "text-green-600 hover:text-green-800"
-                                }`}
-                                title={
-                                  frame.isDummy
-                                    ? "Cannot edit demo frames"
-                                    : "Edit"
-                                }
-                              >
-                                <PencilIcon className="h-5 w-5" />
-                              </Link>
-                              <button
-                                className={`p-1 ${
-                                  frame.isDummy
-                                    ? "text-gray-400 cursor-not-allowed"
-                                    : "text-red-600 hover:text-red-800"
-                                }`}
-                                title={
-                                  frame.isDummy
-                                    ? "Cannot delete demo frames"
-                                    : "Delete"
-                                }
-                                onClick={
-                                  frame.isDummy
-                                    ? undefined
-                                    : () => deleteFrame(frame.id)
-                                }
-                                disabled={frame.isDummy}
-                              >
-                                <TrashIcon className="h-5 w-5" />
-                              </button>
-                            </div>
-                          </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+  <div className="flex items-center space-x-2">
+    <Link
+      to={`/frame/view/${frame.id}`}
+      className="p-1 text-blue-600 hover:text-blue-800"
+      title="View"
+    >
+      <EyeIcon className="h-5 w-5" />
+    </Link>
+    <Link
+      to={`/frame/update/${frame.id}`}
+      className="p-1 text-green-600 hover:text-green-800"
+      title="Edit Frame"
+    >
+      <PencilIcon className="h-5 w-5" />
+    </Link>
+    <button
+      onClick={() => deleteFrame(frame.id)}
+      className="p-1 text-red-600 hover:text-red-800"
+      title="Delete Frame"
+    >
+      <TrashIcon className="h-5 w-5" />
+    </button>
+  </div>
+</td>
                         </tr>
                       ))
                     )}

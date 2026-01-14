@@ -596,49 +596,6 @@ const ViewDiscount = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Quick Actions Card */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-6">Quick Actions</h2>
-                  
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => navigator.clipboard.writeText(discount.name)}
-                      className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                    >
-                      Copy Discount Name
-                    </button>
-                    
-                    {discount.isActive && activeNow && (
-                      <button
-                        onClick={() => {
-                          // In a real app, this would generate a shareable link
-                          alert(`Share this discount: ${discount.name}`)
-                        }}
-                        className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                      >
-                        Share Discount
-                      </button>
-                    )}
-
-                    <Link
-                      to="/discount"
-                      className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                    >
-                      <ArrowLeftIcon className="h-5 w-5 mr-2" />
-                      Back to Discounts
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Activity Log (Optional - can be expanded) */}
-            <div className="mt-8 bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">Recent Activity</h2>
-              <div className="text-center py-8 text-gray-500">
-                <p>Activity log would appear here in a complete implementation</p>
-                <p className="text-sm mt-2">This could include usage history, modifications, etc.</p>
               </div>
             </div>
           </div>
