@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LockClosedIcon, EnvelopeIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import LoginApi from '../../Api/loginApi';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -9,48 +10,60 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   const navigate = useNavigate();
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     // Simple validation
     if (!email || !password) {
       setError('Please fill in all fields');
       return;
     }
-    
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('Please enter a valid email address');
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, accept any email/password combination
-      // In a real app, you would make an API call to your backend
-      console.log('Login attempt with:', { email, password });
-      
-      // Store auth token (demo)
-      localStorage.setItem('token', 'demo-auth-token');
-      localStorage.setItem('user', JSON.stringify({
-        name: 'Admin User',
-        email: email,
-        role: 'Administrator'
-      }));
-      
-      // Navigate to dashboard
-      navigate('/');
-      
+      const userData = { email, password };
+      const response = await LoginApi(userData);
+
+      // Extract the response data
+      const responseData = response.data;
+
+      if (responseData.success) {
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(responseData.data.user));
+
+        // Store tokens in localStorage
+        localStorage.setItem('accessToken', responseData.data.tokens.accessToken);
+        localStorage.setItem('refreshToken', responseData.data.tokens.refreshToken);
+        localStorage.setItem('accessTokenExpiresAt', responseData.data.tokens.accessTokenExpiresAt);
+        localStorage.setItem('refreshTokenExpiresAt', responseData.data.tokens.refreshTokenExpiresAt);
+
+        // You can also store everything together if you prefer
+        // localStorage.setItem('authData', JSON.stringify(responseData.data));
+
+        navigate('/dashboard');
+      }
+
     } catch (err) {
+      console.log(err , "error");
+      
       setError('Invalid email or password. Please try again.');
     } finally {
       setIsLoading(false);
