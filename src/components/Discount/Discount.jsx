@@ -18,152 +18,82 @@ import {
 import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
+import { getAllDiscounts } from "../../Api/discountApi"; // Import your API function
 
 const Discount = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [discounts, setDiscounts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    total: 0,
+    limit: 20,
+  });
 
-  // Dummy discounts data
-  const dummyDiscounts = [
-    {
-      id: 1,
-      name: "Summer Sale 20%",
-      description: "20% discount for summer season",
-      discountType: "percentage",
-      discountValue: 20,
-      maxDiscount: 1000,
-      applicableOn: "global",
-      priority: 10,
-      canStackWithOther: false,
-      canStackWithPromo: true,
-      startDate: "2024-12-01T00:00:00Z",
-      endDate: "2024-12-31T23:59:59Z",
-      isActive: true,
-      isAutoApplied: false,
-      isDummy: true,
-    },
-    {
-      id: 2,
-      name: "Winter Clearance ₹500 Off",
-      description: "Fixed ₹500 off on winter collection",
-      discountType: "fixed",
-      discountValue: 500,
-      maxDiscount: null,
-      applicableOn: "category",
-      priority: 5,
-      canStackWithOther: true,
-      canStackWithPromo: false,
-      startDate: "2024-11-15T00:00:00Z",
-      endDate: "2024-12-15T23:59:59Z",
-      isActive: true,
-      isAutoApplied: true,
-      isDummy: true,
-    },
-    {
-      id: 3,
-      name: "Buy 1 Get 1 Free",
-      description: "Buy one frame, get one free",
-      discountType: "buy_x_get_y",
-      discountValue: 100,
-      maxDiscount: null,
-      applicableOn: "product",
-      priority: 1,
-      canStackWithOther: false,
-      canStackWithPromo: false,
-      startDate: "2024-10-01T00:00:00Z",
-      endDate: "2024-10-31T23:59:59Z",
-      isActive: false,
-      isAutoApplied: false,
-      isDummy: true,
-    },
-    {
-      id: 4,
-      name: "Free Shipping All Orders",
-      description: "Free shipping on all orders",
-      discountType: "free_shipping",
-      discountValue: 0,
-      maxDiscount: null,
-      applicableOn: "global",
-      priority: 20,
-      canStackWithOther: true,
-      canStackWithPromo: true,
-      startDate: "2024-09-01T00:00:00Z",
-      endDate: "2024-12-31T23:59:59Z",
-      isActive: true,
-      isAutoApplied: true,
-      isDummy: true,
-    },
-  ];
-
-  // Load discounts from localStorage
+  // Fetch discounts from API
   useEffect(() => {
-    loadDiscountsFromStorage();
-  }, []);
+    fetchDiscounts();
+  }, [pagination.currentPage, filter]);
 
-  const loadDiscountsFromStorage = () => {
+  const fetchDiscounts = async () => {
     try {
-      const savedDiscounts = JSON.parse(
-        localStorage.getItem("discounts") || "[]"
-      );
+      setLoading(true);
+      setError(null);
 
-      // Filter out any dummy discounts that might have been saved previously
-      const userDiscounts = savedDiscounts.filter(
-        (discount) => !discount.isDummy
-      );
+      const params = {
+        page: pagination.currentPage,
+        limit: pagination.limit,
+      };
 
-      // Combine dummy discounts with user's discounts (dummy first, then user's)
-      const allDiscounts = [...dummyDiscounts, ...userDiscounts];
-
-      setDiscounts(allDiscounts);
-
-      // Only save if we need to initialize or update
-      if (savedDiscounts.length === 0) {
-        localStorage.setItem("discounts", JSON.stringify(userDiscounts));
+      // Add filter params based on filter state
+      if (filter === "active") {
+        params.isActive = true;
+      } else if (filter === "inactive") {
+        params.isActive = false;
       }
-    } catch (error) {
-      console.error("Error loading discounts:", error);
-      // If error, just show dummy discounts
-      setDiscounts(dummyDiscounts);
+
+      const response = await getAllDiscounts(params);
+
+      if (response.success) {
+        setDiscounts(response.discounts);
+        setPagination({
+          currentPage: response.currentPage,
+          totalPages: response.totalPages,
+          total: response.total,
+          limit: pagination.limit,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching discounts:", err);
+      setError(err.message || "Failed to fetch discounts");
+    } finally {
+      setLoading(false);
     }
   };
-
-  // Save only user discounts to localStorage whenever discounts change
-  useEffect(() => {
-    if (discounts.length > 0) {
-      // Filter out dummy discounts before saving
-      const userDiscounts = discounts.filter((discount) => !discount.isDummy);
-      localStorage.setItem("discounts", JSON.stringify(userDiscounts));
-    }
-  }, [discounts]);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
 
-  const deleteDiscount = (id) => {
+  const deleteDiscount = async (id) => {
     if (window.confirm("Are you sure you want to delete this discount?")) {
-      const discountToDelete = discounts.find((d) => d.id === id);
-
-      // Show extra warning for demo discounts
-      if (discountToDelete?.isDummy) {
-        if (
-          !window.confirm(
-            "This is a demo discount. Are you sure you want to delete it?"
-          )
-        ) {
-          return;
-        }
+      try {
+        // Add your delete API call here
+        // await deleteDiscountById(id);
+        
+        // Refresh the list after deletion
+        fetchDiscounts();
+      } catch (err) {
+        console.error("Error deleting discount:", err);
+        alert("Failed to delete discount");
       }
-
-      const updatedDiscounts = discounts.filter(
-        (discount) => discount.id !== id
-      );
-      setDiscounts(updatedDiscounts);
     }
   };
 
-  // Filter discounts based on search and filter
+  // Filter discounts based on search (client-side filtering)
   const filteredDiscounts = discounts.filter((discount) => {
     const matchesSearch =
       discount.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -181,9 +111,7 @@ const Discount = () => {
 
   // Calculate statistics
   const calculateStats = () => {
-    const userDiscounts = discounts.filter((d) => !d.isDummy);
-    const totalDiscounts = discounts.length;
-    const userAdded = userDiscounts.length;
+    const totalDiscounts = pagination.total;
     const activeDiscounts = discounts.filter((d) => d.isActive).length;
     const expiredDiscounts = discounts.filter(
       (d) => new Date(d.endDate) < new Date()
@@ -194,7 +122,6 @@ const Discount = () => {
 
     return {
       totalDiscounts,
-      userAdded,
       activeDiscounts,
       expiredDiscounts,
       percentageDiscounts,
@@ -255,6 +182,56 @@ const Discount = () => {
     return diffDays;
   };
 
+  const handlePageChange = (newPage) => {
+    setPagination((prev) => ({ ...prev, currentPage: newPage }));
+  };
+
+  const handleFilterChange = (newFilter) => {
+    setFilter(newFilter);
+    setPagination((prev) => ({ ...prev, currentPage: 1 })); // Reset to first page
+  };
+
+  // Loading Skeleton Component
+  const LoadingSkeleton = () => (
+    <>
+      {[...Array(5)].map((_, index) => (
+        <tr key={index} className="animate-pulse">
+          <td className="px-6 py-4">
+            <div className="flex items-center">
+              <div className="h-12 w-12 bg-gray-200 rounded-lg"></div>
+              <div className="ml-4 space-y-2 flex-1">
+                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+              </div>
+            </div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-20"></div>
+              <div className="h-3 bg-gray-200 rounded w-32"></div>
+            </div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="space-y-2">
+              <div className="h-3 bg-gray-200 rounded w-24"></div>
+              <div className="h-3 bg-gray-200 rounded w-24"></div>
+            </div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-16"></div>
+          </td>
+          <td className="px-6 py-4">
+            <div className="flex space-x-2">
+              <div className="h-5 w-5 bg-gray-200 rounded"></div>
+              <div className="h-5 w-5 bg-gray-200 rounded"></div>
+              <div className="h-5 w-5 bg-gray-200 rounded"></div>
+            </div>
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+
   return (
     <div className="flex h-screen">
       <Sidebar
@@ -282,14 +259,15 @@ const Discount = () => {
                   <p className="text-gray-600">
                     Manage discount rules and promotions
                   </p>
-                  <div className="mt-2 text-sm text-gray-500">
-                    <span className="inline-flex items-center">
-                      <span className="h-2 w-2 bg-blue-500 rounded-full mr-2"></span>
-                      Blue border indicates demo discounts
-                    </span>
-                  </div>
                 </div>
                 <div className="flex items-center space-x-3">
+                  <button
+                    onClick={fetchDiscounts}
+                    className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                    disabled={loading}
+                  >
+                    {loading ? "Refreshing..." : "Refresh"}
+                  </button>
                   <Link
                     to="/discount/add"
                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -300,6 +278,22 @@ const Discount = () => {
                 </div>
               </div>
             </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center justify-between">
+                <div className="flex items-center">
+                  <XCircleIcon className="h-5 w-5 mr-2" />
+                  <span>{error}</span>
+                </div>
+                <button
+                  onClick={fetchDiscounts}
+                  className="text-red-800 hover:text-red-900 font-medium"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
 
             {/* Search and Filters */}
             <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -318,7 +312,7 @@ const Discount = () => {
               <select
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={filter}
-                onChange={(e) => setFilter(e.target.value)}
+                onChange={(e) => handleFilterChange(e.target.value)}
               >
                 <option value="all">All Discounts</option>
                 <option value="active">Active</option>
@@ -357,12 +351,15 @@ const Discount = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredDiscounts.length === 0 ? (
+                    {loading ? (
+                      <LoadingSkeleton />
+                    ) : filteredDiscounts.length === 0 ? (
                       <tr>
                         <td colSpan="5" className="px-6 py-12 text-center">
                           <div className="text-gray-500">
-                            No discounts found. Click "Add Discount" to get
-                            started.
+                            {searchTerm || filter !== "all"
+                              ? "No discounts found matching your criteria."
+                              : "No discounts found. Click 'Add Discount' to get started."}
                           </div>
                         </td>
                       </tr>
@@ -374,14 +371,7 @@ const Discount = () => {
                         );
 
                         return (
-                          <tr
-                            key={discount.id}
-                            className={`hover:bg-gray-50 ${
-                              discount.isDummy
-                                ? "border-l-4 border-blue-500"
-                                : ""
-                            }`}
-                          >
+                          <tr key={discount._id} className="hover:bg-gray-50">
                             <td className="px-6 py-4">
                               <div className="flex items-center">
                                 <div
@@ -392,15 +382,8 @@ const Discount = () => {
                                   <TagIcon className="h-6 w-6" />
                                 </div>
                                 <div className="ml-4">
-                                  <div className="flex items-center">
-                                    <div className="text-sm font-medium text-gray-900">
-                                      {discount.name}
-                                    </div>
-                                    {discount.isDummy && (
-                                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                                        Demo
-                                      </span>
-                                    )}
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {discount.name}
                                   </div>
                                   <div className="text-sm text-gray-500 mt-1">
                                     {discount.description}
@@ -540,21 +523,21 @@ const Discount = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex items-center space-x-2">
                                 <Link
-                                  to={`/discount/view/${discount.id}`}
+                                  to={`/discount/view/${discount._id}`}
                                   className="p-1 text-blue-600 hover:text-blue-800"
                                   title="View"
                                 >
                                   <EyeIcon className="h-5 w-5" />
                                 </Link>
                                 <Link
-                                  to={`/discount/update/${discount.id}`}
+                                  to={`/discount/update/${discount._id}`}
                                   className="p-1 text-green-600 hover:text-green-800"
                                   title="Edit Discount"
                                 >
                                   <PencilIcon className="h-5 w-5" />
                                 </Link>
                                 <button
-                                  onClick={() => deleteDiscount(discount.id)}
+                                  onClick={() => deleteDiscount(discount._id)}
                                   className="p-1 text-red-600 hover:text-red-800"
                                   title="Delete Discount"
                                 >
@@ -574,37 +557,65 @@ const Discount = () => {
             {/* Pagination */}
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-gray-700">
-                Showing <span className="font-medium">1</span> to{" "}
-                <span className="font-medium">{filteredDiscounts.length}</span>{" "}
-                of <span className="font-medium">{discounts.length}</span>{" "}
+                Showing{" "}
+                <span className="font-medium">
+                  {(pagination.currentPage - 1) * pagination.limit + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-medium">
+                  {Math.min(
+                    pagination.currentPage * pagination.limit,
+                    pagination.total
+                  )}
+                </span>{" "}
+                of <span className="font-medium">{pagination.total}</span>{" "}
                 discounts
-                <span className="ml-2 text-gray-500">
-                  ({discounts.filter((d) => !d.isDummy).length} user-added)
-                </span>
               </div>
               <div className="flex space-x-2">
                 <button
-                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  disabled
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={pagination.currentPage === 1 || loading}
+                  onClick={() => handlePageChange(pagination.currentPage - 1)}
                 >
                   Previous
                 </button>
-                <button className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  1
-                </button>
-                {discounts.length > 10 && (
-                  <>
-                    <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">
-                      2
-                    </button>
-                    <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">
-                      3
-                    </button>
-                  </>
-                )}
+                {[...Array(pagination.totalPages)].map((_, index) => {
+                  const page = index + 1;
+                  // Show first page, last page, current page, and pages around current
+                  if (
+                    page === 1 ||
+                    page === pagination.totalPages ||
+                    (page >= pagination.currentPage - 1 &&
+                      page <= pagination.currentPage + 1)
+                  ) {
+                    return (
+                      <button
+                        key={page}
+                        className={`px-3 py-1 rounded-lg ${
+                          pagination.currentPage === page
+                            ? "bg-blue-600 text-white"
+                            : "border border-gray-300 hover:bg-gray-50"
+                        }`}
+                        onClick={() => handlePageChange(page)}
+                        disabled={loading}
+                      >
+                        {page}
+                      </button>
+                    );
+                  } else if (
+                    page === pagination.currentPage - 2 ||
+                    page === pagination.currentPage + 2
+                  ) {
+                    return <span key={page}>...</span>;
+                  }
+                  return null;
+                })}
                 <button
-                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  disabled={discounts.length <= 10}
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={
+                    pagination.currentPage === pagination.totalPages || loading
+                  }
+                  onClick={() => handlePageChange(pagination.currentPage + 1)}
                 >
                   Next
                 </button>
@@ -617,14 +628,13 @@ const Discount = () => {
                 <div className="flex items-center">
                   <TagIcon className="h-8 w-8 text-blue-500 mr-3" />
                   <div>
-                    <div className="text-sm text-gray-600">Total Discounts</div>
+                    <div className="text-sm text-gray-600">
+                      Total Discounts
+                    </div>
                     <div className="text-2xl font-bold mt-1">
                       {stats.totalDiscounts}
                     </div>
                   </div>
-                </div>
-                <div className="text-sm text-green-600 mt-2">
-                  {stats.userAdded} user-added
                 </div>
               </div>
 

@@ -12,9 +12,11 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
+import {createFrame} from '../../Api/frameapi'
 
 const AddFrame = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     shape: '',
@@ -96,27 +98,34 @@ const AddFrame = () => {
       frameDiscount: parseFloat(formData.frameDiscount) || 0
     }
 
+    setIsSubmitting(true)
+    
     try {
-      // Here you would make an API call to your backend
-      // For now, we'll simulate with localStorage
-      let existingFrames = []
-      try {
-        const storedFrames = localStorage.getItem('frames')
-        existingFrames = storedFrames ? JSON.parse(storedFrames) : []
-      } catch (error) {
-        console.error('Error reading from localStorage:', error)
-        existingFrames = []
-      }
-
-      const updatedFrames = [newFrame, ...existingFrames]
-      localStorage.setItem('frames', JSON.stringify(updatedFrames))
+      // Call the createFrame API
+      await createFrame(newFrame)
+      
+      // Update localStorage to trigger refresh on the frame list page
       localStorage.setItem('frames_updated', Date.now().toString())
       
       alert('Frame added successfully!')
       navigate('/frame')
     } catch (error) {
       console.error('Error saving frame:', error)
-      alert('Error saving frame. Please try again.')
+      
+      // Handle specific error cases
+      if (error.response) {
+        // Server responded with error status
+        const errorMessage = error.response.data?.message || 'Server error occurred'
+        alert(`Error: ${errorMessage}`)
+      } else if (error.request) {
+        // Request was made but no response received
+        alert('No response from server. Please check your connection.')
+      } else {
+        // Something else happened
+        alert('Error saving frame. Please try again.')
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -221,9 +230,10 @@ const AddFrame = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.name ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="e.g., Wayfarer Classic"
                     />
                     {errors.name && (
@@ -243,9 +253,10 @@ const AddFrame = () => {
                       name="shape"
                       value={formData.shape}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.shape ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     >
                       <option value="">Select shape</option>
                       {shapes.map(shape => (
@@ -271,9 +282,10 @@ const AddFrame = () => {
                       name="material"
                       value={formData.material}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.material ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     >
                       <option value="">Select material</option>
                       {materials.map(material => (
@@ -299,9 +311,10 @@ const AddFrame = () => {
                       name="color"
                       value={formData.color}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.color ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     >
                       <option value="">Select color</option>
                       {colors.map(color => (
@@ -335,9 +348,10 @@ const AddFrame = () => {
                       name="size"
                       value={formData.size}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.size ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     >
                       <option value="">Select size</option>
                       {sizes.map(size => (
@@ -362,9 +376,10 @@ const AddFrame = () => {
                       name="width"
                       value={formData.width}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.width ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="e.g., 145mm"
                     />
                     {errors.width && (
@@ -385,9 +400,10 @@ const AddFrame = () => {
                       name="dimensions"
                       value={formData.dimensions}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.dimensions ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="e.g., 52-18-145"
                     />
                     <p className="mt-1 text-sm text-gray-500">
@@ -411,9 +427,10 @@ const AddFrame = () => {
                       name="bridgeSize"
                       value={formData.bridgeSize}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.bridgeSize ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="e.g., 18mm"
                     />
                     {errors.bridgeSize && (
@@ -434,9 +451,10 @@ const AddFrame = () => {
                       name="templeLength"
                       value={formData.templeLength}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.templeLength ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="e.g., 145mm"
                     />
                     {errors.templeLength && (
@@ -463,9 +481,10 @@ const AddFrame = () => {
                         onChange={handleChange}
                         step="0.1"
                         min="0"
+                        disabled={isSubmitting}
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.weight ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         placeholder="e.g., 28"
                       />
                     </div>
@@ -503,9 +522,10 @@ const AddFrame = () => {
                         onChange={handleChange}
                         step="0.01"
                         min="0"
+                        disabled={isSubmitting}
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.price ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         placeholder="e.g., 500"
                       />
                     </div>
@@ -533,9 +553,10 @@ const AddFrame = () => {
                         onChange={handleChange}
                         min="0"
                         max="100"
+                        disabled={isSubmitting}
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.frameDiscount ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         placeholder="e.g., 5"
                       />
                     </div>
@@ -554,15 +575,20 @@ const AddFrame = () => {
                 <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
                   <Link
                     to="/frame"
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-center"
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-center disabled:opacity-50"
                   >
                     Cancel
                   </Link>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    disabled={isSubmitting}
+                    className={`px-6 py-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      isSubmitting 
+                        ? 'bg-blue-400 cursor-not-allowed opacity-50' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                   >
-                    Add Frame
+                    {isSubmitting ? 'Adding Frame...' : 'Add Frame'}
                   </button>
                 </div>
               </div>
