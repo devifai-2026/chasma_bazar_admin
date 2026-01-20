@@ -18,7 +18,7 @@ import {
 import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
-import { getAllDiscounts } from "../../Api/discountApi"; // Import your API function
+import { getAllDiscounts, deleteDiscount as deleteDiscountAPI } from "../../Api/discountApi";
 
 const Discount = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -81,9 +81,8 @@ const Discount = () => {
   const deleteDiscount = async (id) => {
     if (window.confirm("Are you sure you want to delete this discount?")) {
       try {
-        // Add your delete API call here
-        // await deleteDiscountById(id);
-        
+        await deleteDiscountAPI(id);
+        alert("Discount deleted successfully!");
         // Refresh the list after deletion
         fetchDiscounts();
       } catch (err) {
