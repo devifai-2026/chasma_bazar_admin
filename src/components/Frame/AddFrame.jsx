@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useEffect } from 'react'
 import { 
   ArrowLeftIcon,
   RectangleStackIcon,
@@ -7,12 +8,15 @@ import {
   CurrencyDollarIcon,
   DocumentTextIcon,
   ExclamationCircleIcon,
-  ArrowsPointingOutIcon
+  ArrowsPointingOutIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline'
 import { Link, useNavigate } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
 import {createFrame} from '../../Api/frameapi'
+import {getAllDiscounts} from '../../Api/discountApi'
+import uploadToCloudinary from '../../utils/cloudinary'
 
 const AddFrame = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -29,13 +33,33 @@ const AddFrame = () => {
     templeLength: '',
     weight: '',
     price: '',
-    frameDiscount: ''
+    frameDiscount: '',
+    appliedDiscounts: '',
+    images: []
   })
+  const [imagePreviews, setImagePreviews] = useState([])
+  const [discounts, setDiscounts] = useState([])
   const [errors, setErrors] = useState({})
   const navigate = useNavigate()
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
   const closeSidebar = () => setSidebarOpen(false)
+
+  // Load discounts on component mount
+  useEffect(() => {
+    const loadDiscounts = async () => {
+      try {
+        const response = await getAllDiscounts()
+        // Adjust based on your API response structure
+        const discountsData = response.data || response
+        setDiscounts(Array.isArray(discountsData) ? discountsData : discountsData.discounts || [])
+      } catch (error) {
+        console.error('Error loading discounts:', error)
+        setDiscounts([])
+      }
+    }
+    loadDiscounts()
+  }, [])
 
   const handleChange = (e) => {
     const { name, value, type } = e.target
@@ -52,6 +76,14 @@ const AddFrame = () => {
         [name]: ''
       }))
     }
+  }
+
+  const handleDiscountChange = (e) => {
+    const selectedValue = e.target.value
+    setFormData(prev => ({
+      ...prev,
+      appliedDiscounts: selectedValue
+    }))
   }
 
   const validateForm = () => {
@@ -82,27 +114,43 @@ const AddFrame = () => {
       return
     }
 
-    // Prepare the frame data according to API structure
-    const newFrame = {
-      name: formData.name,
-      shape: formData.shape,
-      material: formData.material,
-      color: formData.color,
-      size: formData.size,
-      width: formData.width,
-      dimensions: formData.dimensions,
-      bridgeSize: formData.bridgeSize,
-      templeLength: formData.templeLength,
-      weight: parseFloat(formData.weight),
-      price: parseFloat(formData.price),
-      frameDiscount: parseFloat(formData.frameDiscount) || 0
-    }
-
     setIsSubmitting(true)
     
     try {
+      // Upload images to Cloudinary
+      let images = []
+      if (formData.images.length > 0) {
+        const uploadPromises = formData.images.map((image) =>
+          uploadToCloudinary(image, { folder: 'chasma_bazar/frames' })
+        )
+        const uploadResponses = await Promise.all(uploadPromises)
+        images = uploadResponses.map((response) => ({
+          url: response.secure_url,
+          public_id: response.public_id,
+          alt: `${formData.name} image`
+        }))
+      }
+
+      // Prepare the frame data according to API structure
+      const frameData = {
+        name: formData.name,
+        shape: formData.shape,
+        material: formData.material,
+        color: formData.color,
+        size: formData.size,
+        width: formData.width,
+        dimensions: formData.dimensions,
+        bridgeSize: formData.bridgeSize,
+        templeLength: formData.templeLength,
+        weight: parseFloat(formData.weight),
+        price: parseFloat(formData.price),
+        frameDiscount: parseFloat(formData.frameDiscount) || 0,
+        images: images,
+        appliedDiscounts: formData.appliedDiscounts ? [formData.appliedDiscounts] : []
+      }
+
       // Call the createFrame API
-      await createFrame(newFrame)
+      await createFrame(frameData)
       
       // Update localStorage to trigger refresh on the frame list page
       localStorage.setItem('frames_updated', Date.now().toString())
@@ -130,31 +178,27 @@ const AddFrame = () => {
   }
 
   const shapes = [
-    'wayfarer',
-    'aviator',
     'round',
     'square',
     'rectangle',
     'oval',
     'cat-eye',
-    'butterfly',
-    'sports',
-    'browline',
+    'aviator',
+    'wayfarer',
     'clubmaster',
-    'geometric'
+    'geometric',
+    'other'
   ]
 
   const materials = [
-    'acetate',
-    'metal',
-    'titanium',
-    'stainless steel',
-    'monel',
     'plastic',
-    'tr-90',
-    'carbon fiber',
+    'metal',
+    'acetate',
+    'titanium',
     'wood',
-    'horn'
+    'carbon_fiber',
+    'mixed',
+    'other'
   ]
 
   const colors = [
@@ -173,6 +217,39 @@ const AddFrame = () => {
     'Two-tone',
     'Multi-color'
   ]
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files)
+    
+    // Create previews and store files
+    const newPreviews = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file)
+    }))
+    
+    setImagePreviews(prev => [...prev, ...newPreviews])
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...files]
+    }))
+    
+    // Reset input
+    e.target.value = ''
+  }
+
+  const removeImage = (index) => {
+    setImagePreviews(prev => {
+      const newPreviews = [...prev]
+      URL.revokeObjectURL(newPreviews[index].preview)
+      newPreviews.splice(index, 1)
+      return newPreviews
+    })
+    
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }))
+  }
 
   const sizes = [
     '48mm',
@@ -567,6 +644,110 @@ const AddFrame = () => {
                       </p>
                     )}
                   </div>
+                </div>
+              </div>
+
+              {/* Applied Discounts Card */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                  <CurrencyDollarIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Applied Discounts
+                </h2>
+                
+                <div className="grid grid-cols-1 gap-6">
+                  {/* Applied Discounts Dropdown */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Discount (Optional)
+                    </label>
+                    <select
+                      name="appliedDiscounts"
+                      value={formData.appliedDiscounts}
+                      onChange={handleDiscountChange}
+                      disabled={isSubmitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.appliedDiscounts ? 'border-red-300' : 'border-gray-300'
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    >
+                      <option value="">-- No Discount --</option>
+                      {discounts.map(discount => (
+                        <option key={discount._id} value={discount._id}>
+                          {discount.name} ({discount.discountPercentage}%)
+                        </option>
+                      ))}
+                    </select>
+                    {errors.appliedDiscounts && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.appliedDiscounts}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Images Card */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                  <PhotoIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Frame Images
+                </h2>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">
+                    Upload Frame Images
+                  </label>
+                  
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isSubmitting}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <div className="flex flex-col items-center justify-center">
+                        <PhotoIcon className="h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-sm font-medium text-gray-900">Click to upload images</p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</p>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  {/* Image Previews */}
+                  {imagePreviews.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-medium text-gray-900 mb-4">Uploaded Images ({imagePreviews.length})</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {imagePreviews.map((preview, index) => (
+                          <div key={index} className="relative group">
+                            <div className="h-32 w-full rounded-lg overflow-hidden border border-gray-200">
+                              <img
+                                src={preview.preview}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              disabled={isSubmitting}
+                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                              title="Remove image"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                            <p className="text-xs text-gray-500 mt-1 truncate">{preview.file.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
