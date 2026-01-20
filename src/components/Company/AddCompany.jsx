@@ -11,11 +11,16 @@ import {
   PhotoIcon,
   DocumentTextIcon,
   ExclamationCircleIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  CloudArrowUpIcon,
+  TrashIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline'
 import { Link, useNavigate } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
+import cloudinary from '../../utils/cloudinary'
+import { createCompany } from '../../Api/companyApi'
 
 const AddCompany = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -42,6 +47,12 @@ const AddCompany = () => {
     weblinks: [{ url: '', label: '' }]
   })
   const [errors, setErrors] = useState({})
+  const [isUploading, setIsUploading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [logoPreview, setLogoPreview] = useState('')
+  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const navigate = useNavigate()
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
@@ -50,7 +61,9 @@ const AddCompany = () => {
   const handleChange = (e) => {
     const { name, value, type } = e.target
     
-    // Handle nested objects
+    // Clear submit error when user starts typing
+    if (submitError) setSubmitError('')
+    
     if (name.includes('.')) {
       const [parent, child] = name.split('.')
       setFormData(prev => ({
@@ -67,7 +80,6 @@ const AddCompany = () => {
       }))
     }
     
-    // Clear error for this field if user starts typing
     const fieldName = name.includes('.') ? name.split('.')[0] : name
     if (errors[fieldName]) {
       setErrors(prev => ({
@@ -97,6 +109,124 @@ const AddCompany = () => {
     }
   }
 
+  const uploadToCloudinary = async (file, customPublicId = '') => {
+    setIsUploading(true)
+    setUploadProgress(0)
+    
+    // Use custom public_id if provided, otherwise generate one
+    const publicId = customPublicId || `company_logos/logo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    
+    try {
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval)
+            return 90
+          }
+          return prev + 10
+        })
+      }, 100)
+
+      // Upload to Cloudinary using the imported instance
+      const uploadOptions = {
+        folder: 'company_logos',
+        public_id: publicId,
+        resource_type: 'image',
+        transformation: [
+          { width: 300, height: 300, crop: 'limit', quality: 'auto' },
+          { fetch_format: 'auto' }
+        ]
+      }
+
+      const uploadResult = await cloudinary(file, uploadOptions)
+
+      clearInterval(progressInterval)
+      setUploadProgress(100)
+      
+      // Set the form data with Cloudinary response
+      setFormData(prev => ({
+        ...prev,
+        logo: {
+          url: uploadResult.secure_url,
+          public_id: uploadResult.public_id
+        }
+      }))
+      
+      setLogoPreview(uploadResult.secure_url)
+      
+      // Clear any existing logo errors
+      if (errors.logo_url) {
+        setErrors(prev => ({
+          ...prev,
+          logo_url: ''
+        }))
+      }
+      
+      setTimeout(() => {
+        setIsUploading(false)
+        setUploadProgress(0)
+      }, 500)
+      
+      return uploadResult
+    } catch (error) {
+      console.error('Cloudinary upload error:', error)
+      setErrors(prev => ({
+        ...prev,
+        logo_url: error.message || 'Failed to upload logo. Please try again.'
+      }))
+      setIsUploading(false)
+      setUploadProgress(0)
+      return null
+    }
+  }
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+    if (!validTypes.includes(file.type)) {
+      setErrors(prev => ({
+        ...prev,
+        logo_url: 'Invalid file type. Please upload an image (JPEG, PNG, GIF, WebP, SVG).'
+      }))
+      return
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      setErrors(prev => ({
+        ...prev,
+        logo_url: 'File size too large. Maximum size is 5MB.'
+      }))
+      return
+    }
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setLogoPreview(reader.result)
+    }
+    reader.readAsDataURL(file)
+
+    // Upload to Cloudinary using the public_id from form if provided
+    await uploadToCloudinary(file, formData.logo.public_id)
+  }
+
+  const removeLogo = () => {
+    setFormData(prev => ({
+      ...prev,
+      logo: {
+        url: '',
+        public_id: prev.logo.public_id // Keep the public_id if user entered one
+      }
+    }))
+    setLogoPreview('')
+  }
+
   const validateForm = () => {
     const newErrors = {}
     
@@ -111,7 +241,7 @@ const AddCompany = () => {
     if (!formData.address.state.trim()) newErrors.address_state = 'State is required'
     if (!formData.address.country.trim()) newErrors.address_country = 'Country is required'
     if (!formData.address.pinCode.trim()) newErrors.address_pinCode = 'Address PIN Code is required'
-    if (!formData.logo.url.trim()) newErrors.logo_url = 'Logo URL is required'
+    if (!formData.logo.url.trim()) newErrors.logo_url = 'Logo is required. Please upload a logo.'
     if (!formData.establishedYear) newErrors.establishedYear = 'Established year is required'
     if (!formData.rating || formData.rating < 0 || formData.rating > 5) newErrors.rating = 'Rating must be between 0 and 5'
     if (!formData.totalRatings || formData.totalRatings < 0) newErrors.totalRatings = 'Total ratings must be a positive number'
@@ -143,58 +273,99 @@ const AddCompany = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    console.log('Form submission started') // Debug
+    
+    // Clear previous errors
+    setErrors({})
+    setSubmitError('')
     
     const validationErrors = validateForm()
+    console.log('Validation errors:', validationErrors) // Debug
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
+      console.log('Form validation failed - Errors:', validationErrors) // Debug
       return
     }
+    console.log('Form validation passed') // Debug
 
-    // Prepare the company data according to API structure
-    const newCompany = {
-      name: formData.name,
-      description: formData.description,
-      pinCode: formData.pinCode,
-      email: formData.email,
-      phone: formData.phone,
-      address: {
-        street: formData.address.street,
-        city: formData.address.city,
-        state: formData.address.state,
-        country: formData.address.country,
-        pinCode: formData.address.pinCode
-      },
-      logo: {
-        url: formData.logo.url,
-        public_id: formData.logo.public_id || `logo_${Date.now()}`
-      },
-      establishedYear: parseInt(formData.establishedYear),
-      rating: parseFloat(formData.rating),
-      totalRatings: parseInt(formData.totalRatings),
-      weblinks: formData.weblinks.filter(link => link.url.trim() !== '' && link.label.trim() !== '')
-    }
-
+    setIsSubmitting(true)
+    
     try {
-      // Here you would make an API call to your backend
-      // For now, we'll simulate with localStorage
-      let existingCompanies = []
-      try {
-        const storedCompanies = localStorage.getItem('companies')
-        existingCompanies = storedCompanies ? JSON.parse(storedCompanies) : []
-      } catch (error) {
-        console.error('Error reading from localStorage:', error)
-        existingCompanies = []
+      // Prepare the company data according to API structure
+      const newCompany = {
+        name: formData.name,
+        description: formData.description,
+        pinCode: formData.pinCode,
+        email: formData.email,
+        phone: formData.phone,
+        address: {
+          street: formData.address.street,
+          city: formData.address.city,
+          state: formData.address.state,
+          country: formData.address.country,
+          pinCode: formData.address.pinCode
+        },
+        logo: {
+          url: formData.logo.url,
+          public_id: formData.logo.public_id || `logo_${Date.now()}`
+        },
+        establishedYear: parseInt(formData.establishedYear),
+        rating: parseFloat(formData.rating),
+        totalRatings: parseInt(formData.totalRatings),
+        weblinks: formData.weblinks.filter(link => link.url.trim() !== '' && link.label.trim() !== '')
       }
 
-      const updatedCompanies = [newCompany, ...existingCompanies]
-      localStorage.setItem('companies', JSON.stringify(updatedCompanies))
-      localStorage.setItem('companies_updated', Date.now().toString())
+      // Call the API
+      console.log('Calling createCompany with data:', newCompany) // Debug
+      const response = await createCompany(newCompany)
+      console.log('API Response:', response) // Debug
       
-      alert('Company added successfully!')
-      navigate('/companies') // Adjust this route based on your application
+      if (response.success) {
+        setSubmitSuccess(true)
+        
+        // Show success message for 2 seconds before navigating
+        setTimeout(() => {
+          navigate('/companies')
+        }, 2000)
+      } else {
+        setSubmitError(response.message || 'Failed to create company')
+      }
     } catch (error) {
-      console.error('Error saving company:', error)
-      alert('Error saving company. Please try again.')
+      console.error('Error creating company:', error)
+      
+      // Handle different types of errors
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        const { data, status } = error.response
+        
+        if (status === 400) {
+          // Handle validation errors from backend
+          if (data.errors) {
+            const backendErrors = {}
+            Object.keys(data.errors).forEach(key => {
+              backendErrors[key] = data.errors[key].message
+            })
+            setErrors(backendErrors)
+          } else {
+            setSubmitError(data.message || 'Validation failed')
+          }
+        } else if (status === 401) {
+          setSubmitError('Unauthorized. Please log in again.')
+        } else if (status === 409) {
+          setSubmitError('Company with this name already exists')
+        } else {
+          setSubmitError(data.message || `Error: ${status}`)
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        setSubmitError('Network error. Please check your connection.')
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        setSubmitError(error.message || 'An unexpected error occurred')
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -210,12 +381,34 @@ const AddCompany = () => {
         
         <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
           <div className="mx-auto max-w-4xl">
+            {/* Success Message */}
+            {submitSuccess && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center">
+                  <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                  <p className="text-green-700 font-medium">
+                    Company created successfully! Redirecting to companies page...
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {submitError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center">
+                  <ExclamationCircleIcon className="h-5 w-5 text-red-500 mr-2" />
+                  <p className="text-red-700 font-medium">{submitError}</p>
+                </div>
+              </div>
+            )}
+
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
                   <Link 
-                    to="/company" 
+                    to="/companies" 
                     className="mr-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
                   >
                     <ArrowLeftIcon className="h-5 w-5" />
@@ -251,6 +444,7 @@ const AddCompany = () => {
                         errors.name ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder="Enter company name"
+                      disabled={isSubmitting || submitSuccess}
                     />
                     {errors.name && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -278,6 +472,7 @@ const AddCompany = () => {
                           errors.pinCode ? 'border-red-300' : 'border-gray-300'
                         }`}
                         placeholder="Enter PIN code"
+                        disabled={isSubmitting || submitSuccess}
                       />
                     </div>
                     {errors.pinCode && (
@@ -306,6 +501,7 @@ const AddCompany = () => {
                           errors.email ? 'border-red-300' : 'border-gray-300'
                         }`}
                         placeholder="Enter email address"
+                        disabled={isSubmitting || submitSuccess}
                       />
                     </div>
                     {errors.email && (
@@ -334,6 +530,7 @@ const AddCompany = () => {
                           errors.phone ? 'border-red-300' : 'border-gray-300'
                         }`}
                         placeholder="Enter phone number"
+                        disabled={isSubmitting || submitSuccess}
                       />
                     </div>
                     {errors.phone && (
@@ -360,6 +557,7 @@ const AddCompany = () => {
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.establishedYear ? 'border-red-300' : 'border-gray-300'
                         }`}
+                        disabled={isSubmitting || submitSuccess}
                       >
                         <option value="">Select year</option>
                         {years.map(year => (
@@ -390,6 +588,7 @@ const AddCompany = () => {
                       errors.description ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="Enter company description..."
+                    disabled={isSubmitting || submitSuccess}
                   />
                   {errors.description && (
                     <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -422,6 +621,7 @@ const AddCompany = () => {
                         errors.address_street ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder="Enter street address"
+                      disabled={isSubmitting || submitSuccess}
                     />
                     {errors.address_street && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -445,6 +645,7 @@ const AddCompany = () => {
                         errors.address_city ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder="Enter city"
+                      disabled={isSubmitting || submitSuccess}
                     />
                     {errors.address_city && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -468,6 +669,7 @@ const AddCompany = () => {
                         errors.address_state ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder="Enter state"
+                      disabled={isSubmitting || submitSuccess}
                     />
                     {errors.address_state && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -491,6 +693,7 @@ const AddCompany = () => {
                         errors.address_country ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder="Enter country"
+                      disabled={isSubmitting || submitSuccess}
                     />
                     {errors.address_country && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -514,6 +717,7 @@ const AddCompany = () => {
                         errors.address_pinCode ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder="Enter PIN code"
+                      disabled={isSubmitting || submitSuccess}
                     />
                     {errors.address_pinCode && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -533,69 +737,141 @@ const AddCompany = () => {
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Logo URL */}
+                  {/* File Upload */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Logo URL *
+                      Upload Logo *
                     </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <GlobeAltIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="url"
-                        name="logo.url"
-                        value={formData.logo.url}
-                        onChange={handleChange}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.logo_url ? 'border-red-300' : 'border-gray-300'
-                        }`}
-                        placeholder="https://example.com/logo.png"
-                      />
+                    <div className={`border-2 border-dashed rounded-lg p-6 text-center ${
+                      errors.logo_url ? 'border-red-300' : 'border-gray-300'
+                    }`}>
+                      {!logoPreview && !isUploading ? (
+                        <div className="space-y-4">
+                          <CloudArrowUpIcon className="h-12 w-12 text-gray-400 mx-auto" />
+                          <div>
+                            <p className="text-sm text-gray-600">
+                              Drag and drop your logo here, or
+                            </p>
+                            <label className={`inline-block mt-2 px-4 py-2 rounded-lg cursor-pointer ${
+                              isSubmitting || submitSuccess
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}>
+                              Browse Files
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileUpload}
+                                className="hidden"
+                                disabled={isUploading || isSubmitting || submitSuccess}
+                              />
+                            </label>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Supports: JPEG, PNG, GIF, WebP, SVG (Max 5MB)
+                          </p>
+                        </div>
+                      ) : isUploading ? (
+                        <div className="space-y-4">
+                          <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div 
+                              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                              style={{ width: `${uploadProgress}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-sm text-gray-600">Uploading to Cloudinary... {uploadProgress}%</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <img
+                            src={logoPreview}
+                            alt="Logo preview"
+                            className="h-32 w-32 object-contain mx-auto border rounded-lg"
+                          />
+                          <div className="flex justify-center space-x-4">
+                            <label className={`px-4 py-2 rounded-lg cursor-pointer ${
+                              isSubmitting || submitSuccess
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}>
+                              Change Logo
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileUpload}
+                                className="hidden"
+                                disabled={isSubmitting || submitSuccess}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={removeLogo}
+                              disabled={isSubmitting || submitSuccess}
+                              className={`px-4 py-2 rounded-lg flex items-center ${
+                                isSubmitting || submitSuccess
+                                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                  : 'bg-red-100 text-red-600 hover:bg-red-200'
+                              }`}
+                            >
+                              <TrashIcon className="h-4 w-4 mr-2" />
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     {errors.logo_url && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <p className="mt-2 text-sm text-red-600 flex items-center">
                         <ExclamationCircleIcon className="h-4 w-4 mr-1" />
                         {errors.logo_url}
                       </p>
                     )}
                   </div>
 
-                  {/* Logo Public ID */}
+                  {/* Logo Public ID (Editable field) */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Logo Public ID
                     </label>
-                    <input
-                      type="text"
-                      name="logo.public_id"
-                      value={formData.logo.public_id}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="e.g., logo_123"
-                    />
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <DocumentTextIcon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        name="logo.public_id"
+                        value={formData.logo.public_id}
+                        onChange={handleChange}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g., logo_123 or leave empty for auto-generation"
+                        disabled={isUploading || isSubmitting || submitSuccess}
+                      />
+                    </div>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Optional: Enter a custom Public ID for Cloudinary. If left empty, one will be auto-generated.
+                    </p>
                   </div>
 
-                  {/* Logo Preview */}
+                  {/* Logo URL (Read-only after upload) */}
                   {formData.logo.url && (
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Logo Preview
+                        Cloudinary URL
                       </label>
-                      <div className="flex items-center space-x-4">
-                        <img
-                          src={formData.logo.url}
-                          alt="Logo preview"
-                          className="h-20 w-20 object-contain border rounded-lg"
-                          onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/80?text=Logo+Error'
-                          }}
-                        />
-                        <div className="text-sm text-gray-500">
-                          <p>Logo will be displayed here</p>
-                          <p>Recommended size: 80x80 pixels</p>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <GlobeAltIcon className="h-5 w-5 text-gray-400" />
                         </div>
+                        <input
+                          type="text"
+                          value={formData.logo.url}
+                          readOnly
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                        />
                       </div>
+                      <p className="mt-1 text-sm text-gray-500">
+                        This URL is automatically generated by Cloudinary after upload.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -630,6 +906,7 @@ const AddCompany = () => {
                           errors.rating ? 'border-red-300' : 'border-gray-300'
                         }`}
                         placeholder="e.g., 4.5"
+                        disabled={isSubmitting || submitSuccess}
                       />
                     </div>
                     {errors.rating && (
@@ -655,6 +932,7 @@ const AddCompany = () => {
                         errors.totalRatings ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder="e.g., 120"
+                      disabled={isSubmitting || submitSuccess}
                     />
                     {errors.totalRatings && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -677,7 +955,7 @@ const AddCompany = () => {
                   <div key={index} className="mb-6 p-4 border border-gray-200 rounded-lg">
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="font-medium text-gray-700">Weblink {index + 1}</h3>
-                      {formData.weblinks.length > 1 && (
+                      {formData.weblinks.length > 1 && !isSubmitting && !submitSuccess && (
                         <button
                           type="button"
                           onClick={() => removeWeblink(index)}
@@ -702,6 +980,7 @@ const AddCompany = () => {
                             errors[`weblink_url_${index}`] ? 'border-red-300' : 'border-gray-300'
                           }`}
                           placeholder="https://example.com"
+                          disabled={isSubmitting || submitSuccess}
                         />
                         {errors[`weblink_url_${index}`] && (
                           <p className="mt-1 text-sm text-red-600">
@@ -723,6 +1002,7 @@ const AddCompany = () => {
                             errors[`weblink_label_${index}`] ? 'border-red-300' : 'border-gray-300'
                           }`}
                           placeholder="e.g., Website"
+                          disabled={isSubmitting || submitSuccess}
                         />
                         {errors[`weblink_label_${index}`] && (
                           <p className="mt-1 text-sm text-red-600">
@@ -734,29 +1014,62 @@ const AddCompany = () => {
                   </div>
                 ))}
 
-                <button
-                  type="button"
-                  onClick={addWeblink}
-                  className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400"
-                >
-                  + Add Another Weblink
-                </button>
+                {!isSubmitting && !submitSuccess && (
+                  <button
+                    type="button"
+                    onClick={addWeblink}
+                    className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400"
+                  >
+                    + Add Another Weblink
+                  </button>
+                )}
               </div>
 
               {/* Form Actions */}
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
                   <Link
-                    to="/company"
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-center"
+                    to="/companies"
+                    className={`px-6 py-2 border rounded-lg text-center ${
+                      isSubmitting || submitSuccess
+                        ? 'border-gray-300 text-gray-500 bg-gray-100 cursor-not-allowed'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                    onClick={(e) => {
+                      if (isSubmitting || submitSuccess) {
+                        e.preventDefault()
+                      }
+                    }}
                   >
                     Cancel
                   </Link>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    disabled={isUploading || isSubmitting || submitSuccess}
+                    className={`px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      isUploading || isSubmitting || submitSuccess
+                        ? 'bg-blue-400 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
                   >
-                    Add Company
+                    {isSubmitting ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating Company...
+                      </span>
+                    ) : submitSuccess ? (
+                      <span className="flex items-center justify-center">
+                        <CheckCircleIcon className="h-5 w-5 mr-2" />
+                        Created Successfully
+                      </span>
+                    ) : isUploading ? (
+                      'Uploading Logo...'
+                    ) : (
+                      'Add Company'
+                    )}
                   </button>
                 </div>
               </div>
