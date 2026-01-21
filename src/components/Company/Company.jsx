@@ -27,20 +27,30 @@ const Companies = () => {
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   // Fetch companies from API
   useEffect(() => {
     fetchCompanies();
-  }, []);
+  }, [page, searchTerm]);
 
   const fetchCompanies = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getAllCompanies();
+      const response = await getAllCompanies({
+        name: searchTerm,
+        page: page,
+        limit: limit
+      });
       
       if (response.success) {
         setCompanies(response.data);
+        setTotal(response.total);
+        setTotalPages(response.totalPages);
       } else {
         setError('Failed to fetch companies');
       }
@@ -52,35 +62,37 @@ const Companies = () => {
     }
   };
 
-  // Filter companies based on search and filter
+  // Filter companies based on client-side filter
   const filteredCompanies = companies.filter(company => {
-    const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.phone?.includes(searchTerm);
-    
     const matchesFilter = filter === 'all' || 
                          (filter === 'established' && company.establishedYear < 2000) ||
                          (filter === 'new' && company.establishedYear >= 2015) ||
                          (filter === 'premium' && company.rating >= 4.5);
     
-    return matchesSearch && matchesFilter;
+    return matchesFilter;
   });
 
   // Calculate statistics
   const calculateStats = () => {
-    const totalCompanies = companies.length;
+    const totalCompanies = total;
     const avgRating = companies.length > 0 
       ? (companies.reduce((sum, c) => sum + (c.rating || 0), 0) / companies.length).toFixed(1)
       : "0.0";
     const establishedCompanies = companies.filter(c => c.establishedYear && c.establishedYear < 2000).length;
+    const uniqueCities = [...new Set(companies.map(c => c.address?.city).filter(Boolean))].length;
 
-    return { totalCompanies, avgRating, establishedCompanies };
+    return { totalCompanies, avgRating, establishedCompanies, uniqueCities };
   };
 
   const stats = calculateStats();
-
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
+
+  // Reset to page 1 when search term changes
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    setPage(1);
+  };
 
   const deleteCompany = async (id) => {
     if (window.confirm("Are you sure you want to delete this company?")) {
@@ -88,6 +100,7 @@ const Companies = () => {
         await deleteCompanyAPI(id);
         alert("Company deleted successfully!");
         // Refresh the list after deletion
+        setPage(1);
         fetchCompanies();
       } catch (err) {
         console.error("Error deleting company:", err);
@@ -164,10 +177,10 @@ const Companies = () => {
                   <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search companies by name, email, or phone..."
+                    placeholder="Search companies by name..."
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => handleSearch(e.target.value)}
                   />
                 </div>
               </div>
@@ -419,35 +432,55 @@ const Companies = () => {
             {/* Pagination */}
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-gray-700">
-                Showing <span className="font-medium">1</span> to{" "}
-                <span className="font-medium">{Math.min(10, filteredCompanies.length)}</span> of{" "}
-                <span className="font-medium">{filteredCompanies.length}</span> companies
+                Showing page <span className="font-medium">{page}</span> of{" "}
+                <span className="font-medium">{totalPages}</span> ({" "}
+                <span className="font-medium">{total}</span> total companies)
               </div>
               <div className="flex space-x-2">
                 <button
                   className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled
+                  disabled={page === 1}
+                  onClick={() => setPage(Math.max(1, page - 1))}
                 >
                   Previous
                 </button>
-                <button className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  1
-                </button>
-                {filteredCompanies.length > 10 && (
-                  <>
-                    <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">
-                      2
-                    </button>
-                    {filteredCompanies.length > 20 && (
-                      <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50">
-                        3
+                {[...Array(totalPages)].map((_, index) => {
+                  const pageNum = index + 1;
+                  // Show first page, last page, current page, and adjacent pages
+                  if (
+                    pageNum === 1 ||
+                    pageNum === totalPages ||
+                    Math.abs(pageNum - page) <= 1
+                  ) {
+                    return (
+                      <button
+                        key={pageNum}
+                        className={`px-3 py-1 rounded-lg ${
+                          page === pageNum
+                            ? "bg-blue-600 text-white"
+                            : "border border-gray-300 hover:bg-gray-50"
+                        }`}
+                        onClick={() => setPage(pageNum)}
+                      >
+                        {pageNum}
                       </button>
-                    )}
-                  </>
-                )}
+                    );
+                  } else if (
+                    (pageNum === 2 && page > 3) ||
+                    (pageNum === totalPages - 1 && page < totalPages - 2)
+                  ) {
+                    return (
+                      <span key={pageNum} className="px-2 py-1">
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                })}
                 <button
                   className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={filteredCompanies.length <= 10}
+                  disabled={page === totalPages}
+                  onClick={() => setPage(Math.min(totalPages, page + 1))}
                 >
                   Next
                 </button>
@@ -501,7 +534,7 @@ const Companies = () => {
                   <div>
                     <div className="text-sm text-gray-600">Cities</div>
                     <div className="text-2xl font-bold mt-1">
-                      {[...new Set(companies.map(c => c.address?.city).filter(Boolean))].length}
+                      {stats.uniqueCities}
                     </div>
                   </div>
                 </div>
