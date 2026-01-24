@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
+import {getProductById} from '../../Api/productApi';
 
 const ProductView = () => {
   const { id } = useParams();
@@ -34,129 +35,78 @@ const ProductView = () => {
     generateStockHistory();
   }, [id]);
 
-  const loadProduct = () => {
+  const loadProduct = async () => {
     setLoading(true);
     try {
-      const savedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+      const response = await getProductById(id);
       
-      const dummyProducts = [
-        { 
-          id: 1, 
-          name: 'Wireless Headphones', 
-          category: 'Electronics', 
-          price: '₹99.99', 
-          cost: '₹45.00',
-          stock: 45, 
-          minStock: 10,
-          status: 'In Stock', 
-          image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=400&fit=crop',
-          description: 'Premium wireless headphones with noise cancellation and 30-hour battery life.',
-          brand: 'SoundMax',
-          sku: 'SM-WH001',
-          supplier: 'Tech Suppliers Inc.',
-          supplierContact: 'supplier@tech.com',
-          rating: 4.5,
-          reviews: 128,
-          weight: '0.5 kg',
-          dimensions: '18 x 15 x 8 cm',
-          location: 'Warehouse A, Shelf 12',
-          features: ['Noise Cancelling', 'Bluetooth 5.0', '30-hour battery', 'Water resistant'],
-          isDummy: true,
-          createdAt: '2024-01-15',
-          lastRestocked: '2024-03-10',
-          totalSold: 245,
-          revenue: '₹24,497.55',
-          margin: '55%',
-          images: [
-            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=400&fit=crop',
-            'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=300&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=300&h=300&fit=crop'
-          ]
-        },
-        { 
-          id: 2, 
-          name: 'Running Shoes', 
-          category: 'Sports', 
-          price: '₹129.99', 
-          cost: '₹65.00',
-          stock: 23, 
-          minStock: 15,
-          status: 'Low Stock', 
-          image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=400&fit=crop',
-          description: 'Lightweight running shoes with enhanced cushioning for maximum comfort.',
-          brand: 'RunPro',
-          sku: 'RP-RS202',
-          supplier: 'Sport Gear Co.',
-          supplierContact: 'contact@sportgear.com',
-          rating: 4.2,
-          reviews: 89,
-          weight: '0.8 kg',
-          dimensions: '30 x 20 x 12 cm',
-          location: 'Warehouse B, Shelf 5',
-          features: ['Breathable mesh', 'Shock absorption', 'Non-slip sole', 'Lightweight'],
-          isDummy: true,
-          createdAt: '2024-02-10',
-          lastRestocked: '2024-03-05',
-          totalSold: 189,
-          revenue: '₹24,568.11',
-          margin: '50%',
-          images: [
-            'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=400&fit=crop',
-            'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=300&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=300&h=300&fit=crop'
-          ]
-        },
-        { 
-          id: 3, 
-          name: 'Coffee Maker', 
-          category: 'Home & Kitchen', 
-          price: '₹79.99', 
-          cost: '₹35.00',
-          stock: 0, 
-          minStock: 5,
-          status: 'Out of Stock', 
-          image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&h=400&fit=crop',
-          description: 'Programmable coffee maker with thermal carafe and built-in grinder.',
-          brand: 'BrewMaster',
-          sku: 'BM-CM300',
-          supplier: 'Home Appliances Ltd.',
-          supplierContact: 'sales@homeappliances.com',
-          rating: 4.7,
-          reviews: 256,
-          weight: '3.2 kg',
-          dimensions: '25 x 35 x 30 cm',
-          location: 'Warehouse A, Shelf 8',
-          features: ['Programmable', 'Built-in grinder', 'Thermal carafe', '24-hour timer'],
-          isDummy: true,
-          createdAt: '2024-01-20',
-          lastRestocked: '2024-02-28',
-          totalSold: 156,
-          revenue: '₹12,478.44',
-          margin: '56%',
-          images: [
-            'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&h=400&fit=crop',
-            'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e7?w=300&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1518834103326-9fd4c5fff6d1?w=300&h=300&fit=crop'
-          ]
-        },
-        // ... rest of the dummy products with images arrays
-      ];
-
-      const userProducts = savedProducts.filter(p => !p.isDummy);
-      const allProducts = [...dummyProducts, ...userProducts];
-      
-      const foundProduct = allProducts.find(p => p.id.toString() === id);
-      
-      if (foundProduct) {
-        setProduct(foundProduct);
-        // Set image gallery
-        if (foundProduct.images && foundProduct.images.length > 0) {
-          setImageGallery(foundProduct.images);
-        } else {
-          // Create gallery from single image
-          setImageGallery([foundProduct.image]);
+      if (response.success && response.data) {
+        const apiData = response.data;
+        
+        // Transform API response to component format
+        const productData = {
+          _id: apiData._id,
+          id: apiData._id,
+          name: apiData.name,
+          sku: apiData.sku,
+          description: apiData.description,
+          category: apiData.userCategory || 'General',
+          price: apiData.price,
+          stock: apiData.stock || 0,
+          minStock: 10, // Default value
+          status: apiData.stock > 0 ? 'In Stock' : 'Out of Stock',
+          image: apiData.colors?.[0]?.images?.[0]?.url || 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=600&h=400&fit=crop',
+          brand: apiData.frameType?.name || 'Unknown',
+          location: 'Not specified',
+          dimensions: apiData.dimensions,
+          weight: apiData.weight,
+          features: [
+            `Shape: ${apiData.frameType?.shape || 'N/A'}`,
+            `Material: ${apiData.material || 'N/A'}`,
+            `Type: ${apiData.specsType || 'N/A'}`,
+            `Model: ${apiData.model || 'N/A'}`
+          ].filter(f => !f.includes('N/A')),
+          supplier: 'Not specified',
+          supplierContact: 'N/A',
+          revenue: `₹${apiData.price * (apiData.stock || 0)}`,
+          totalSold: 0,
+          margin: '0%',
+          rating: apiData.averageRating || 0,
+          reviews: apiData.totalReviews || 0,
+          cost: 'N/A',
+          isDummy: false,
+          frameType: apiData.frameType,
+          colors: apiData.colors,
+          warranty: apiData.warranty,
+          type: apiData.type,
+          specsType: apiData.specsType,
+          model: apiData.model
+        };
+        
+        setProduct(productData);
+        
+        // Set image gallery from colors array
+        const imageGalleryArray = [];
+        if (apiData.colors && Array.isArray(apiData.colors)) {
+          apiData.colors.forEach(color => {
+            if (color.images && Array.isArray(color.images)) {
+              color.images.forEach(img => {
+                if (img.url) {
+                  imageGalleryArray.push(img.url);
+                }
+              });
+            }
+          });
         }
+        
+        // Fallback if no images found
+        if (imageGalleryArray.length === 0) {
+          imageGalleryArray.push('https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=600&h=400&fit=crop');
+        }
+        
+        setImageGallery(imageGalleryArray);
       } else {
+        console.error('Product not found');
         navigate('/products');
       }
     } catch (error) {
@@ -192,6 +142,28 @@ const ProductView = () => {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
+
+  // Helper function to format dimensions object
+  const formatDimensions = (dimensions) => {
+    if (!dimensions) return 'N/A';
+    if (typeof dimensions === 'string') return dimensions;
+    if (typeof dimensions === 'object') {
+      const { height, width, depth } = dimensions;
+      return `${width || '0'} x ${height || '0'} x ${depth || '0'} cm`;
+    }
+    return 'N/A';
+  };
+
+  // Helper function to format weight object
+  const formatWeight = (weight) => {
+    if (!weight && weight !== 0) return 'N/A';
+    if (typeof weight === 'string') return weight;
+    if (typeof weight === 'number') return `${weight} g`;
+    if (typeof weight === 'object' && weight.value) {
+      return `${weight.value} ${weight.unit || 'kg'}`;
+    }
+    return 'N/A';
+  };
 
   const restockProduct = () => {
     const quantity = prompt('Enter quantity to restock:', '50');
@@ -514,11 +486,11 @@ const ProductView = () => {
                         </div>
                         <div className="mb-4">
                           <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions</label>
-                          <div className="text-gray-600">{product.dimensions || 'N/A'}</div>
+                          <div className="text-gray-600">{formatDimensions(product.dimensions)}</div>
                         </div>
                         <div className="mb-4">
                           <label className="block text-sm font-medium text-gray-700 mb-1">Weight</label>
-                          <div className="text-gray-600">{product.weight || 'N/A'}</div>
+                          <div className="text-gray-600">{formatWeight(product.weight)}</div>
                         </div>
                       </div>
                     </div>
