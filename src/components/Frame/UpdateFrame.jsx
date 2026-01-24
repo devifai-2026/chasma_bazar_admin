@@ -7,110 +7,97 @@ import {
   CurrencyDollarIcon,
   ExclamationCircleIcon,
   CheckCircleIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
+  DocumentTextIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
+import { getFrameById, updateFrame as updateFrameAPI } from '../../Api/frameapi';
+import { getAllDiscounts } from '../../Api/discountApi';
+import uploadToCloudinary  from '../../utils/cloudinary';
 
 const UpdateFrame = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [formData, setFormData] = useState({
+    name: '',
+    shape: '',
+    material: '',
+    color: '',
     size: '',
+    width: '',
+    dimensions: '',
+    bridgeSize: '',
+    templeLength: '',
+    weight: '',
+    price: '',
+    frameDiscount: '',
+    appliedDiscounts: '',
+    images: []
   });
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [discounts, setDiscounts] = useState([]);
   const [originalData, setOriginalData] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
-  const [isDummyFrame, setIsDummyFrame] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
     loadFrame();
+    loadDiscounts();
   }, [id]);
 
-  const loadFrame = () => {
+  const loadDiscounts = async () => {
     try {
-      const allFrames = JSON.parse(localStorage.getItem('frames') || '[]');
+      const response = await getAllDiscounts();
+      const discountsData = response.data || response;
+      setDiscounts(Array.isArray(discountsData) ? discountsData : discountsData.discounts || []);
+    } catch (error) {
+      console.error('Error loading discounts:', error);
+      setDiscounts([]);
+    }
+  };
+
+  const loadFrame = async () => {
+    try {
+      const response = await getFrameById(id);
+      console.log({frameData: response});
       
-      // Also check dummy data
-      const dummyFrames = [
-        {
-          id: 1,
-          name: "Wayfarer Classic",
-          shape: "wayfarer",
-          material: "acetate",
-          color: "Black",
-          size: "52mm",
-          width: "145mm",
-          dimensions: "52-18-145",
-          bridgeSize: "18mm",
-          templeLength: "145mm",
-          weight: 28,
-          price: 500,
-          frameDiscount: 5,
-          isDummy: true
-        },
-        {
-          id: 2,
-          name: "Aviator Gold",
-          shape: "aviator",
-          material: "metal",
-          color: "Gold",
-          size: "58mm",
-          width: "150mm",
-          dimensions: "58-18-150",
-          bridgeSize: "18mm",
-          templeLength: "150mm",
-          weight: 32,
-          price: 750,
-          frameDiscount: 10,
-          isDummy: true
-        },
-        {
-          id: 3,
-          name: "Round Tortoise",
-          shape: "round",
-          material: "acetate",
-          color: "Tortoise",
-          size: "50mm",
-          width: "140mm",
-          dimensions: "50-19-140",
-          bridgeSize: "19mm",
-          templeLength: "140mm",
-          weight: 26,
-          price: 450,
-          frameDiscount: 8,
-          isDummy: true
-        },
-        {
-          id: 4,
-          name: "Sports Titanium",
-          shape: "sports",
-          material: "titanium",
-          color: "Gunmetal",
-          size: "56mm",
-          width: "155mm",
-          dimensions: "56-20-155",
-          bridgeSize: "20mm",
-          templeLength: "155mm",
-          weight: 22,
-          price: 1200,
-          frameDiscount: 15,
-          isDummy: true
+      // Handle nested response structure
+      const frameData = response.data ? response.data : response;
+      
+      if (frameData) {
+        setOriginalData(frameData);
+        
+        // Load images
+        if (frameData.images && frameData.images.length > 0) {
+          const previews = frameData.images.map(img => ({
+            preview: img.url,
+            file: null,
+            isExisting: true,
+            public_id: img.public_id
+          }));
+          setImagePreviews(previews);
         }
-      ];
-
-      const allData = [...dummyFrames, ...allFrames.filter(f => !f.isDummy)];
-      const foundFrame = allData.find(f => f.id === parseInt(id));
-
-      if (foundFrame) {
-        // Track if it's a dummy frame
-        setIsDummyFrame(foundFrame.isDummy || false);
-
-        setOriginalData(foundFrame);
+        
         setFormData({
-          size: foundFrame.size,
+          name: frameData.name || '',
+          shape: frameData.shape || '',
+          material: frameData.material || '',
+          color: frameData.color || '',
+          size: frameData.size || '',
+          width: frameData.width || '',
+          dimensions: frameData.dimensions || '',
+          bridgeSize: frameData.bridgeSize || '',
+          templeLength: frameData.templeLength || '',
+          weight: frameData.weight || '',
+          price: frameData.price || '',
+          frameDiscount: frameData.frameDiscount || '',
+          appliedDiscounts: frameData.appliedDiscounts && frameData.appliedDiscounts.length > 0 ? frameData.appliedDiscounts[0]._id || frameData.appliedDiscounts[0] : '',
+          images: []
         });
       } else {
         alert('Frame not found!');
@@ -128,12 +115,63 @@ const UpdateFrame = () => {
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
 
+  const shapes = [
+    'round',
+    'square',
+    'rectangle',
+    'oval',
+    'cat-eye',
+    'aviator',
+    'wayfarer',
+    'clubmaster',
+    'geometric',
+    'other'
+  ];
+
+  const materials = [
+    'plastic',
+    'metal',
+    'acetate',
+    'titanium',
+    'wood',
+    'carbon_fiber',
+    'mixed',
+    'other'
+  ];
+
+  const colors = [
+    'Black',
+    'Brown',
+    'Tortoise',
+    'Clear',
+    'Gold',
+    'Silver',
+    'Gunmetal',
+    'Blue',
+    'Red',
+    'Green',
+    'Purple',
+    'Rose Gold',
+    'Two-tone',
+    'Multi-color'
+  ];
+
+  const sizes = [
+    '48mm',
+    '50mm',
+    '52mm',
+    '54mm',
+    '56mm',
+    '58mm',
+    '60mm'
+  ];
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'number' ? parseFloat(value) || '' : value
     }));
     
     // Clear error for this field if user starts typing
@@ -145,16 +183,100 @@ const UpdateFrame = () => {
     }
   };
 
+  const handleDiscountChange = (e) => {
+    const selectedValue = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      appliedDiscounts: selectedValue
+    }));
+  };
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    
+    // Create previews and store files
+    const newPreviews = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      isExisting: false
+    }));
+    
+    setImagePreviews(prev => [...prev, ...newPreviews]);
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...files]
+    }));
+    
+    // Reset input
+    e.target.value = '';
+  };
+
+  const removeImage = (index) => {
+    setImagePreviews(prev => {
+      const newPreviews = [...prev];
+      if (!newPreviews[index].isExisting) {
+        URL.revokeObjectURL(newPreviews[index].preview);
+      }
+      newPreviews.splice(index, 1);
+      return newPreviews;
+    });
+    
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.size || !formData.size.includes('mm')) {
-      newErrors.size = 'Size must include "mm" (e.g., 51mm)';
+    if (!formData.name || formData.name.trim() === '') {
+      newErrors.name = 'Frame name is required';
     }
     
-    const sizeValue = parseFloat(formData.size.replace('mm', ''));
-    if (isNaN(sizeValue) || sizeValue < 40 || sizeValue > 70) {
-      newErrors.size = 'Size must be between 40mm and 70mm';
+    if (!formData.shape || formData.shape.trim() === '') {
+      newErrors.shape = 'Shape is required';
+    }
+    
+    if (!formData.material || formData.material.trim() === '') {
+      newErrors.material = 'Material is required';
+    }
+    
+    if (!formData.color || formData.color.trim() === '') {
+      newErrors.color = 'Color is required';
+    }
+    
+    if (!formData.size || !formData.size.toString().includes('mm')) {
+      newErrors.size = 'Size must include "mm" (e.g., 51mm)';
+    } else {
+      const sizeValue = parseFloat(formData.size.replace('mm', ''));
+      if (isNaN(sizeValue) || sizeValue < 40 || sizeValue > 70) {
+        newErrors.size = 'Size must be between 40mm and 70mm';
+      }
+    }
+    
+    if (!formData.width || formData.width.trim() === '') {
+      newErrors.width = 'Width is required';
+    }
+    
+    if (!formData.bridgeSize || formData.bridgeSize.trim() === '') {
+      newErrors.bridgeSize = 'Bridge size is required';
+    }
+    
+    if (!formData.templeLength || formData.templeLength.trim() === '') {
+      newErrors.templeLength = 'Temple length is required';
+    }
+    
+    if (!formData.weight || isNaN(parseFloat(formData.weight))) {
+      newErrors.weight = 'Weight must be a valid number';
+    }
+    
+    if (!formData.price || isNaN(parseFloat(formData.price))) {
+      newErrors.price = 'Price must be a valid number';
+    }
+    
+    if (isNaN(parseFloat(formData.frameDiscount)) || parseFloat(formData.frameDiscount) < 0 || parseFloat(formData.frameDiscount) > 100) {
+      newErrors.frameDiscount = 'Discount must be between 0 and 100';
     }
 
     return newErrors;
@@ -169,59 +291,59 @@ const UpdateFrame = () => {
       return;
     }
 
+    setSubmitting(true);
     try {
-      // Get current frames
-      const existingFrames = JSON.parse(localStorage.getItem('frames') || '[]');
-      
-      // If editing a dummy frame, create a new user frame
-      if (isDummyFrame) {
-        // Create a new user frame based on the dummy
-        const newFrame = {
-          ...originalData,
-          id: Date.now(), // New ID
-          isDummy: false, // Convert to user frame
-          size: formData.size,
-          // Update dimensions with new size
-          dimensions: `${formData.size.replace('mm', '')}-${originalData.bridgeSize}-${originalData.templeLength}`,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-
-        // Remove isDummy property before saving
-        const { isDummy, ...frameToSave } = newFrame;
-
-        // Add to user frames
-        existingFrames.push(frameToSave);
-        
-        // Save to localStorage
-        localStorage.setItem('frames', JSON.stringify(existingFrames));
-        
-        alert('Demo frame converted to user frame and updated successfully!');
-        navigate('/frame');
-      } else {
-        // For existing user frames, find and update
-        const updatedFrames = existingFrames.map(frame => {
-          if (frame.id === parseInt(id)) {
-            return {
-              ...frame,
-              size: formData.size,
-              // Update dimensions with new size
-              dimensions: `${formData.size.replace('mm', '')}-${frame.bridgeSize}-${frame.templeLength}`,
-              updatedAt: new Date().toISOString()
-            };
-          }
-          return frame;
-        });
-
-        // Save back to localStorage
-        localStorage.setItem('frames', JSON.stringify(updatedFrames));
-        
-        alert('Frame updated successfully!');
-        navigate(`/frame/view/${id}`);
+      // Upload new images to Cloudinary
+      let newImages = [];
+      if (formData.images && formData.images.length > 0) {
+        const uploadPromises = formData.images.map((image) =>
+          uploadToCloudinary(image, { folder: 'chasma_bazar/frames' })
+        );
+        const uploadResponses = await Promise.all(uploadPromises);
+        newImages = uploadResponses.map((response) => ({
+          url: response.secure_url,
+          public_id: response.public_id,
+          alt: `${formData.name} image`
+        }));
       }
+
+      // Combine existing and new images
+      const existingImages = imagePreviews
+        .filter(img => img.isExisting)
+        .map(img => ({
+          url: img.preview,
+          public_id: img.public_id,
+          alt: `${formData.name} image`
+        }));
+
+      const allImages = [...existingImages, ...newImages];
+
+      const updateData = {
+        name: formData.name,
+        shape: formData.shape,
+        material: formData.material,
+        color: formData.color,
+        size: formData.size,
+        width: formData.width,
+        dimensions: formData.dimensions,
+        bridgeSize: formData.bridgeSize,
+        templeLength: formData.templeLength,
+        weight: parseFloat(formData.weight),
+        price: parseFloat(formData.price),
+        frameDiscount: parseFloat(formData.frameDiscount),
+        images: allImages,
+        appliedDiscounts: formData.appliedDiscounts ? [formData.appliedDiscounts] : []
+      };
+
+      await updateFrameAPI(id, updateData);
+      
+      alert('Frame updated successfully!');
+      navigate(`/frame/view/${id}`);
     } catch (error) {
       console.error('Error updating frame:', error);
       alert('Error updating frame. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -314,220 +436,496 @@ const UpdateFrame = () => {
                         Edit frame: {originalData.name}
                       </p>
                     </div>
-                    {isDummyFrame && (
-                      <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                        Demo Frame
-                      </div>
-                    )}
                   </div>
-                  {isDummyFrame && (
-                    <div className="mt-2 text-sm text-blue-600 bg-blue-50 p-3 rounded-lg">
-                      <p>
-                        <strong>Note:</strong> You are editing a demo frame. When you save changes, 
-                        it will be converted to a user frame and saved to your local storage.
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Current Information Card */}
+              {/* Basic Information Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                  <InformationCircleIcon className="h-5 w-5 mr-2 text-blue-500" />
-                  Current Frame Information
+                  <DocumentTextIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Basic Information
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <div className="text-sm text-gray-500">Frame Name</div>
-                    <div className="text-lg font-medium text-gray-900">
-                      {originalData.name}
-                    </div>
+                  {/* Frame Name */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Frame Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.name ? 'border-red-300' : 'border-gray-300'
+                      } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      placeholder="e.g., Wayfarer Classic"
+                    />
+                    {errors.name && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.name}
+                      </p>
+                    )}
                   </div>
-                  
+
+                  {/* Shape */}
                   <div>
-                    <div className="text-sm text-gray-500">Shape</div>
-                    <span className={`px-2 py-1 rounded-full text-sm font-medium ${getShapeColor(originalData.shape)}`}>
-                      {originalData.shape.charAt(0).toUpperCase() + originalData.shape.slice(1)}
-                    </span>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Shape *
+                    </label>
+                    <select
+                      name="shape"
+                      value={formData.shape}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.shape ? 'border-red-300' : 'border-gray-300'
+                      } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    >
+                      <option value="">Select shape</option>
+                      {shapes.map(shape => (
+                        <option key={shape} value={shape}>
+                          {shape.charAt(0).toUpperCase() + shape.slice(1).replace('_', ' ')}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.shape && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.shape}
+                      </p>
+                    )}
                   </div>
-                  
+
+                  {/* Material */}
                   <div>
-                    <div className="text-sm text-gray-500">Material</div>
-                    <span className={`px-2 py-1 rounded-full text-sm font-medium ${getMaterialColor(originalData.material)}`}>
-                      {originalData.material.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                    </span>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Material *
+                    </label>
+                    <select
+                      name="material"
+                      value={formData.material}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.material ? 'border-red-300' : 'border-gray-300'
+                      } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    >
+                      <option value="">Select material</option>
+                      {materials.map(material => (
+                        <option key={material} value={material}>
+                          {material.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.material && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.material}
+                      </p>
+                    )}
                   </div>
-                  
+
+                  {/* Color */}
                   <div>
-                    <div className="text-sm text-gray-500">Color</div>
-                    <div className="text-lg font-medium text-gray-900">
-                      {originalData.color}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="text-sm text-gray-500">Weight</div>
-                    <div className="text-lg font-medium text-gray-900">
-                      {originalData.weight}g
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="text-sm text-gray-500">Price</div>
-                    <div className="text-lg font-medium text-gray-900">
-                      ₹{originalData.price}
-                      {originalData.frameDiscount > 0 && (
-                        <span className="ml-2 text-sm text-green-600">
-                          (-{originalData.frameDiscount}%)
-                        </span>
-                      )}
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Color *
+                    </label>
+                    <select
+                      name="color"
+                      value={formData.color}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.color ? 'border-red-300' : 'border-gray-300'
+                      } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    >
+                      <option value="">Select color</option>
+                      {colors.map(color => (
+                        <option key={color} value={color}>{color}</option>
+                      ))}
+                    </select>
+                    {errors.color && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.color}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Update Size Card */}
+              {/* Dimensions Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
                   <ArrowsPointingOutIcon className="h-5 w-5 mr-2 text-blue-500" />
-                  Update Frame Size
+                  Dimensions
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
+                  {/* Size */}
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Lens Size *
                     </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <ArrowsPointingOutIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        name="size"
-                        value={formData.size}
-                        onChange={handleChange}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.size ? 'border-red-300' : 'border-gray-300'
-                        }`}
-                        placeholder="e.g., 51mm"
-                      />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                        <div className="text-sm text-gray-500">
-                          Current: {originalData.size}
-                        </div>
-                      </div>
-                    </div>
+                    <select
+                      name="size"
+                      value={formData.size}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.size ? 'border-red-300' : 'border-gray-300'
+                      } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    >
+                      <option value="">Select size</option>
+                      {sizes.map(size => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
                     {errors.size && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
                         <ExclamationCircleIcon className="h-4 w-4 mr-1" />
                         {errors.size}
                       </p>
                     )}
-                    <div className="mt-2 text-sm text-gray-500">
-                      Enter lens size in millimeters (e.g., 51mm). Must be between 40mm and 70mm.
-                    </div>
                   </div>
 
-                  {/* Dimensions Preview */}
-                  <div className="md:col-span-2">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <InformationCircleIcon className="h-5 w-5 text-blue-500 mr-2" />
-                        <div className="text-sm text-blue-700">
-                          <p className="font-medium">Dimensions will be updated automatically</p>
-                          <p className="mt-1">
-                            New dimensions: {formData.size.replace('mm', '') || '??'}-{originalData.bridgeSize}-{originalData.templeLength}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                  {/* Width */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Frame Width *
+                    </label>
+                    <input
+                      type="text"
+                      name="width"
+                      value={formData.width}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.width ? 'border-red-300' : 'border-gray-300'
+                      } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      placeholder="e.g., 145mm"
+                    />
+                    {errors.width && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.width}
+                      </p>
+                    )}
                   </div>
 
-                  {/* Current Dimensions */}
-                  <div className="md:col-span-2">
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                      <h3 className="text-sm font-medium text-gray-700 mb-3">Current Dimensions</h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                          <div className="text-xs text-gray-500">Lens Size</div>
-                          <div className="text-sm font-medium">{originalData.size}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-500">Bridge</div>
-                          <div className="text-sm font-medium">{originalData.bridgeSize}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-500">Temple</div>
-                          <div className="text-sm font-medium">{originalData.templeLength}</div>
-                        </div>
-                        <div>
-                          <div className="text-xs text-gray-500">Format</div>
-                          <div className="text-sm font-medium">{originalData.dimensions}</div>
-                        </div>
+                  {/* Dimensions */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Full Dimensions *
+                    </label>
+                    <input
+                      type="text"
+                      name="dimensions"
+                      value={formData.dimensions}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.dimensions ? 'border-red-300' : 'border-gray-300'
+                      } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      placeholder="e.g., 52-18-145"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      Format: Lens Size - Bridge Size - Temple Length
+                    </p>
+                    {errors.dimensions && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.dimensions}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Bridge Size */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bridge Size *
+                    </label>
+                    <input
+                      type="text"
+                      name="bridgeSize"
+                      value={formData.bridgeSize}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.bridgeSize ? 'border-red-300' : 'border-gray-300'
+                      } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      placeholder="e.g., 18mm"
+                    />
+                    {errors.bridgeSize && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.bridgeSize}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Temple Length */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Temple Length *
+                    </label>
+                    <input
+                      type="text"
+                      name="templeLength"
+                      value={formData.templeLength}
+                      onChange={handleChange}
+                      disabled={submitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.templeLength ? 'border-red-300' : 'border-gray-300'
+                      } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                      placeholder="e.g., 145mm"
+                    />
+                    {errors.templeLength && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.templeLength}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Weight */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Weight (g) *
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <ScaleIcon className="h-5 w-5 text-gray-400" />
                       </div>
+                      <input
+                        type="number"
+                        name="weight"
+                        value={formData.weight}
+                        onChange={handleChange}
+                        step="0.1"
+                        min="0"
+                        disabled={submitting}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                          errors.weight ? 'border-red-300' : 'border-gray-300'
+                        } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        placeholder="e.g., 28"
+                      />
                     </div>
+                    {errors.weight && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.weight}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Update Summary Card */}
+              {/* Pricing Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                  <RectangleStackIcon className="h-5 w-5 mr-2 text-blue-500" />
-                  Update Summary
+                  <CurrencyDollarIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Pricing
                 </h2>
                 
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-sm text-gray-700">Current Lens Size</div>
-                    <div className="text-lg font-bold text-gray-900">
-                      {originalData.size}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Price */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Price (₹) *
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <CurrencyDollarIcon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleChange}
+                        step="0.01"
+                        min="0"
+                        disabled={submitting}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                          errors.price ? 'border-red-300' : 'border-gray-300'
+                        } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        placeholder="e.g., 500"
+                      />
                     </div>
+                    {errors.price && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.price}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Frame Discount */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Discount (%) *
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <CurrencyDollarIcon className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="number"
+                        name="frameDiscount"
+                        value={formData.frameDiscount}
+                        onChange={handleChange}
+                        min="0"
+                        max="100"
+                        disabled={submitting}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                          errors.frameDiscount ? 'border-red-300' : 'border-gray-300'
+                        } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        placeholder="e.g., 5"
+                      />
+                    </div>
+                    {errors.frameDiscount && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.frameDiscount}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Applied Discounts Card */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                  <CurrencyDollarIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Applied Discounts
+                </h2>
+                
+                <div className="grid grid-cols-1 gap-6">
+                  {/* Applied Discounts Dropdown */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Discount (Optional)
+                    </label>
+                    <select
+                      name="appliedDiscounts"
+                      value={formData.appliedDiscounts}
+                      onChange={handleDiscountChange}
+                      disabled={submitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.appliedDiscounts ? 'border-red-300' : 'border-gray-300'
+                      } ${submitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    >
+                      <option value="">-- No Discount --</option>
+                      {discounts.map(discount => (
+                        <option key={discount._id} value={discount._id}>
+                          {discount.name} ({discount.discountPercentage || discount.discountValue}%)
+                        </option>
+                      ))}
+                    </select>
+                    {errors.appliedDiscounts && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.appliedDiscounts}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Images Card */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                  <PhotoIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Frame Images
+                </h2>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">
+                    Upload Frame Images
+                  </label>
+                  
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={submitting}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <div className="flex flex-col items-center justify-center">
+                        <PhotoIcon className="h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-sm font-medium text-gray-900">Click to upload images</p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</p>
+                      </div>
+                    </label>
                   </div>
                   
-                  <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-blue-700">New Lens Size</div>
-                    <div className="text-lg font-bold text-blue-900">
-                      {formData.size || 'Not set'}
+                  {/* Image Previews */}
+                  {imagePreviews.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-medium text-gray-900 mb-4">Images ({imagePreviews.length})</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {imagePreviews.map((preview, index) => (
+                          <div key={index} className="relative group">
+                            <div className="h-32 w-full rounded-lg overflow-hidden border border-gray-200">
+                              <img
+                                src={preview.preview}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              disabled={submitting}
+                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                              title="Remove image"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                            <p className="text-xs text-gray-500 mt-1 truncate">
+                              {preview.file ? preview.file.name : 'Existing image'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-sm text-green-700">New Dimensions</div>
-                    <div className="text-lg font-bold text-green-900">
-                      {formData.size ? `${formData.size.replace('mm', '')}-${originalData.bridgeSize}-${originalData.templeLength}` : 'N/A'}
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
               {/* Form Actions */}
               <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex flex-col sm:flex-row justify-between space-y-3 sm:space-y-0">
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      Last updated: {new Date(originalData.updatedAt || originalData.createdAt || Date.now()).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                    <Link
-                      to="/frame"
-                      className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-center"
-                    >
-                      Cancel
-                    </Link>
-                    <button
-                      type="submit"
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    >
-                      {isDummyFrame ? 'Save as New Frame' : 'Update Frame'}
-                    </button>
-                  </div>
+                <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+                  <Link
+                    to="/frame"
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-center disabled:opacity-50"
+                  >
+                    Cancel
+                  </Link>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className={`px-6 py-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      submitting 
+                        ? 'bg-blue-400 cursor-not-allowed opacity-50' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                  >
+                    {submitting ? 'Updating Frame...' : 'Update Frame'}
+                  </button>
                 </div>
               </div>
             </form>

@@ -1,25 +1,32 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   ArrowLeftIcon,
-  PhotoIcon,
   TagIcon,
   CurrencyDollarIcon,
   CubeIcon,
   DocumentTextIcon,
   ExclamationCircleIcon,
-  EyeIcon,
-  UserGroupIcon,
   BuildingOfficeIcon,
   ShieldCheckIcon,
   SparklesIcon,
-  BeakerIcon
+  PhotoIcon
 } from '@heroicons/react/24/outline'
 import { Link, useNavigate } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
+import {getFrames} from '../../Api/frameapi';
+import {getAllCompanies} from '../../Api/companyApi';
+import {createProduct} from '../../Api/productApi';
+import uploadToCloudinary from '../../utils/cloudinary';
 
 const AddProduct = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [frames, setFrames] = useState([])
+  const [companies, setCompanies] = useState([])
+  const [loadingFrames, setLoadingFrames] = useState(false)
+  const [loadingCompanies, setLoadingCompanies] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [imagePreviews, setImagePreviews] = useState({})
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
@@ -28,7 +35,8 @@ const AddProduct = () => {
     userCategory: '',
     description: '',
     price: '',
-    productDiscount: '',
+    productDiscount: 0,
+    appliedDiscounts: [],
     company: '',
     colors: [{ color: '', hexCode: '#000000', images: [{ type: 'normal', url: '', public_id: '', alt: '' }, { type: '3d', url: '', public_id: '', alt: '' }] }],
     stock: '',
@@ -40,13 +48,42 @@ const AddProduct = () => {
     warranty: { duration: '', durationType: 'months', description: '' },
     isFeatured: false,
     tags: '',
-    ageGroup: 'adults'
+    ageGroup: 'all'
   })
   const [errors, setErrors] = useState({})
   const navigate = useNavigate()
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
   const closeSidebar = () => setSidebarOpen(false)
+
+  // Fetch frames and companies on component mount
+  useEffect(() => {
+    const fetchFramesAndCompanies = async () => {
+      try {
+        setLoadingFrames(true)
+        const framesData = await getFrames()
+        setFrames(framesData?.data || [])
+      } catch (error) {
+        console.error('Error fetching frames:', error)
+        setFrames([])
+      } finally {
+        setLoadingFrames(false)
+      }
+
+      try {
+        setLoadingCompanies(true)
+        const companiesData = await getAllCompanies()
+        setCompanies(companiesData?.data || [])
+      } catch (error) {
+        console.error('Error fetching companies:', error)
+        setCompanies([])
+      } finally {
+        setLoadingCompanies(false)
+      }
+    }
+
+    fetchFramesAndCompanies()
+  }, [])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -104,6 +141,43 @@ const AddProduct = () => {
     setFormData(prev => ({ ...prev, colors: updatedColors }))
   }
 
+  const handleImageUpload = (colorIndex, imageIndex, files) => {
+    if (!files || files.length === 0) return
+    
+    const file = files[0]
+    const preview = URL.createObjectURL(file)
+    
+    // Store preview and file
+    const key = `${colorIndex}-${imageIndex}`
+    setImagePreviews(prev => ({
+      ...prev,
+      [key]: { file, preview }
+    }))
+    
+    // Update formData with the file object temporarily
+    const updatedColors = [...formData.colors]
+    updatedColors[colorIndex].images[imageIndex].file = file
+    setFormData(prev => ({ ...prev, colors: updatedColors }))
+  }
+
+  const removeImagePreview = (colorIndex, imageIndex) => {
+    const key = `${colorIndex}-${imageIndex}`
+    if (imagePreviews[key]) {
+      URL.revokeObjectURL(imagePreviews[key].preview)
+    }
+    
+    setImagePreviews(prev => {
+      const newPreviews = { ...prev }
+      delete newPreviews[key]
+      return newPreviews
+    })
+    
+    // Clear from formData
+    const updatedColors = [...formData.colors]
+    updatedColors[colorIndex].images[imageIndex].file = null
+    setFormData(prev => ({ ...prev, colors: updatedColors }))
+  }
+
   const addColor = () => {
     setFormData(prev => ({
       ...prev,
@@ -130,12 +204,14 @@ const AddProduct = () => {
     
     if (!formData.name.trim()) newErrors.name = 'Product name is required'
     if (!formData.sku.trim()) newErrors.sku = 'SKU is required'
-    if (!formData.price || formData.price <= 0) newErrors.price = 'Valid price is required'
-    if (!formData.productDiscount || formData.productDiscount < 0) newErrors.productDiscount = 'Valid discount is required'
-    if (!formData.stock || formData.stock < 0) newErrors.stock = 'Valid stock quantity is required'
-    if (!formData.company) newErrors.company = 'Company is required'
-    if (!formData.frameType) newErrors.frameType = 'Frame type is required'
     if (!formData.type) newErrors.type = 'Product type is required'
+    if (!formData.frameType) newErrors.frameType = 'Frame type is required'
+    if (!formData.userCategory) newErrors.userCategory = 'User category is required'
+    if (!formData.description.trim()) newErrors.description = 'Product description is required'
+    if (!formData.price || formData.price <= 0) newErrors.price = 'Valid price is required'
+    if (formData.productDiscount < 0 || formData.productDiscount > 100) newErrors.productDiscount = 'Discount must be between 0-100'
+    if (!formData.company) newErrors.company = 'Company is required'
+    if (!formData.stock || formData.stock < 0) newErrors.stock = 'Valid stock quantity is required'
     if (!formData.specsType) newErrors.specsType = 'Specs type is required'
     if (!formData.model.trim()) newErrors.model = 'Model is required'
     if (!formData.material.trim()) newErrors.material = 'Material is required'
@@ -146,7 +222,7 @@ const AddProduct = () => {
     if (!formData.warranty.duration || formData.warranty.duration <= 0) newErrors.warranty_duration = 'Valid warranty duration is required'
     if (!formData.ageGroup) newErrors.ageGroup = 'Age group is required'
     
-    // Validate colors
+    // Validate colors and images (check for files, not URLs)
     formData.colors.forEach((color, index) => {
       if (!color.color.trim()) {
         newErrors[`color_${index}`] = 'Color name is required'
@@ -155,8 +231,8 @@ const AddProduct = () => {
         newErrors[`hexCode_${index}`] = 'Hex code is required'
       }
       color.images.forEach((img, imgIndex) => {
-        if (!img.url.trim()) {
-          newErrors[`image_url_${index}_${imgIndex}`] = 'Image URL is required'
+        if (!img.file) {
+          newErrors[`image_url_${index}_${imgIndex}`] = 'Image file is required'
         }
         if (!img.alt.trim()) {
           newErrors[`image_alt_${index}_${imgIndex}`] = 'Image alt text is required'
@@ -170,82 +246,102 @@ const AddProduct = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    // First, validate basic form data (without image URLs)
     const validationErrors = validateForm()
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
     }
 
-    // Prepare the product data according to API structure
-    const newProduct = {
-      name: formData.name,
-      sku: formData.sku,
-      type: formData.type,
-      frameType: formData.frameType,
-      userCategory: formData.userCategory,
-      description: formData.description,
-      price: parseFloat(formData.price),
-      productDiscount: parseFloat(formData.productDiscount) || 0,
-      company: formData.company,
-      colors: formData.colors.map(color => ({
-        color: color.color,
-        hexCode: color.hexCode,
-        images: color.images.filter(img => img.url.trim() !== '') // Only include images with URLs
-      })),
-      stock: parseInt(formData.stock),
-      specsType: formData.specsType,
-      model: formData.model,
-      material: formData.material,
-      weight: parseFloat(formData.weight),
-      dimensions: {
-        height: parseFloat(formData.dimensions.height),
-        width: parseFloat(formData.dimensions.width),
-        depth: parseFloat(formData.dimensions.depth)
-      },
-      warranty: {
-        duration: parseInt(formData.warranty.duration),
-        durationType: formData.warranty.durationType,
-        description: formData.warranty.description
-      },
-      isFeatured: formData.isFeatured,
-      tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-      ageGroup: formData.ageGroup
-    }
+    setIsSubmitting(true)
 
     try {
-      // Here you would make an API call to your backend
-      // For now, we'll simulate with localStorage
-      let existingProducts = []
-      try {
-        const storedProducts = localStorage.getItem('api_products')
-        existingProducts = storedProducts ? JSON.parse(storedProducts) : []
-      } catch (error) {
-        console.error('Error reading from localStorage:', error)
-        existingProducts = []
+      // Upload images to Cloudinary FIRST
+      const uploadedColors = await Promise.all(
+        formData.colors.map(async (color) => {
+          const uploadedImages = await Promise.all(
+            color.images.map(async (image) => {
+              if (!image.file) {
+                throw new Error(`Image file required for ${image.type} image in ${color.color} color`)
+              }
+              
+              // Upload file to Cloudinary
+              const uploadResponse = await uploadToCloudinary(image.file, {
+                folder: 'chasma_bazar/products'
+              })
+              
+              return {
+                type: image.type,
+                url: uploadResponse.secure_url,
+                public_id: uploadResponse.public_id,
+                alt: image.alt
+              }
+            })
+          )
+          
+          return {
+            color: color.color,
+            hexCode: color.hexCode,
+            images: uploadedImages
+          }
+        })
+      )
+
+      // Prepare the product data with uploaded images
+      const newProduct = {
+        name: formData.name,
+        sku: formData.sku,
+        type: formData.type,
+        frameType: formData.frameType,
+        userCategory: formData.userCategory,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        productDiscount: parseFloat(formData.productDiscount) || 0,
+        appliedDiscounts: formData.appliedDiscounts,
+        company: formData.company,
+        colors: uploadedColors,
+        stock: parseInt(formData.stock),
+        specsType: formData.specsType,
+        model: formData.model,
+        material: formData.material,
+        weight: parseFloat(formData.weight),
+        dimensions: {
+          height: parseFloat(formData.dimensions.height),
+          width: parseFloat(formData.dimensions.width),
+          depth: parseFloat(formData.dimensions.depth)
+        },
+        warranty: {
+          duration: parseInt(formData.warranty.duration),
+          durationType: formData.warranty.durationType,
+          description: formData.warranty.description
+        },
+        isFeatured: formData.isFeatured,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        ageGroup: formData.ageGroup
       }
 
-      const updatedProducts = [newProduct, ...existingProducts]
-      localStorage.setItem('api_products', JSON.stringify(updatedProducts))
-      localStorage.setItem('products_updated', Date.now().toString())
-      
-      alert('Product added successfully!')
-      navigate('/products')
+      // Send to API with Cloudinary URLs
+      const response = await createProduct(newProduct)
+      if (response.success) {
+        alert('Product created successfully!')
+        navigate('/products')
+      } else {
+        alert(response.message || 'Error creating product')
+      }
     } catch (error) {
-      console.error('Error saving product:', error)
-      alert('Error saving product. Please try again.')
+      const errorMessage = error.response?.data?.message || error.message || 'Error creating product'
+      console.error('Error creating product:', error)
+      alert(errorMessage)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const productTypes = ['optical', 'sunglasses', 'reading_glasses', 'sports_glasses']
-  const frameTypes = [
-    { value: 'full_rim', label: 'Full Rim' },
-    { value: 'half_rim', label: 'Half Rim' },
-    { value: 'rimless', label: 'Rimless' },
-    { value: 'sports', label: 'Sports' }
-  ]
-  const userCategories = ['Men', 'Women', 'Unisex', 'Kids']
-  const specTypes = ['eyeglasses', 'sunglasses']
-  const ageGroups = ['kids', 'teens', 'adults', 'seniors']
+  const userCategories = ['Men', 'Women', 'Kids']
+  const materialOptions = ['Metal', 'Plastic', 'Acetate', 'Titanium', 'Stainless Steel', 'Aluminum', 'TR90', 'Carbon Fiber', 'Wood', 'Nylon', 'Polycarbonate', 'Mixed Materials']
+  const specTypes = ['eyeglasses', 'sunglasses', 'computer_glasses', 'reading_glasses']
+  const ageGroups = ['children', 'teens', 'adults', 'seniors', 'all']
   const durationTypes = ['days', 'months', 'years']
   const imageTypes = ['normal', '3d']
 
@@ -371,11 +467,12 @@ const AddProduct = () => {
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.frameType ? 'border-red-300' : 'border-gray-300'
                       }`}
+                      disabled={loadingFrames}
                     >
-                      <option value="">Select frame type</option>
-                      {frameTypes.map(type => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
+                      <option value="">{loadingFrames ? 'Loading frames...' : 'Select frame type'}</option>
+                      {frames.map(frame => (
+                        <option key={frame._id} value={frame._id}>
+                          {frame.name}
                         </option>
                       ))}
                     </select>
@@ -390,19 +487,27 @@ const AddProduct = () => {
                   {/* User Category */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      User Category
+                      User Category *
                     </label>
                     <select
                       name="userCategory"
                       value={formData.userCategory}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.userCategory ? 'border-red-300' : 'border-gray-300'
+                      }`}
                     >
                       <option value="">Select category</option>
                       {userCategories.map(cat => (
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
+                    {errors.userCategory && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.userCategory}
+                      </p>
+                    )}
                   </div>
 
                   {/* Price */}
@@ -468,22 +573,28 @@ const AddProduct = () => {
                   {/* Company */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Company ID *
+                      Company *
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
                       </div>
-                      <input
-                        type="text"
+                      <select
                         name="company"
                         value={formData.company}
                         onChange={handleChange}
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.company ? 'border-red-300' : 'border-gray-300'
                         }`}
-                        placeholder="Enter company ID"
-                      />
+                        disabled={loadingCompanies}
+                      >
+                        <option value="">{loadingCompanies ? 'Loading companies...' : 'Select company'}</option>
+                        {companies.map(company => (
+                          <option key={company._id} value={company._id}>
+                            {company.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     {errors.company && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -530,9 +641,8 @@ const AddProduct = () => {
                         errors.specsType ? 'border-red-300' : 'border-gray-300'
                       }`}
                     >
-                      <option value="">Select specs type</option>
                       {specTypes.map(type => (
-                        <option key={type} value={type}>{type}</option>
+                        <option key={type} value={type}>{type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</option>
                       ))}
                     </select>
                     {errors.specsType && (
@@ -571,16 +681,19 @@ const AddProduct = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Material *
                     </label>
-                    <input
-                      type="text"
+                    <select
                       name="material"
                       value={formData.material}
                       onChange={handleChange}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.material ? 'border-red-300' : 'border-gray-300'
                       }`}
-                      placeholder="e.g., Acetate"
-                    />
+                    >
+                      <option value="">Select material</option>
+                      {materialOptions.map(material => (
+                        <option key={material} value={material}>{material}</option>
+                      ))}
+                    </select>
                     {errors.material && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
                         <ExclamationCircleIcon className="h-4 w-4 mr-1" />
@@ -627,7 +740,6 @@ const AddProduct = () => {
                         errors.ageGroup ? 'border-red-300' : 'border-gray-300'
                       }`}
                     >
-                      <option value="">Select age group</option>
                       {ageGroups.map(group => (
                         <option key={group} value={group}>
                           {group.charAt(0).toUpperCase() + group.slice(1)}
@@ -646,16 +758,24 @@ const AddProduct = () => {
                 {/* Description */}
                 <div className="mt-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
+                    Description *
                   </label>
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
                     rows="4"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.description ? 'border-red-300' : 'border-gray-300'
+                    }`}
                     placeholder="Enter product description..."
                   />
+                  {errors.description && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                      {errors.description}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -755,16 +875,16 @@ const AddProduct = () => {
                             <div className="space-y-4">
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Image URL *
+                                  Image Upload *
                                 </label>
                                 <input
-                                  type="url"
-                                  value={image.url}
-                                  onChange={(e) => handleImageUrlChange(colorIndex, imageIndex, 'url', e.target.value)}
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => handleImageUpload(colorIndex, imageIndex, e.target.files)}
+                                  disabled={isSubmitting}
                                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                                     errors[`image_url_${colorIndex}_${imageIndex}`] ? 'border-red-300' : 'border-gray-300'
                                   }`}
-                                  placeholder="https://example.com/image.jpg"
                                 />
                                 {errors[`image_url_${colorIndex}_${imageIndex}`] && (
                                   <p className="mt-1 text-sm text-red-600">
@@ -781,6 +901,7 @@ const AddProduct = () => {
                                   type="text"
                                   value={image.public_id}
                                   onChange={(e) => handleImageUrlChange(colorIndex, imageIndex, 'public_id', e.target.value)}
+                                  disabled={isSubmitting}
                                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                   placeholder="e.g., black_front_123"
                                 />
@@ -794,6 +915,7 @@ const AddProduct = () => {
                                   type="text"
                                   value={image.alt}
                                   onChange={(e) => handleImageUrlChange(colorIndex, imageIndex, 'alt', e.target.value)}
+                                  disabled={isSubmitting}
                                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                                     errors[`image_alt_${colorIndex}_${imageIndex}`] ? 'border-red-300' : 'border-gray-300'
                                   }`}
@@ -806,19 +928,29 @@ const AddProduct = () => {
                                 )}
                               </div>
                               
-                              {image.url && (
+                              {imagePreviews[`${colorIndex}-${imageIndex}`] && (
                                 <div>
                                   <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Image Preview
                                   </label>
-                                  <img
-                                    src={image.url}
-                                    alt={image.alt}
-                                    className="h-32 w-32 object-cover rounded-lg border mx-auto"
-                                    onError={(e) => {
-                                      e.target.src = 'https://via.placeholder.com/150?text=Image+Error'
-                                    }}
-                                  />
+                                  <div className="relative inline-block">
+                                    <img
+                                      src={imagePreviews[`${colorIndex}-${imageIndex}`].preview}
+                                      alt={image.alt}
+                                      className="h-32 w-32 object-cover rounded-lg border mx-auto"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => removeImagePreview(colorIndex, imageIndex)}
+                                      disabled={isSubmitting}
+                                      className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 disabled:opacity-50"
+                                      title="Remove image"
+                                    >
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 </div>
                               )}
                             </div>
