@@ -1,19 +1,10 @@
 import axiosInstance from "../utils/axiosInstance";
 
-export const createOrder = async (orderData) => {
-    try {
-        const response = await axiosInstance.post("/api/orders", orderData);
-        return response.data;
-    }
-    catch (error) {
-        console.error("Error creating order:", error);
-        throw error;
-    }
-};
+
 
 export const getAllOrders = async (params = {}) => {
     try {
-        const response = await axiosInstance.get("/api/orders", { params });
+        const response = await axiosInstance.get("/api/orders/admin/all", { params });
         return response.data;
     }
     catch (error) {
@@ -22,36 +13,18 @@ export const getAllOrders = async (params = {}) => {
     }
 };
 
-export const getOrderById = async (id) => {
+;
+
+export const updateOrderStatus = async (id, status) => {
     try {
-        const response = await axiosInstance.get(`/api/orders/${id}`);
+        const response = await axiosInstance.put(`/api/orders/${id}/status`, { status });
         return response.data;
     }
     catch (error) {
-        console.error(`Error fetching order with id ${id}:`, error);
+        console.error(`Error updating order status for id ${id}:`, error);
         throw error;
     }
 };
 
-export const updateOrder = async (id, orderData) => {
-    try {
-        const response = await axiosInstance.put(`/api/orders/${id}`, orderData);
-        return response.data;
-    }
-    catch (error) {
-        console.error(`Error updating order with id ${id}:`, error);
-        throw error;
-    }
-};
 
-export const deleteOrder = async (id) => {
-    try {
-        const response = await axiosInstance.delete(`/api/orders/${id}`);
-        return response.data;
-    }
-    catch (error) {
-        console.error(`Error deleting order with id ${id}:`, error);
-        throw error;
-    }
-};
 

@@ -35,13 +35,13 @@ const MainContent = ({ sidebarOpen }) => {
       icon: ShoppingCartIcon,
       color: 'bg-purple-500'
     },
-    {
-      title: 'Growth',
-      value: '30.5%',
-      change: '+4.3%',
-      icon: ArrowTrendingUpIcon,
-      color: 'bg-orange-500'
-    }
+    // {
+    //   title: 'Growth',
+    //   value: '30.5%',
+    //   change: '+4.3%',
+    //   icon: ArrowTrendingUpIcon,
+    //   color: 'bg-orange-500'
+    // }
   ]
 
   return (
@@ -60,8 +60,8 @@ const MainContent = ({ sidebarOpen }) => {
         </div>
 
         {/* Charts and Recent Orders */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Monthly Target Card */}
+        {/* <div className="grid gap-6 lg:grid-cols-2">
+          Monthly Target Card
           <div className="rounded-lg bg-white p-6 shadow">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -74,15 +74,14 @@ const MainContent = ({ sidebarOpen }) => {
             </div>
             
             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-8">
-              {/* Circular Progress Bar */}
+              
               <div className="flex-shrink-0">
                 <CircularProgress percentage={75.55} size={160} strokeWidth={12} />
               </div>
               
-              {/* Target Details */}
+              
               <div className="flex-1">
                 <div className="space-y-6">
-                  {/* Progress comparison */}
                   <div className="bg-blue-50 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -98,7 +97,7 @@ const MainContent = ({ sidebarOpen }) => {
                     </div>
                   </div>
                   
-                  {/* Earnings info */}
+                  
                   <div className="border-l-4 border-blue-500 pl-4 py-2">
                     <p className="text-sm text-gray-700">
                       <span className="font-semibold">You earned ₹3287 today</span>, it's higher than last 
@@ -106,7 +105,7 @@ const MainContent = ({ sidebarOpen }) => {
                     </p>
                   </div>
                   
-                  {/* Target breakdown */}
+              
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Target</span>
@@ -125,7 +124,7 @@ const MainContent = ({ sidebarOpen }) => {
               </div>
             </div>
             
-            {/* Action buttons */}
+          
             <div className="mt-8 flex space-x-4">
               <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
                 Set New Target
@@ -136,12 +135,14 @@ const MainContent = ({ sidebarOpen }) => {
             </div>
           </div>
 
-          {/* Recent Orders */}
+          
+        </div> */}
+
+        {/* Recent Orders */}
           <RecentOrders />
-        </div>
 
         {/* Full Width Revenue Chart */}
-        <div className="mt-6 rounded-lg bg-white p-6 shadow">
+        {/* <div className="mt-6 rounded-lg bg-white p-6 shadow">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Revenue Overview</h2>
@@ -182,11 +183,11 @@ const MainContent = ({ sidebarOpen }) => {
               <p className="text-xl font-bold text-gray-900">₹78,500</p>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Progress Chart Row */}
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-lg bg-white p-6 shadow">
+          {/* <div className="rounded-lg bg-white p-6 shadow">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">User Growth Progress</h2>
@@ -197,7 +198,7 @@ const MainContent = ({ sidebarOpen }) => {
               </button>
             </div>
             <ProgressChart />
-          </div>
+          </div> */}
 
           {/* Recent Users */}
           <div className="rounded-lg bg-white p-6 shadow">
