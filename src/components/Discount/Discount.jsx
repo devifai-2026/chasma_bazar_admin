@@ -57,7 +57,6 @@ const Discount = () => {
       }
 
       const response = await getAllDiscounts(params);
-
       if (response.success) {
         setDiscounts(response.discounts);
         setPagination({
@@ -82,6 +81,7 @@ const Discount = () => {
     if (window.confirm("Are you sure you want to delete this discount?")) {
       try {
         await deleteDiscountAPI(id);
+        
         alert("Discount deleted successfully!");
         // Refresh the list after deletion
         fetchDiscounts();

@@ -28,7 +28,6 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
   const navigation = [
     { name: 'Dashboard', icon: HomeIcon, to: '/' },
     { name: 'Products', icon: CubeIcon, to: '/products' },
-    { name: 'Category', icon: FolderIcon, to: '/categories' },
     { name: 'Company', icon: BuildingOfficeIcon, to: '/company' },
     { name: 'Frame', icon: Square3Stack3DIcon, to: '/frame' }, 
     { name: 'Discount', icon: TicketIcon, to: '/discount' }, 

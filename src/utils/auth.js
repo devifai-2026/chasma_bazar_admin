@@ -44,35 +44,31 @@ export const clearAuthData = () => {
 // Refresh token function
 export const refreshToken = async () => {
   try {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) {
+    const refreshTokenStr = localStorage.getItem('refreshToken');
+    if (!refreshTokenStr) {
       throw new Error('No refresh token available');
     }
 
-    const response = await fetch('YOUR_REFRESH_TOKEN_ENDPOINT', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken })
-    });
-
-    if (!response.ok) {
-      throw new Error('Token refresh failed');
+    // Import here to avoid circular dependencies
+    const { refreshTokenApi } = await import('../Api/authApi');
+    const data = await refreshTokenApi(refreshTokenStr);
+    
+    if (data.data && data.data.tokens) {
+      const tokens = data.data.tokens;
+      // Store new tokens
+      localStorage.setItem('accessToken', tokens.accessToken);
+      localStorage.setItem('refreshToken', tokens.refreshToken);
+      localStorage.setItem('accessTokenExpiresAt', tokens.accessTokenExpiresAt);
+      localStorage.setItem('refreshTokenExpiresAt', tokens.refreshTokenExpiresAt);
+      
+      return tokens.accessToken;
     }
-
-    const data = await response.json();
     
-    // Store new tokens
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    localStorage.setItem('accessTokenExpiresAt', data.accessTokenExpiresAt);
-    localStorage.setItem('refreshTokenExpiresAt', data.refreshTokenExpiresAt);
-    
-    return data.accessToken;
+    throw new Error('Invalid refresh token response');
   } catch (error) {
+    console.error('Token refresh error:', error);
     clearAuthData();
-    window.location.href = '/';
+    window.location.href = '/login';
     throw error;
   }
 };

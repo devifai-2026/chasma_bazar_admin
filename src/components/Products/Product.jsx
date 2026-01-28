@@ -12,14 +12,15 @@ import {
 import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
-import {getAllProducts} from "../../Api/productApi";
+import { getAllProducts, deleteProduct as deleteProductAPI } from "../../Api/productApi";
+import { toast, Toaster } from "react-hot-toast";
 
 const Products = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   // Filter and pagination state
   const [filters, setFilters] = useState({
     search: '',
@@ -32,7 +33,7 @@ const Products = () => {
     frameType: '',
     frameShape: '',
   });
-  
+
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -50,16 +51,16 @@ const Products = () => {
         page: pageParams.page,
         limit: pageParams.limit,
       };
-      
+
       // Remove empty filter values
       Object.keys(queryParams).forEach(key => {
         if (!queryParams[key]) {
           delete queryParams[key];
         }
       });
-      
+
       const response = await getAllProducts(queryParams);
-      
+
       if (response.success) {
         setProducts(response.data);
         setPagination({
@@ -103,12 +104,22 @@ const Products = () => {
     }
   };
 
-  const deleteProduct = (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      // Call delete API
-      // Note: deleteProduct API function should be implemented
-      // For now, we'll just refresh the list
-      fetchProducts(filters, pagination);
+  const handleDeleteProduct = async (id) => {
+    if (window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+      try {
+        const response = await deleteProductAPI(id);
+        
+        if (response.success) {
+          toast.success('Product deleted successfully!');
+          // Refresh the products list
+          fetchProducts(filters, pagination);
+        } else {
+          toast.error('Error deleting product: ' + (response.message || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        toast.error('Error deleting product: ' + (error.message || 'Please try again.'));
+      }
     }
   };
 
@@ -139,11 +150,11 @@ const Products = () => {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+        <Toaster position="top-right" />
 
         <main
-          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${
-            sidebarOpen ? "lg:pl-6" : "lg:pl-6"
-          }`}
+          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? "lg:pl-6" : "lg:pl-6"
+            }`}
         >
           <div className="mx-auto max-w-7xl">
             {/* Header */}
@@ -187,7 +198,7 @@ const Products = () => {
                   />
                 </div>
               </div>
-              <select 
+              <select
                 value={filters.category}
                 onChange={(e) => handleFilterChange('category', e.target.value)}
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -238,7 +249,7 @@ const Products = () => {
                 <option value="Titanium">Titanium</option>
                 <option value="Stainless Steel">Stainless Steel</option>
               </select>
-              <button 
+              <button
                 onClick={() => {
                   setFilters({
                     search: '',
@@ -353,13 +364,12 @@ const Products = () => {
                               <div className="flex items-center">
                                 <div className="w-24 bg-gray-200 rounded-full h-2">
                                   <div
-                                    className={`h-2 rounded-full ${
-                                      product.stock > 50
+                                    className={`h-2 rounded-full ${product.stock > 50
                                         ? "bg-green-500"
                                         : product.stock > 20
-                                        ? "bg-yellow-500"
-                                        : "bg-red-500"
-                                    }`}
+                                          ? "bg-yellow-500"
+                                          : "bg-red-500"
+                                      }`}
                                     style={{
                                       width: `${Math.min(product.stock || 0, 100)}%`,
                                     }}
@@ -372,13 +382,12 @@ const Products = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span
-                                className={`px-3 py-1 text-xs rounded-full ${
-                                  getStatus(product.stock) === "In Stock"
+                                className={`px-3 py-1 text-xs rounded-full ${getStatus(product.stock) === "In Stock"
                                     ? "bg-green-100 text-green-800"
                                     : getStatus(product.stock) === "Low Stock"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
                               >
                                 {getStatus(product.stock)}
                               </span>
@@ -402,7 +411,7 @@ const Products = () => {
                                 <button
                                   className="p-1 text-red-600 hover:text-red-800"
                                   title="Delete"
-                                  onClick={() => deleteProduct(product._id)}
+                                  onClick={() => handleDeleteProduct(product._id)}
                                 >
                                   <TrashIcon className="h-5 w-5" />
                                 </button>
@@ -442,11 +451,10 @@ const Products = () => {
                   .map((page) => (
                     <button
                       key={page}
-                      className={`px-3 py-1 rounded-lg ${
-                        page === pagination.page
+                      className={`px-3 py-1 rounded-lg ${page === pagination.page
                           ? "bg-blue-600 text-white"
                           : "border border-gray-300 hover:bg-gray-50"
-                      }`}
+                        }`}
                       onClick={() => handlePageChange(page)}
                     >
                       {page}
