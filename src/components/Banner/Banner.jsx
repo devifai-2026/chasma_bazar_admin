@@ -17,169 +17,108 @@ import {
 import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
+import { getAllBanners, deleteBanner } from "../../Api/bannerApi";
 
 const Banner = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [banners, setBanners] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalBanners, setTotalBanners] = useState(0);
+  const [pageSize] = useState(10);
 
-  // Dummy banners data based on your API structure
-  const dummyBanners = [
-    {
-      id: 1,
-      title: "Summer Sale 2025",
-      description: "Get 50% off on all sunglasses",
-      image:
-        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200&h-400&fit=crop",
-      buttonText: "Shop Now",
-      buttonLink: "/products/sale",
-      pages: ["home", "products"],
-      position: "top",
-      priority: 10,
-      isActive: true,
-      startDate: "2025-01-01T00:00:00.000Z",
-      endDate: "2025-12-31T23:59:59.000Z",
-      createdAt: "2024-12-01T10:30:00Z",
-      isDummy: true,
-    },
-    {
-      id: 2,
-      title: "Winter Collection Launch",
-      description: "New winter frames now available",
-      image:
-        "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=1200&h=400&fit=crop",
-      buttonText: "Explore",
-      buttonLink: "/products/winter-collection",
-      pages: ["home"],
-      position: "middle",
-      priority: 5,
-      isActive: true,
-      startDate: "2024-11-01T00:00:00.000Z",
-      endDate: "2025-02-28T23:59:59.000Z",
-      createdAt: "2024-10-25T14:20:00Z",
-      isDummy: true,
-    },
-    {
-      id: 3,
-      title: "Limited Time Offer",
-      description: "Buy one get one free on selected items",
-      image:
-        "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200&h=400&fit=crop",
-      buttonText: "Grab Deal",
-      buttonLink: "/products/bogo",
-      pages: ["home", "products", "cart"],
-      position: "bottom",
-      priority: 8,
-      isActive: false,
-      startDate: "2024-10-01T00:00:00.000Z",
-      endDate: "2024-10-31T23:59:59.000Z",
-      createdAt: "2024-09-28T09:15:00Z",
-      isDummy: true,
-    },
-  ];
-
-  // Load banners from localStorage
+  // Load banners from API
   useEffect(() => {
-    loadBannersFromStorage();
-  }, []);
+    fetchBanners(currentPage);
+  }, [currentPage, filter]);
 
-  const loadBannersFromStorage = () => {
+  const fetchBanners = async (page) => {
+    setLoading(true);
+    setError("");
     try {
-      const savedBanners = JSON.parse(localStorage.getItem("banners") || "[]");
+      const params = {
+        page,
+        limit: pageSize,
+      };
 
-      // Add isDummy: false to user-created banners
-      const userBanners = savedBanners.map((banner) => ({
-        ...banner,
-        isDummy: false,
-      }));
+      // Add filter for isActive if selected
+      if (filter === "active") {
+        params.isActive = "true";
+      } else if (filter === "inactive") {
+        params.isActive = "false";
+      }
 
-      // Combine dummy banners with user's banners
-      const allBanners = [...dummyBanners, ...userBanners];
+      const response = await getAllBanners(params);
 
-      setBanners(allBanners);
-    } catch (error) {
-      console.error("Error loading banners:", error);
-      setBanners(dummyBanners);
+      setBanners(response.data || []);
+      
+      // Extract pagination data from response.pagination object
+      if (response.pagination) {
+        setCurrentPage(response.pagination.currentPage || page);
+        setTotalPages(response.pagination.totalPages || 1);
+        setTotalBanners(response.pagination.total || 0);
+      } else {
+        setCurrentPage(page);
+        setTotalPages(1);
+        setTotalBanners(response.data?.length || 0);
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || "Failed to load banners";
+      setError(errorMessage);
+      console.error("Error fetching banners:", err);
+      setBanners([]);
+    } finally {
+      setLoading(false);
     }
   };
-
-  // Save only user banners to localStorage
-  useEffect(() => {
-    if (banners.length > 0) {
-      const userBanners = banners.filter((banner) => !banner.isDummy);
-      const bannersToSave = userBanners.map(({ isDummy, ...rest }) => rest);
-      localStorage.setItem("banners", JSON.stringify(bannersToSave));
-    }
-  }, [banners]);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
 
-  const deleteBanner = (id) => {
+  const deleteBannerHandler = async (id) => {
     if (window.confirm("Are you sure you want to delete this banner?")) {
-      const bannerToDelete = banners.find((b) => b.id === id);
+      try {
+        const response = await deleteBanner(id);
 
-      if (bannerToDelete?.isDummy) {
-        if (
-          !window.confirm(
-            "This is a demo banner. Are you sure you want to delete it?"
-          )
-        ) {
-          return;
+        if (response.success) {
+          // Refresh the products list
+          fetchBanners(currentPage);
         }
-      }
+      } catch (error) {
+        console.error('Error deleting product:', error);
 
-      const updatedBanners = banners.filter((banner) => banner.id !== id);
-      setBanners(updatedBanners);
-
-      if (bannerToDelete?.isDummy) {
-        const deletedDummyIds = JSON.parse(
-          localStorage.getItem("deletedBannerIds") || "[]"
-        );
-        deletedDummyIds.push(id);
-        localStorage.setItem(
-          "deletedBannerIds",
-          JSON.stringify(deletedDummyIds)
-        );
       }
     }
   };
 
-  // Filter banners
+  // Filter banners by search term (client-side)
   const filteredBanners = banners.filter((banner) => {
     const matchesSearch =
       banner.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       banner.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesFilter =
-      filter === "all" ||
-      (filter === "active" && banner.isActive) ||
-      (filter === "inactive" && !banner.isActive) ||
-      (filter === "expired" && new Date(banner.endDate) < new Date());
-
-    return matchesSearch && matchesFilter;
+    return matchesSearch;
   });
 
   // Calculate statistics
   const calculateStats = () => {
-    const userBanners = banners.filter((b) => !b.isDummy);
-    const totalBanners = banners.length;
-    const userAdded = userBanners.length;
     const activeBanners = banners.filter((b) => b.isActive).length;
     const expiredBanners = banners.filter(
-      (b) => new Date(b.endDate) < new Date()
+      (b) => new Date(b.endDate || Date.now() + 365 * 24 * 60 * 60 * 1000) < new Date()
     ).length;
     const currentBanners = banners.filter(
       (b) =>
         b.isActive &&
-        new Date(b.startDate) <= new Date() &&
-        new Date(b.endDate) >= new Date()
+        new Date(b.startDate || 0) <= new Date() &&
+        new Date(b.endDate || Date.now() + 365 * 24 * 60 * 60 * 1000) >= new Date()
     ).length;
 
     return {
       totalBanners,
-      userAdded,
       activeBanners,
       expiredBanners,
       currentBanners,
@@ -193,6 +132,8 @@ const Banner = () => {
       top: "bg-blue-100 text-blue-800",
       middle: "bg-green-100 text-green-800",
       bottom: "bg-amber-100 text-amber-800",
+      sidebar: "bg-purple-100 text-purple-800",
+      popup: "bg-pink-100 text-pink-800",
     };
     return colors[position] || "bg-gray-100 text-gray-800";
   };
@@ -206,19 +147,15 @@ const Banner = () => {
     });
   };
 
-  const isExpired = (endDate) => {
-    return new Date(endDate) < new Date();
-  };
-
   const isActiveNow = (banner) => {
     const now = new Date();
-    const start = new Date(banner.startDate);
-    const end = new Date(banner.endDate);
+    const start = new Date(banner.startDate || 0);
+    const end = new Date(banner.endDate || Date.now() + 365 * 24 * 60 * 60 * 1000);
     return banner.isActive && start <= now && end >= now;
   };
 
   const getDaysRemaining = (endDate) => {
-    const end = new Date(endDate);
+    const end = new Date(endDate || Date.now() + 365 * 24 * 60 * 60 * 1000);
     const now = new Date();
     const diffTime = end - now;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -243,9 +180,8 @@ const Banner = () => {
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
         <main
-          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${
-            sidebarOpen ? "lg:pl-6" : "lg:pl-6"
-          }`}
+          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? "lg:pl-6" : "lg:pl-6"
+            }`}
         >
           <div className="mx-auto max-w-7xl">
             {/* Header */}
@@ -307,8 +243,20 @@ const Banner = () => {
             </div>
 
             {/* Banners Grid */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800">{error}</p>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredBanners.length === 0 ? (
+              {loading ? (
+                <div className="col-span-full bg-white rounded-lg shadow p-12 text-center">
+                  <div className="text-gray-500">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <div className="text-lg font-medium">Loading banners...</div>
+                  </div>
+                </div>
+              ) : filteredBanners.length === 0 ? (
                 <div className="col-span-full bg-white rounded-lg shadow p-12 text-center">
                   <div className="text-gray-500">
                     <PhotoIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
@@ -322,16 +270,13 @@ const Banner = () => {
                 </div>
               ) : (
                 filteredBanners.map((banner) => {
-                  const expired = isExpired(banner.endDate);
                   const activeNow = isActiveNow(banner);
                   const daysRemaining = getDaysRemaining(banner.endDate);
 
                   return (
                     <div
-                      key={banner.id}
-                      className={`bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow duration-300 ${
-                        banner.isDummy ? "border-l-4 border-blue-500" : ""
-                      }`}
+                      key={banner._id}
+                      className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow duration-300"
                     >
                       {/* Banner Image */}
                       <div className="relative h-48 bg-gray-100">
@@ -355,13 +300,6 @@ const Banner = () => {
                             {banner.position.toUpperCase()}
                           </span>
                         </div>
-                        {banner.isDummy && (
-                          <div className="absolute top-3 left-3">
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                              Demo
-                            </span>
-                          </div>
-                        )}
                       </div>
 
                       {/* Banner Content */}
@@ -421,8 +359,8 @@ const Banner = () => {
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center text-gray-600">
                             <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
-                            {formatDate(banner.startDate)} -{" "}
-                            {formatDate(banner.endDate)}
+                            {banner.startDate ? formatDate(banner.startDate) : "No start date"} -{" "}
+                            {banner.endDate ? formatDate(banner.endDate) : "No end date"}
                           </div>
 
                           <div className="flex items-center justify-between">
@@ -433,13 +371,13 @@ const Banner = () => {
                                   <span className="text-green-600 font-medium">
                                     Active
                                   </span>
-                                  {!expired && (
+                                  {banner.endDate && (
                                     <span className="ml-2 text-xs text-green-500">
-                                      {daysRemaining} days left
+                                      {getDaysRemaining(banner.endDate)} days left
                                     </span>
                                   )}
                                 </>
-                              ) : expired ? (
+                              ) : banner.endDate && new Date(banner.endDate) < new Date() ? (
                                 <>
                                   <XCircleIcon className="h-5 w-5 text-red-500 mr-1" />
                                   <span className="text-red-600 font-medium">
@@ -459,7 +397,7 @@ const Banner = () => {
                             {/* Action Buttons */}
                             <div className="flex items-center space-x-2">
                               <Link
-                                to={`/banner/view/${banner.id}`}
+                                to={`/banner/view/${banner._id}`}
                                 className="p-1 text-blue-600 hover:text-blue-800"
                                 title="View Details"
                               >
@@ -468,7 +406,7 @@ const Banner = () => {
 
                               {/* Edit Button - NOW ENABLED FOR ALL */}
                               <Link
-                                to={`/banner/update/${banner.id}`}
+                                to={`/banner/update/${banner._id}`}
                                 className="p-1 text-green-600 hover:text-green-800"
                                 title="Edit Banner"
                               >
@@ -476,7 +414,7 @@ const Banner = () => {
                               </Link>
 
                               <button
-                                onClick={() => deleteBanner(banner.id)}
+                                onClick={() => deleteBannerHandler(banner._id)}
                                 className="p-1 text-red-600 hover:text-red-800"
                                 title="Delete Banner"
                               >
@@ -485,6 +423,7 @@ const Banner = () => {
                             </div>
                           </div>
                         </div>
+                        
                       </div>
                     </div>
                   );
@@ -495,26 +434,27 @@ const Banner = () => {
             {/* Pagination */}
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-gray-700">
-                Showing <span className="font-medium">1</span> to{" "}
-                <span className="font-medium">{filteredBanners.length}</span> of{" "}
-                <span className="font-medium">{banners.length}</span> banners
-                <span className="ml-2 text-gray-500">
-                  ({banners.filter((b) => !b.isDummy).length} user-added)
-                </span>
+                Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to{" "}
+                <span className="font-medium">
+                  {Math.min(currentPage * pageSize, totalBanners)}
+                </span>{" "}
+                of <span className="font-medium">{totalBanners}</span> banners
               </div>
               <div className="flex space-x-2">
                 <button
-                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  disabled
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Previous
                 </button>
-                <button className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  1
+                <button className="px-3 py-1 bg-blue-600 text-white rounded-lg">
+                  {currentPage}
                 </button>
                 <button
-                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  disabled={banners.length <= 9}
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Next
                 </button>
@@ -532,9 +472,6 @@ const Banner = () => {
                       {stats.totalBanners}
                     </div>
                   </div>
-                </div>
-                <div className="text-sm text-green-600 mt-2">
-                  {stats.userAdded} user-added
                 </div>
               </div>
 

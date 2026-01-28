@@ -20,145 +20,56 @@ import {
 import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
+import {getAllPromoCodes , deletePromoCode} from '../../Api/promoCodeApi';
 
 const PromoCode = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [promoCodes, setPromoCodes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Dummy promocodes data based on your API structure
-  const dummyPromoCodes = [
-    {
-      id: 1,
-      code: "SUMMER20",
-      description: "Summer sale 20% off",
-      discountType: "percentage",
-      discountValue: 20,
-      maxDiscount: 1000,
-      minOrderValue: 2000,
-      usageLimit: 100,
-      usageCount: 45,
-      startDate: "2024-06-01T00:00:00Z",
-      endDate: "2024-08-31T23:59:59Z",
-      isActive: true,
-      isDummy: true,
-      createdAt: "2024-05-15T10:30:00Z"
-    },
-    {
-      id: 2,
-      code: "WELCOME100",
-      description: "Welcome discount ₹100 off",
-      discountType: "fixed",
-      discountValue: 100,
-      maxDiscount: null,
-      minOrderValue: 500,
-      usageLimit: 1000,
-      usageCount: 789,
-      startDate: "2024-01-01T00:00:00Z",
-      endDate: "2024-12-31T23:59:59Z",
-      isActive: true,
-      isDummy: true,
-      createdAt: "2024-01-01T00:00:00Z"
-    },
-    {
-      id: 3,
-      code: "FLASH50",
-      description: "Flash sale 50% off",
-      discountType: "percentage",
-      discountValue: 50,
-      maxDiscount: 2000,
-      minOrderValue: 1000,
-      usageLimit: 50,
-      usageCount: 50,
-      startDate: "2024-11-01T00:00:00Z",
-      endDate: "2024-11-02T23:59:59Z",
-      isActive: false,
-      isDummy: true,
-      createdAt: "2024-10-30T12:00:00Z"
-    },
-    {
-      id: 4,
-      code: "FREESHIP",
-      description: "Free shipping on all orders",
-      discountType: "free_shipping",
-      discountValue: 0,
-      maxDiscount: null,
-      minOrderValue: 1000,
-      usageLimit: null,
-      usageCount: 123,
-      startDate: "2024-09-01T00:00:00Z",
-      endDate: "2024-12-31T23:59:59Z",
-      isActive: true,
-      isDummy: true,
-      createdAt: "2024-08-15T09:00:00Z"
-    }
-  ];
-
-  // Load promocodes from localStorage
+  // Load promocodes from API
   useEffect(() => {
-    loadPromoCodesFromStorage();
+    loadPromoCodesFromAPI();
   }, []);
 
-  const loadPromoCodesFromStorage = () => {
+  const loadPromoCodesFromAPI = async () => {
     try {
-      const savedPromoCodes = JSON.parse(
-        localStorage.getItem("promoCodes") || "[]"
-      );
-
-      // Add isDummy: false to user-created promo codes if not present
-      const userPromoCodes = savedPromoCodes.map(promo => ({
-        ...promo,
-        isDummy: false
-      }));
-
-      // Combine dummy promocodes with user's promocodes
-      const allPromoCodes = [...dummyPromoCodes, ...userPromoCodes];
-
-      setPromoCodes(allPromoCodes);
+      setIsLoading(true);
+      setError(null);
+      const response = await getAllPromoCodes();
+      
+      // Handle both direct array response and object with data property
+      const data = Array.isArray(response) ? response : (response.data || []);
+      
+      setPromoCodes(data);
     } catch (error) {
-      console.error("Error loading promocodes:", error);
-      setPromoCodes(dummyPromoCodes);
+      console.error('Error fetching promo codes:', error);
+      setError('Failed to load promo codes. Please try again.');
+      // Fallback to empty array instead of dummy data
+      setPromoCodes([]);
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  // Save only user promocodes to localStorage whenever promocodes change
-  useEffect(() => {
-    if (promoCodes.length > 0) {
-      // Filter out dummy promocodes before saving
-      const userPromoCodes = promoCodes.filter((promo) => !promo.isDummy);
-      // Remove isDummy property before saving
-      const promosToSave = userPromoCodes.map(({ isDummy, ...rest }) => rest);
-      localStorage.setItem("promoCodes", JSON.stringify(promosToSave));
-    }
-  }, [promoCodes]);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
 
-  const deletePromoCode = (id) => {
-    if (window.confirm("Are you sure you want to delete this promo code? This action cannot be undone.")) {
-      const promoToDelete = promoCodes.find((p) => p.id === id);
-      
-      // Show warning for demo codes
-      if (promoToDelete?.isDummy) {
-        if (!window.confirm("This is a demo promo code. Are you sure you want to delete it? It cannot be restored.")) {
-          return;
-        }
-      }
-
-      // Remove from state
-      const updatedPromoCodes = promoCodes.filter((promo) => promo.id !== id);
-      setPromoCodes(updatedPromoCodes);
-      
-      // If we deleted a dummy code, we need to also update the dummyPromoCodes array
-      // for future page reloads. Since dummyPromoCodes is constant, we'll handle it
-      // by not restoring it on next load if it's deleted.
-      // To persist this, we can store deleted dummy IDs in localStorage
-      if (promoToDelete?.isDummy) {
-        const deletedDummyIds = JSON.parse(localStorage.getItem("deletedDummyIds") || "[]");
-        deletedDummyIds.push(id);
-        localStorage.setItem("deletedDummyIds", JSON.stringify(deletedDummyIds));
+  const deletePromoCodeHandler = async (id) => {
+    if (window.confirm('Are you sure you want to delete this promo code? This action cannot be undone.')) {
+      try {
+        const response = await deletePromoCode(id);
+        
+        if (response.success) {
+          // Refresh the products list
+          loadPromoCodesFromAPI();
+        } 
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        
       }
     }
   };
@@ -179,14 +90,12 @@ const PromoCode = () => {
 
   // Calculate statistics
   const calculateStats = () => {
-    const userPromoCodes = promoCodes.filter(p => !p.isDummy);
     const totalPromoCodes = promoCodes.length;
-    const userAdded = userPromoCodes.length;
     const activePromoCodes = promoCodes.filter(p => p.isActive).length;
     const expiredPromoCodes = promoCodes.filter(p => new Date(p.endDate) < new Date()).length;
     const reachedLimit = promoCodes.filter(p => p.usageLimit && p.usageCount >= p.usageLimit).length;
 
-    return { totalPromoCodes, userAdded, activePromoCodes, expiredPromoCodes, reachedLimit };
+    return { totalPromoCodes, activePromoCodes, expiredPromoCodes, reachedLimit };
   };
 
   const stats = calculateStats();
@@ -260,12 +169,6 @@ const PromoCode = () => {
                   <p className="text-gray-600">
                     Manage promo codes and customer discounts
                   </p>
-                  <div className="mt-2 text-sm text-gray-500">
-                    <span className="inline-flex items-center">
-                      <span className="h-2 w-2 bg-blue-500 rounded-full mr-2"></span>
-                      Blue border indicates demo promo codes
-                    </span>
-                  </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Link
@@ -313,6 +216,27 @@ const PromoCode = () => {
 
             {/* Promo Codes Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
+              {isLoading ? (
+                <div className="flex items-center justify-center p-12">
+                  <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                    <p className="text-gray-600">Loading promo codes...</p>
+                  </div>
+                </div>
+              ) : error ? (
+                <div className="p-6 bg-red-50 border border-red-200 rounded-lg m-4">
+                  <div className="text-red-800">
+                    <p className="font-medium">Error loading promo codes</p>
+                    <p className="text-sm mt-1">{error}</p>
+                    <button
+                      onClick={loadPromoCodesFromAPI}
+                      className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -352,10 +276,8 @@ const PromoCode = () => {
                         
                         return (
                           <tr
-                            key={promo.id}
-                            className={`hover:bg-gray-50 ${
-                              promo.isDummy ? "border-l-4 border-blue-500" : ""
-                            }`}
+                            key={promo._id || promo.id}
+                            className="hover:bg-gray-50"
                           >
                             <td className="px-6 py-4">
                               <div className="flex items-center">
@@ -367,11 +289,6 @@ const PromoCode = () => {
                                     <div className="text-lg font-bold text-gray-900 font-mono">
                                       {promo.code}
                                     </div>
-                                    {promo.isDummy && (
-                                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                                        Demo
-                                      </span>
-                                    )}
                                   </div>
                                   <div className="text-sm text-gray-500 mt-1">
                                     {promo.description}
@@ -493,25 +410,23 @@ const PromoCode = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex items-center space-x-2">
                                 <Link
-                                  to={`/promoCode/view/${promo.id}`}
+                                  to={`/promoCode/view/${promo._id || promo.id}`}
                                   className="p-1 text-blue-600 hover:text-blue-800"
                                   title="View Details"
                                 >
                                   <EyeIcon className="h-5 w-5" />
                                 </Link>
                                 
-                            {/* Edit Button - NOW ENABLED FOR ALL */}
-<Link
-  to={`/promoCode/update/${promo.id}`}
-  className="p-1 text-green-600 hover:text-green-800"
-  title="Edit Promo Code"
->
-  <PencilIcon className="h-5 w-5" />
-</Link>
+                                <Link
+                                  to={`/promoCode/update/${promo._id || promo.id}`}
+                                  className="p-1 text-green-600 hover:text-green-800"
+                                  title="Edit Promo Code"
+                                >
+                                  <PencilIcon className="h-5 w-5" />
+                                </Link>
                                 
-                                {/* DELETE BUTTON - ENABLED FOR ALL */}
                                 <button
-                                  onClick={() => deletePromoCode(promo.id)}
+                                  onClick={() => deletePromoCodeHandler(promo._id || promo.id)}
                                   className="p-1 text-red-600 hover:text-red-800"
                                   title="Delete Promo Code"
                                 >
@@ -526,6 +441,7 @@ const PromoCode = () => {
                   </tbody>
                 </table>
               </div>
+              )}
             </div>
 
             {/* Pagination */}
@@ -534,9 +450,6 @@ const PromoCode = () => {
                 Showing <span className="font-medium">1</span> to{" "}
                 <span className="font-medium">{filteredPromoCodes.length}</span> of{" "}
                 <span className="font-medium">{promoCodes.length}</span> promo codes
-                <span className="ml-2 text-gray-500">
-                  ({promoCodes.filter((p) => !p.isDummy).length} user-added)
-                </span>
               </div>
               <div className="flex space-x-2">
                 <button
@@ -576,9 +489,6 @@ const PromoCode = () => {
                     <div className="text-sm text-gray-600">Total Promo Codes</div>
                     <div className="text-2xl font-bold mt-1">{stats.totalPromoCodes}</div>
                   </div>
-                </div>
-                <div className="text-sm text-green-600 mt-2">
-                  {stats.userAdded} user-added
                 </div>
               </div>
               
@@ -622,18 +532,19 @@ const PromoCode = () => {
               </div>
             </div>
 
-            {/* Info Card about Demo Promo Codes - Updated */}
+            {/* Info Card about Promo Codes */}
             <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
               <div className="flex">
                 <InformationCircleIcon className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
                 <div>
-                  <h3 className="text-lg font-semibold text-blue-900">About Demo Promo Codes</h3>
+                  <h3 className="text-lg font-semibold text-blue-900">Promo Code Management</h3>
                   <div className="mt-2 text-blue-700">
                     <ul className="list-disc pl-5 space-y-1">
-                      <li>Demo promo codes are shown with blue border for identification</li>
-                      <li>You can now delete any promo code including demo codes</li>
-                      <li>Edit functionality is still disabled for demo promo codes</li>
-                      <li>Click "Add Promo Code" to create your own promo codes</li>
+                      <li>View all promo codes fetched from the backend API</li>
+                      <li>Edit or delete any promo code using the action buttons</li>
+                      <li>Search by code name or description</li>
+                      <li>Filter by status (Active, Inactive, Expired, Usage Limit reached)</li>
+                      <li>Track usage statistics and validity dates</li>
                     </ul>
                   </div>
                 </div>

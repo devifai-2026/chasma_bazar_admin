@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
+import {getAllOrders} from "../../Api/orderApi";
 
 const Orders = () => {
   const navigate = useNavigate();

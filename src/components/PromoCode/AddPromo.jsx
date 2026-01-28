@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   ArrowLeftIcon,
   TicketIcon,
@@ -14,9 +14,17 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
+import { createPromoCode } from '../../Api/promoCodeApi'
+import { getAllProducts } from '../../Api/productApi'
+import { getFrames } from '../../Api/frameapi'
+import { getAllCompanies } from '../../Api/companyApi'
 
 const AddPromo = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+  const [products, setProducts] = useState([])
+  const [frames, setFrames] = useState([])
+  const [companies, setCompanies] = useState([])
   const [formData, setFormData] = useState({
     code: '',
     description: '',
@@ -25,12 +33,36 @@ const AddPromo = () => {
     maxDiscount: '',
     minOrderValue: '',
     usageLimit: '',
+    applicableProducts: [],
+    applicableFrames: [],
+    applicableCompanies: [],
     startDate: '',
     endDate: '',
     isActive: true
   })
   const [errors, setErrors] = useState({})
   const navigate = useNavigate()
+
+  // Fetch products, frames, and companies on component mount
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    try {
+      const [productsRes, framesRes, companiesRes] = await Promise.all([
+        getAllProducts(),
+        getFrames(),
+        getAllCompanies()
+      ])
+
+      setProducts(productsRes.data || [])
+      setFrames(framesRes.data || [])
+      setCompanies(companiesRes.data || [])
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
+  }
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
   const closeSidebar = () => setSidebarOpen(false)
@@ -66,7 +98,7 @@ const AddPromo = () => {
     if (!formData.discountValue || formData.discountValue <= 0) newErrors.discountValue = 'Valid discount value is required'
     if (formData.discountType === 'percentage' && formData.discountValue > 100) newErrors.discountValue = 'Percentage cannot exceed 100%'
     if (!formData.minOrderValue || formData.minOrderValue < 0) newErrors.minOrderValue = 'Valid minimum order value is required'
-    if (formData.usageLimit && formData.usageLimit <= 0) newErrors.usageLimit = 'Usage limit must be positive number'
+    if (!formData.usageLimit || formData.usageLimit <= 0) newErrors.usageLimit = 'Usage limit is required'
     if (!formData.startDate) newErrors.startDate = 'Start date is required'
     if (!formData.endDate) newErrors.endDate = 'End date is required'
     
@@ -100,6 +132,8 @@ const AddPromo = () => {
       return
     }
 
+    setIsLoading(true)
+
     // Prepare the promo code data according to API structure
     const newPromoCode = {
       code: formData.code.toUpperCase(),
@@ -108,51 +142,32 @@ const AddPromo = () => {
       discountValue: parseFloat(formData.discountValue),
       maxDiscount: formData.maxDiscount ? parseFloat(formData.maxDiscount) : null,
       minOrderValue: parseFloat(formData.minOrderValue),
-      usageLimit: formData.usageLimit ? parseInt(formData.usageLimit) : null,
-      usageCount: 0,
+      usageLimit: parseInt(formData.usageLimit),
+      applicableProducts: formData.applicableProducts.length > 0 ? formData.applicableProducts : [],
+      applicableFrames: formData.applicableFrames.length > 0 ? formData.applicableFrames : [],
+      applicableCompanies: formData.applicableCompanies.length > 0 ? formData.applicableCompanies : [],
       startDate: new Date(formData.startDate).toISOString(),
       endDate: new Date(formData.endDate).toISOString(),
-      isActive: formData.isActive,
-      createdAt: new Date().toISOString()
+      isActive: formData.isActive
     }
 
     try {
-      // Check if promo code already exists
-      let existingPromoCodes = []
-      try {
-        const storedPromoCodes = localStorage.getItem('promoCodes')
-        existingPromoCodes = storedPromoCodes ? JSON.parse(storedPromoCodes) : []
-      } catch (error) {
-        console.error('Error reading from localStorage:', error)
-        existingPromoCodes = []
-      }
-
-      // Check for duplicate code
-      const isDuplicate = existingPromoCodes.some(
-        promo => promo.code.toLowerCase() === newPromoCode.code.toLowerCase()
-      )
-      
-      if (isDuplicate) {
-        setErrors({ code: 'This promo code already exists' })
-        return
-      }
-
-      const updatedPromoCodes = [newPromoCode, ...existingPromoCodes]
-      localStorage.setItem('promoCodes', JSON.stringify(updatedPromoCodes))
-      localStorage.setItem('promoCodes_updated', Date.now().toString())
-      
+      const response = await createPromoCode(newPromoCode)
       alert('Promo code added successfully!')
       navigate('/promoCode')
     } catch (error) {
       console.error('Error saving promo code:', error)
-      alert('Error saving promo code. Please try again.')
+      const errorMessage = error.response?.data?.message || 'Error saving promo code. Please try again.'
+      setErrors({ submit: errorMessage })
+      alert(errorMessage)
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const discountTypes = [
     { value: 'percentage', label: 'Percentage (%)' },
-    { value: 'fixed', label: 'Fixed Amount (₹)' },
-    { value: 'free_shipping', label: 'Free Shipping' }
+    { value: 'fixed', label: 'Fixed Amount (₹)' }
   ]
 
   // Calculate today's date for min date restrictions
@@ -386,7 +401,7 @@ const AddPromo = () => {
                   {/* Usage Limit */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Usage Limit
+                      Usage Limit *
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -402,7 +417,7 @@ const AddPromo = () => {
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.usageLimit ? 'border-red-300' : 'border-gray-300'
                         }`}
-                        placeholder="e.g., 100 (leave empty for unlimited)"
+                        placeholder="e.g., 100"
                       />
                     </div>
                     {errors.usageLimit && (
@@ -412,7 +427,7 @@ const AddPromo = () => {
                       </p>
                     )}
                     <p className="mt-1 text-sm text-gray-500">
-                      Maximum number of times this promo can be used (leave empty for unlimited)
+                      Maximum number of times this promo can be used
                     </p>
                   </div>
 
@@ -426,6 +441,106 @@ const AddPromo = () => {
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Applicable Items Card */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                  <TagIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Applicable Items (Optional)
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Applicable Products */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Products
+                    </label>
+                    <select
+                      name="applicableProducts"
+                      value={formData.applicableProducts.length > 0 ? formData.applicableProducts[0] : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            applicableProducts: [e.target.value]
+                          }))
+                        }
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    >
+                      <option value="">Select Products (Optional)</option>
+                      {products.map(product => (
+                        <option key={product._id} value={product._id}>
+                          {product.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Leave empty to apply to all products
+                    </p>
+                  </div>
+
+                  {/* Applicable Frames */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Frames
+                    </label>
+                    <select
+                      name="applicableFrames"
+                      value={formData.applicableFrames.length > 0 ? formData.applicableFrames[0] : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            applicableFrames: [e.target.value]
+                          }))
+                        }
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    >
+                      <option value="">Select Frames (Optional)</option>
+                      {frames.map(frame => (
+                        <option key={frame._id} value={frame._id}>
+                          {frame.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Leave empty to apply to all frames
+                    </p>
+                  </div>
+
+                  {/* Applicable Companies */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Companies
+                    </label>
+                    <select
+                      name="applicableCompanies"
+                      value={formData.applicableCompanies.length > 0 ? formData.applicableCompanies[0] : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            applicableCompanies: [e.target.value]
+                          }))
+                        }
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    >
+                      <option value="">Select Companies (Optional)</option>
+                      {companies.map(company => (
+                        <option key={company._id} value={company._id}>
+                          {company.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Leave empty to apply to all companies
+                    </p>
                   </div>
                 </div>
               </div>
@@ -548,6 +663,11 @@ const AddPromo = () => {
 
               {/* Form Actions */}
               <div className="bg-white rounded-lg shadow p-6">
+                {errors.submit && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700">{errors.submit}</p>
+                  </div>
+                )}
                 <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
                   <Link
                     to="/promoCode"
@@ -557,9 +677,12 @@ const AddPromo = () => {
                   </Link>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    disabled={isLoading}
+                    className={`px-6 py-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                   >
-                    Add Promo Code
+                    {isLoading ? 'Adding Promo Code...' : 'Add Promo Code'}
                   </button>
                 </div>
               </div>

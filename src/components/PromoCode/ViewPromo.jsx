@@ -16,6 +16,7 @@ import {
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
+import {getPromoCodeById} from '../../Api/promoCodeApi';
 
 const ViewPromo = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -28,83 +29,16 @@ const ViewPromo = () => {
     loadPromoCode();
   }, [id]);
 
-  const loadPromoCode = () => {
+  const loadPromoCode = async () => {
     try {
-      const allPromoCodes = JSON.parse(localStorage.getItem('promoCodes') || '[]');
+      setLoading(true);
+      const response = await getPromoCodeById(id);
       
-      // Also check dummy data
-      const dummyPromoCodes = [
-        {
-          id: 1,
-          code: "SUMMER20",
-          description: "Summer sale 20% off",
-          discountType: "percentage",
-          discountValue: 20,
-          maxDiscount: 1000,
-          minOrderValue: 2000,
-          usageLimit: 100,
-          usageCount: 45,
-          startDate: "2024-06-01T00:00:00Z",
-          endDate: "2024-08-31T23:59:59Z",
-          isActive: true,
-          isDummy: true,
-          createdAt: "2024-05-15T10:30:00Z"
-        },
-        {
-          id: 2,
-          code: "WELCOME100",
-          description: "Welcome discount ₹100 off",
-          discountType: "fixed",
-          discountValue: 100,
-          maxDiscount: null,
-          minOrderValue: 500,
-          usageLimit: 1000,
-          usageCount: 789,
-          startDate: "2024-01-01T00:00:00Z",
-          endDate: "2024-12-31T23:59:59Z",
-          isActive: true,
-          isDummy: true,
-          createdAt: "2024-01-01T00:00:00Z"
-        },
-        {
-          id: 3,
-          code: "FLASH50",
-          description: "Flash sale 50% off",
-          discountType: "percentage",
-          discountValue: 50,
-          maxDiscount: 2000,
-          minOrderValue: 1000,
-          usageLimit: 50,
-          usageCount: 50,
-          startDate: "2024-11-01T00:00:00Z",
-          endDate: "2024-11-02T23:59:59Z",
-          isActive: false,
-          isDummy: true,
-          createdAt: "2024-10-30T12:00:00Z"
-        },
-        {
-          id: 4,
-          code: "FREESHIP",
-          description: "Free shipping on all orders",
-          discountType: "free_shipping",
-          discountValue: 0,
-          maxDiscount: null,
-          minOrderValue: 1000,
-          usageLimit: null,
-          usageCount: 123,
-          startDate: "2024-09-01T00:00:00Z",
-          endDate: "2024-12-31T23:59:59Z",
-          isActive: true,
-          isDummy: true,
-          createdAt: "2024-08-15T09:00:00Z"
-        }
-      ];
-
-      const allData = [...dummyPromoCodes, ...allPromoCodes.filter(p => !p.isDummy)];
-      const foundPromo = allData.find(p => p.id === parseInt(id));
-
-      if (foundPromo) {
-        setPromoCode(foundPromo);
+      // Handle both direct object response and object with data property
+      const data = response.data || response;
+      
+      if (data) {
+        setPromoCode(data);
       } else {
         navigate('/promoCode');
       }
@@ -224,17 +158,7 @@ const ViewPromo = () => {
                     <p className="text-gray-600">View and manage promo code information</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  {!promoCode.isDummy && (
-                    <Link
-                      to={`/promoCode/edit/${promoCode.id}`}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
-                    >
-                      <TagIcon className="h-5 w-5 mr-2" />
-                      Edit Promo Code
-                    </Link>
-                  )}
-                </div>
+                
               </div>
             </div>
 
@@ -439,14 +363,7 @@ const ViewPromo = () => {
                   >
                     Back to List
                   </Link>
-                  {!promoCode.isDummy && (
-                    <Link
-                      to={`/promoCode/edit/${promoCode.id}`}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                      Edit Promo Code
-                    </Link>
-                  )}
+                  
                 </div>
               </div>
             </div>
