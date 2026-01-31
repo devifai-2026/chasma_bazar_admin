@@ -104,7 +104,7 @@ const MainContent = ({ sidebarOpen }) => {
       setStats([])
       setRecentUsersData([])
       setRecentOrders([])
-      
+
     } finally {
       setLoading(false)
     }
@@ -159,7 +159,7 @@ const MainContent = ({ sidebarOpen }) => {
   // Prepare revenue chart data
   // const prepareRevenueChartData = () => {
   //   if (revenueData) return revenueData
-    
+
   //   return {
   //     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
   //     datasets: [
@@ -189,14 +189,14 @@ const MainContent = ({ sidebarOpen }) => {
     if (performanceMetrics?.avgOrderValue?.value) {
       return `₹${performanceMetrics.avgOrderValue.value.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
     }
-    
+
     if (!stats[0]?.value || !stats[2]?.value) return '₹0.00'
-    
+
     const revenue = parseInt(stats[0].value.replace(/[^0-9]/g, ''))
     const orders = parseInt(stats[2].value.replace(/[^0-9]/g, ''))
-    
+
     if (orders === 0) return '₹0.00'
-    
+
     return `₹${(revenue / orders).toFixed(2)}`
   }
 
@@ -279,7 +279,7 @@ const MainContent = ({ sidebarOpen }) => {
               </span>
             </div>
 
-           
+
 
             {/* Recent Users List */}
             <div className="border-t pt-4">
@@ -320,8 +320,8 @@ const MainContent = ({ sidebarOpen }) => {
                         </div>
                       </div>
                       <span className={`rounded-full px-3 py-1 text-xs font-medium ${user.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
                         }`}>
                         {user.isActive ? 'Active' : 'Inactive'}
                       </span>
@@ -335,7 +335,7 @@ const MainContent = ({ sidebarOpen }) => {
           {/* Performance Metrics with Progress Charts */}
           <div className="rounded-lg bg-white p-6 shadow">
             <h2 className="text-lg font-semibold mb-6">Performance Metrics</h2>
-            
+
             {loading ? (
               <div className="space-y-6">
                 {[1, 2, 3, 4].map((i) => (
@@ -356,8 +356,8 @@ const MainContent = ({ sidebarOpen }) => {
                 {/* Conversion Rate */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <CircularProgress 
-                      value={performanceMetrics.conversionRate?.value || 0} 
+                    <CircularProgress
+                      value={performanceMetrics.conversionRate?.value || 0}
                       maxValue={10}
                       color="text-blue-600"
                     />
@@ -367,23 +367,26 @@ const MainContent = ({ sidebarOpen }) => {
                     </div>
                   </div>
                   <div className="text-right">
+                    {/* FIX: Make sure to append the percentage sign */}
                     <p className="text-lg font-semibold text-blue-600">
                       {performanceMetrics.conversionRate?.value || 0}%
                     </p>
                     {performanceMetrics.conversionRate?.change && (
                       <p className="text-xs text-green-600 flex items-center">
                         <ArrowUpIcon className="h-3 w-3 mr-1" />
+                        {/* FIX: Add percentage sign to change value */}
                         +{performanceMetrics.conversionRate.change}%
                       </p>
                     )}
                   </div>
                 </div>
 
+
                 {/* Bounce Rate */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <CircularProgress 
-                      value={performanceMetrics.bounceRate?.value || 0} 
+                    <CircularProgress
+                      value={performanceMetrics.bounceRate?.value || 0}
                       maxValue={100}
                       color="text-yellow-600"
                     />
@@ -393,6 +396,7 @@ const MainContent = ({ sidebarOpen }) => {
                     </div>
                   </div>
                   <div className="text-right">
+                    {/* FIX: Add percentage sign */}
                     <p className="text-lg font-semibold text-yellow-600">
                       {performanceMetrics.bounceRate?.value || 0}%
                     </p>
@@ -417,12 +421,12 @@ const MainContent = ({ sidebarOpen }) => {
                     {performanceMetrics.newSessions?.change && (
                       <p className="text-xs text-green-600 flex items-center">
                         <ArrowUpIcon className="h-3 w-3 mr-1" />
+                        {/* FIX: Add percentage sign to change */}
                         +{performanceMetrics.newSessions.change}%
                       </p>
                     )}
                   </div>
                 </div>
-
                 {/* Additional Info */}
                 <div className="pt-6 border-t">
                   <div className="grid grid-cols-2 gap-4">
@@ -459,7 +463,7 @@ const MainContent = ({ sidebarOpen }) => {
           </div>
         </div>
 
-      
+
 
         {/* Refresh Button */}
         <div className="mt-6 flex justify-end">
