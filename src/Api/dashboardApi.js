@@ -22,7 +22,7 @@ export const getRecentUsers = async () => {
 
 export const getAllRecentOrders = async () => {
   try {
-    const response = await axiosInstance.get("/api/dashboard//orders/recent");
+    const response = await axiosInstance.get("/api/dashboard/orders/recent");
     return response.data;
   } catch (error) {
     console.error("Error fetching recent orders:", error);
