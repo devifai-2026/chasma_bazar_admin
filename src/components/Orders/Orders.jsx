@@ -103,7 +103,7 @@ const Orders = () => {
       setUpdateLoading(true);
       setUpdateError(null);
       
-      const response = await updateOrderStatus(selectedOrder._id, { status: newStatus });
+      const response = await updateOrderStatus(selectedOrder._id, newStatus);
       
       if (response.success) {
         setUpdateSuccess(true);
