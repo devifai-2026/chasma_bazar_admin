@@ -182,6 +182,58 @@ const PromoCode = () => {
               </div>
             </div>
 
+            {/* Quick Stats */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <TicketIcon className="h-8 w-8 text-blue-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Total Promo Codes</div>
+                    <div className="text-2xl font-bold mt-1">{stats.totalPromoCodes}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <CheckCircleIcon className="h-8 w-8 text-green-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Active</div>
+                    <div className="text-2xl font-bold mt-1">{stats.activePromoCodes}</div>
+                  </div>
+                </div>
+                <div className="text-sm text-green-600 mt-2">
+                  Currently active
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <XCircleIcon className="h-8 w-8 text-red-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Expired</div>
+                    <div className="text-2xl font-bold mt-1">{stats.expiredPromoCodes}</div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  Past validity date
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <BoltIcon className="h-8 w-8 text-yellow-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Reached Limit</div>
+                    <div className="text-2xl font-bold mt-1">{stats.reachedLimit}</div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  Max usage reached
+                </div>
+              </div>
+            </div>
+
             {/* Search and Filters */}
             <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
@@ -480,76 +532,9 @@ const PromoCode = () => {
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <TicketIcon className="h-8 w-8 text-blue-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Total Promo Codes</div>
-                    <div className="text-2xl font-bold mt-1">{stats.totalPromoCodes}</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <CheckCircleIcon className="h-8 w-8 text-green-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Active</div>
-                    <div className="text-2xl font-bold mt-1">{stats.activePromoCodes}</div>
-                  </div>
-                </div>
-                <div className="text-sm text-green-600 mt-2">
-                  Currently active
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <XCircleIcon className="h-8 w-8 text-red-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Expired</div>
-                    <div className="text-2xl font-bold mt-1">{stats.expiredPromoCodes}</div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Past validity date
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <BoltIcon className="h-8 w-8 text-yellow-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Reached Limit</div>
-                    <div className="text-2xl font-bold mt-1">{stats.reachedLimit}</div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Max usage reached
-                </div>
-              </div>
-            </div>
+            
 
-            {/* Info Card about Promo Codes */}
-            <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <div className="flex">
-                <InformationCircleIcon className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
-                <div>
-                  <h3 className="text-lg font-semibold text-blue-900">Promo Code Management</h3>
-                  <div className="mt-2 text-blue-700">
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>View all promo codes fetched from the backend API</li>
-                      <li>Edit or delete any promo code using the action buttons</li>
-                      <li>Search by code name or description</li>
-                      <li>Filter by status (Active, Inactive, Expired, Usage Limit reached)</li>
-                      <li>Track usage statistics and validity dates</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
+            
           </div>
         </main>
       </div>

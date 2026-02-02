@@ -278,6 +278,68 @@ const Discount = () => {
               </div>
             </div>
 
+            {/* Quick Stats */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <TagIcon className="h-8 w-8 text-blue-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">
+                      Total Discounts
+                    </div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.totalDiscounts}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <CheckCircleIcon className="h-8 w-8 text-green-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Active</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.activeDiscounts}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-green-600 mt-2">
+                  Currently active
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <XCircleIcon className="h-8 w-8 text-red-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Expired</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.expiredDiscounts}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  Past validity date
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <CurrencyDollarIcon className="h-8 w-8 text-yellow-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Percentage</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.percentageDiscounts}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  Percentage type discounts
+                </div>
+              </div>
+            </div>
+
             {/* Error Message */}
             {error && (
               <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center justify-between">
@@ -621,67 +683,7 @@ const Discount = () => {
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <TagIcon className="h-8 w-8 text-blue-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">
-                      Total Discounts
-                    </div>
-                    <div className="text-2xl font-bold mt-1">
-                      {stats.totalDiscounts}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <CheckCircleIcon className="h-8 w-8 text-green-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Active</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {stats.activeDiscounts}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-green-600 mt-2">
-                  Currently active
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <XCircleIcon className="h-8 w-8 text-red-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Expired</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {stats.expiredDiscounts}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Past validity date
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <CurrencyDollarIcon className="h-8 w-8 text-yellow-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Percentage</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {stats.percentageDiscounts}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Percentage type discounts
-                </div>
-              </div>
-            </div>
+            
           </div>
         </main>
       </div>

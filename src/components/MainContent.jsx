@@ -110,51 +110,7 @@ const MainContent = ({ sidebarOpen }) => {
     }
   }
 
-  // Format currency for display
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount)
-  }
-
-  // Prepare data for Daily Active Users chart
-  const prepareDAUChartData = () => {
-    // Use actual data if available, otherwise use sample data
-    if (dailyActiveUsers.length > 0) {
-      const sortedData = [...dailyActiveUsers].sort((a, b) => new Date(a.date) - new Date(b.date))
-
-      return {
-        labels: sortedData.map(item => {
-          const date = new Date(item.date)
-          return date.toLocaleDateString('en-US', { weekday: 'short' })
-        }),
-        datasets: [{
-          label: 'Daily Active Users',
-          data: sortedData.map(item => item.count),
-          borderColor: 'rgb(139, 92, 246)',
-          backgroundColor: 'rgba(139, 92, 246, 0.1)',
-          fill: true,
-          tension: 0.4,
-        }]
-      }
-    }
-
-    // Fallback to sample data
-    return {
-      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      datasets: [{
-        label: 'Daily Active Users',
-        data: [450, 520, 480, 600, 750, 680, 720],
-        borderColor: 'rgb(139, 92, 246)',
-        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-        fill: true,
-        tension: 0.4,
-      }]
-    }
-  }
+  
 
   // Prepare revenue chart data
   // const prepareRevenueChartData = () => {
@@ -299,7 +255,7 @@ const MainContent = ({ sidebarOpen }) => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {recentUsersData.slice(0, 5).map((user, index) => (
+                  {recentUsersData.slice(0, 10).map((user, index) => (
                     <div key={user._id || index} className="flex items-center justify-between">
                       <div className="flex items-center">
                         <img

@@ -47,7 +47,7 @@ const UserEdit = () => {
     { value: 'viewer', label: 'Viewer', description: 'View only access' },
   ];
 
-  const accountStatuses = ['active', 'inactive', 'suspended', 'pending'];
+  const accountStatuses = ['active', 'inactive'];
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -504,46 +504,11 @@ const UserEdit = () => {
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
                   <ShieldCheckIcon className="h-6 w-6 mr-2 text-purple-600" />
-                  Role & Status
+                  Status
                 </h2>
 
                 {/* Role Selection */}
-                <div className="mb-8">
-                  <label className="block text-sm font-medium text-gray-700 mb-4">
-                    User Role *
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {roles.map((role) => (
-                      <button
-                        type="button"
-                        key={role.value}
-                        onClick={() => setFormData(prev => ({ ...prev, role: role.value }))}
-                        className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                          formData.role === role.value
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="text-left">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className={`font-semibold ${
-                              formData.role === role.value ? 'text-blue-700' : 'text-gray-800'
-                            }`}>
-                              {role.label}
-                            </span>
-                            {formData.role === role.value && (
-                              <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-600">{role.description}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                  {errors.role && (
-                    <p className="mt-1 text-sm text-red-600">{errors.role}</p>
-                  )}
-                </div>
+                
 
                 {/* Account Status Selection */}
                 <div className="mb-8">

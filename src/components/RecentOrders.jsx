@@ -104,9 +104,7 @@ const RecentOrders = ({ orders, loading }) => {
       <div className="rounded-lg bg-white p-6 shadow mb-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold">Recent Orders</h2>
-          <button className="text-sm text-blue-600 hover:text-blue-800">
-            View all →
-          </button>
+          
         </div>
         <div className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -134,9 +132,7 @@ const RecentOrders = ({ orders, loading }) => {
             {orders?.length || 0} orders
           </p>
         </div>
-        <button className="text-sm text-blue-600 hover:text-blue-800 mt-2 sm:mt-0">
-          View all →
-        </button>
+        
       </div>
       
       <div className="overflow-x-auto mb-6">

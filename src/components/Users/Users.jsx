@@ -27,7 +27,6 @@ import {
 const Users = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -44,27 +43,39 @@ const Users = () => {
   const [error, setError] = useState(null);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
   const statusOptions = ["All", "Active", "Inactive"];
-  const roleOptions = ["All", "Admin", "Manager", "Editor", "Viewer"];
+  const roleOptions = ["All", "Admin","User"];
 
-  // Fetch users and statistics
+  // Debounce search term to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch users and statistics - now triggered by all filter changes
   const fetchUsersAndStats = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Prepare query parameters
+      // Prepare query parameters for API
       const params = {
         page: currentPage,
         limit: itemsPerPage,
-        ...(searchTerm && { search: searchTerm }),
-        ...(statusFilter !== "All" && { status: statusFilter }),
-        ...(roleFilter !== "All" && { role: roleFilter }),
+        ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
+        ...(statusFilter !== "All" && { status: statusFilter.toLowerCase() }), // Convert to lowercase for API
+        ...(roleFilter !== "All" && { role: roleFilter.toLowerCase() }), // Convert to lowercase for API
         ...(sortConfig.key && {
-          sortField: sortConfig.key.toUpperCase(),
+          sortField: sortConfig.key,
           sortDirection: sortConfig.direction
         }),
       };
+
+      console.log("API params:", params); // Debug log
 
       // Fetch users
       const usersResponse = await getUsers(params);
@@ -89,7 +100,6 @@ const Users = () => {
           }));
 
           setUsers(transformedUsers);
-          setFilteredUsers(transformedUsers);
           setTotalPages(pagination?.totalPages || 1);
           setTotalItems(pagination?.totalItems || transformedUsers.length);
 
@@ -100,6 +110,19 @@ const Users = () => {
               activeUsers: statistics.activeUsers || 0,
               adminUsers: statistics.adminUsers || 0,
               newThisMonth: statistics.newThisMonth || 0,
+            });
+          } else {
+            // Fallback stats calculation
+            setStats({
+              totalUsers: transformedUsers.length,
+              activeUsers: transformedUsers.filter(u => u.status === "Active").length,
+              adminUsers: transformedUsers.filter(u => u.role === "Admin").length,
+              newThisMonth: transformedUsers.filter(u => {
+                const joinDate = new Date(u.joinDate);
+                const now = new Date();
+                return joinDate.getMonth() === now.getMonth() &&
+                  joinDate.getFullYear() === now.getFullYear();
+              }).length,
             });
           }
         }
@@ -115,7 +138,6 @@ const Users = () => {
       if (savedUsers) {
         const parsedUsers = JSON.parse(savedUsers);
         setUsers(parsedUsers);
-        setFilteredUsers(parsedUsers);
         setTotalItems(parsedUsers.length);
 
         // Calculate fallback stats
@@ -137,78 +159,10 @@ const Users = () => {
     }
   };
 
-  // Initial data fetch
+  // Fetch data when filters, pagination, or sorting changes
   useEffect(() => {
     fetchUsersAndStats();
-  }, [currentPage, sortConfig]);
-
-  // Filter users locally when search/filters change
-  useEffect(() => {
-    let result = users;
-
-    // Apply search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (user) =>
-          user.name.toLowerCase().includes(term) ||
-          user.email.toLowerCase().includes(term) ||
-          user.phone.toLowerCase().includes(term) ||
-          user.role.toLowerCase().includes(term)
-      );
-    }
-
-    // Apply status filter
-    if (statusFilter !== "All") {
-      result = result.filter((user) => user.status === statusFilter);
-    }
-
-    // Apply role filter
-    if (roleFilter !== "All") {
-      result = result.filter((user) => user.role === roleFilter);
-    }
-
-    // Apply sorting
-    if (sortConfig.key) {
-      result = [...result].sort((a, b) => {
-        let aValue = a[sortConfig.key];
-        let bValue = b[sortConfig.key];
-
-        // Handle string comparison
-        if (typeof aValue === "string") {
-          return sortConfig.direction === "asc"
-            ? aValue.localeCompare(bValue)
-            : bValue.localeCompare(aValue);
-        }
-
-        // Handle date comparison
-        if (sortConfig.key === "joinDate") {
-          aValue = new Date(aValue);
-          bValue = new Date(bValue);
-          return sortConfig.direction === "asc"
-            ? aValue - bValue
-            : bValue - aValue;
-        }
-
-        // Handle number comparison
-        if (typeof aValue === "number") {
-          return sortConfig.direction === "asc"
-            ? aValue - bValue
-            : bValue - aValue;
-        }
-
-        return 0;
-      });
-    }
-
-    setFilteredUsers(result);
-    setCurrentPage(1);
-  }, [searchTerm, statusFilter, roleFilter, users, sortConfig]);
-
-  // Refresh data when filters change
-  const handleFilterChange = () => {
-    fetchUsersAndStats();
-  };
+  }, [currentPage, sortConfig, debouncedSearchTerm, statusFilter, roleFilter]);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
@@ -264,15 +218,15 @@ const Users = () => {
     setStatusFilter("All");
     setRoleFilter("All");
     setSortConfig({ key: "id", direction: "asc" });
-    fetchUsersAndStats();
+    setCurrentPage(1);
   };
 
   // Calculate pagination for current view
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
 
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
@@ -314,7 +268,7 @@ const Users = () => {
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Users</h1>
                   <p className="text-gray-600">
-                    Manage user accounts and permissions ({filteredUsers.length}{" "}
+                    Manage user accounts and permissions ({totalItems}{" "}
                     users found)
                   </p>
                 </div>
@@ -401,11 +355,6 @@ const Users = () => {
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
-                          handleFilterChange();
-                        }
-                      }}
                     />
                   </div>
                 </div>
@@ -418,7 +367,7 @@ const Users = () => {
                       value={statusFilter}
                       onChange={(e) => {
                         setStatusFilter(e.target.value);
-                        handleFilterChange();
+                        setCurrentPage(1); // Reset to first page when filter changes
                       }}
                     >
                       {statusOptions.map((option) => (
@@ -435,7 +384,7 @@ const Users = () => {
                       value={roleFilter}
                       onChange={(e) => {
                         setRoleFilter(e.target.value);
-                        handleFilterChange();
+                        setCurrentPage(1); // Reset to first page when filter changes
                       }}
                     >
                       {roleOptions.map((option) => (
@@ -524,7 +473,7 @@ const Users = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {currentUsers.length === 0 ? (
+                    {users.length === 0 ? (
                       <tr>
                         <td colSpan="6" className="px-6 py-12 text-center">
                           <div className="text-gray-500">
@@ -543,7 +492,7 @@ const Users = () => {
                         </td>
                       </tr>
                     ) : (
-                      currentUsers.map((user) => (
+                      users.map((user) => (
                         <tr
                           key={user.id}
                           className="hover:bg-gray-50 transition-colors"
@@ -645,15 +594,15 @@ const Users = () => {
             </div>
 
             {/* Pagination */}
-            {filteredUsers.length > 0 && (
+            {users.length > 0 && (
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white rounded-lg shadow p-4">
                 <div className="text-sm text-gray-700">
                   Showing{" "}
                   <span className="font-medium">{indexOfFirstItem + 1}</span> to{" "}
                   <span className="font-medium">
-                    {Math.min(indexOfLastItem, filteredUsers.length)}
+                    {Math.min(indexOfLastItem, totalItems)}
                   </span>{" "}
-                  of <span className="font-medium">{filteredUsers.length}</span>{" "}
+                  of <span className="font-medium">{totalItems}</span>{" "}
                   users
                 </div>
 

@@ -164,6 +164,60 @@ const deleteFrame = async (id) => {
               </div>
             </div>
 
+            {/* Quick Stats */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <RectangleStackIcon className="h-8 w-8 text-blue-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Total Frames</div>
+                    <div className="text-2xl font-bold mt-1">{stats.totalFrames}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <ScaleIcon className="h-8 w-8 text-purple-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Avg. Weight</div>
+                    <div className="text-2xl font-bold mt-1">{stats.avgWeight}g</div>
+                  </div>
+                </div>
+                <div className="text-sm text-blue-600 mt-2">
+                  Based on all frames
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <BeakerIcon className="h-8 w-8 text-green-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Materials</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {[...new Set(frames.map(f => f.material))].length}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  Unique materials
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <CurrencyDollarIcon className="h-8 w-8 text-yellow-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Avg. Discount</div>
+                    <div className="text-2xl font-bold mt-1">{stats.avgDiscount}%</div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  Average discount rate
+                </div>
+              </div>
+            </div>
+
             {/* Search and Filters */}
             <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
@@ -443,59 +497,7 @@ const deleteFrame = async (id) => {
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <RectangleStackIcon className="h-8 w-8 text-blue-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Total Frames</div>
-                    <div className="text-2xl font-bold mt-1">{stats.totalFrames}</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <ScaleIcon className="h-8 w-8 text-purple-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Avg. Weight</div>
-                    <div className="text-2xl font-bold mt-1">{stats.avgWeight}g</div>
-                  </div>
-                </div>
-                <div className="text-sm text-blue-600 mt-2">
-                  Based on all frames
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <BeakerIcon className="h-8 w-8 text-green-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Materials</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {[...new Set(frames.map(f => f.material))].length}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Unique materials
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <CurrencyDollarIcon className="h-8 w-8 text-yellow-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Avg. Discount</div>
-                    <div className="text-2xl font-bold mt-1">{stats.avgDiscount}%</div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Average discount rate
-                </div>
-              </div>
-            </div>
+            
           </div>
         </main>
       </div>

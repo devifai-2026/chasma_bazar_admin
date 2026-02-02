@@ -207,6 +207,66 @@ const Banner = () => {
               </div>
             </div>
 
+            {/* Quick Stats */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <PhotoIcon className="h-8 w-8 text-blue-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Total Banners</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.totalBanners}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <CheckCircleIcon className="h-8 w-8 text-green-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">
+                      Currently Active
+                    </div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.currentBanners}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-green-600 mt-2">
+                  Showing on site now
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <CheckCircleIcon className="h-8 w-8 text-amber-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Active (Total)</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.activeBanners}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  Including scheduled
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <XCircleIcon className="h-8 w-8 text-red-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Expired</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.expiredBanners}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">Past end date</div>
+              </div>
+            </div>
+
             {/* Search and Filters */}
             <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
@@ -457,65 +517,7 @@ const Banner = () => {
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <PhotoIcon className="h-8 w-8 text-blue-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Total Banners</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {stats.totalBanners}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <CheckCircleIcon className="h-8 w-8 text-green-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">
-                      Currently Active
-                    </div>
-                    <div className="text-2xl font-bold mt-1">
-                      {stats.currentBanners}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-green-600 mt-2">
-                  Showing on site now
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <CheckCircleIcon className="h-8 w-8 text-amber-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Active (Total)</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {stats.activeBanners}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Including scheduled
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <XCircleIcon className="h-8 w-8 text-red-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Expired</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {stats.expiredBanners}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">Past end date</div>
-              </div>
-            </div>
+            
           </div>
         </main>
       </div>

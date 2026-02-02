@@ -184,6 +184,44 @@ const Products = () => {
               </div>
             </div>
 
+            {/* Quick Stats */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="text-sm text-gray-600">Total Products</div>
+                <div className="text-2xl font-bold mt-2">{pagination.total}</div>
+                <div className="text-sm text-green-600 mt-1">
+                  Total in database
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="text-sm text-gray-600">Out of Stock</div>
+                <div className="text-2xl font-bold mt-2">
+                  {products.filter((p) => (p.stock || 0) === 0).length}
+                </div>
+                <div className="text-sm text-red-600 mt-1">
+                  Needs restock
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="text-sm text-gray-600">Low Stock</div>
+                <div className="text-2xl font-bold mt-2">
+                  {products.filter((p) => (p.stock || 0) > 0 && (p.stock || 0) < 20).length}
+                </div>
+                <div className="text-sm text-yellow-600 mt-1">
+                  Need attention
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="text-sm text-gray-600">Avg. Price</div>
+                <div className="text-2xl font-bold mt-2">
+                  ₹{calculateAveragePrice()}
+                </div>
+                <div className="text-sm text-blue-600 mt-1">
+                  Current page average
+                </div>
+              </div>
+            </div>
+
             {/* Search and Filters */}
             <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
@@ -466,43 +504,7 @@ const Products = () => {
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="text-sm text-gray-600">Total Products</div>
-                <div className="text-2xl font-bold mt-2">{pagination.total}</div>
-                <div className="text-sm text-green-600 mt-1">
-                  Total in database
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="text-sm text-gray-600">Out of Stock</div>
-                <div className="text-2xl font-bold mt-2">
-                  {products.filter((p) => (p.stock || 0) === 0).length}
-                </div>
-                <div className="text-sm text-red-600 mt-1">
-                  Needs restock
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="text-sm text-gray-600">Low Stock</div>
-                <div className="text-2xl font-bold mt-2">
-                  {products.filter((p) => (p.stock || 0) > 0 && (p.stock || 0) < 20).length}
-                </div>
-                <div className="text-sm text-yellow-600 mt-1">
-                  Need attention
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="text-sm text-gray-600">Avg. Price</div>
-                <div className="text-2xl font-bold mt-2">
-                  ₹{calculateAveragePrice()}
-                </div>
-                <div className="text-sm text-blue-600 mt-1">
-                  Current page average
-                </div>
-              </div>
-            </div>
+            
           </div>
         </main>
       </div>

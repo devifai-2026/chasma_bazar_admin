@@ -170,6 +170,64 @@ const Companies = () => {
               </div>
             )}
 
+             {/* Quick Stats */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <BuildingOfficeIcon className="h-8 w-8 text-blue-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Total Companies</div>
+                    <div className="text-2xl font-bold mt-1">{stats.totalCompanies}</div>
+                  </div>
+                </div>
+                <div className="text-sm text-blue-600 mt-2">
+                  From backend database
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <StarIcon className="h-8 w-8 text-yellow-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Avg. Rating</div>
+                    <div className="text-2xl font-bold mt-1">{stats.avgRating}</div>
+                  </div>
+                </div>
+                <div className="text-sm text-blue-600 mt-2">
+                  Based on all companies
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <GlobeAltIcon className="h-8 w-8 text-green-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Established</div>
+                    <div className="text-2xl font-bold mt-1">{stats.establishedCompanies}</div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  Founded before 2000
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <MapPinIcon className="h-8 w-8 text-purple-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Cities</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {stats.uniqueCities}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  Operating cities
+                </div>
+              </div>
+            </div>
+
+
             {/* Search and Filters */}
             <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2">
@@ -349,7 +407,7 @@ const Companies = () => {
                                 {company.address?.street || 'N/A'}
                               </div>
                               <div className="text-sm text-gray-500">
-                                PIN: {company.pinCode || 'N/A'}
+                                PIN: {company?.address?.pinCode || 'N/A'}
                               </div>
                             </div>
                           </td>
@@ -487,63 +545,7 @@ const Companies = () => {
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <BuildingOfficeIcon className="h-8 w-8 text-blue-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Total Companies</div>
-                    <div className="text-2xl font-bold mt-1">{stats.totalCompanies}</div>
-                  </div>
-                </div>
-                <div className="text-sm text-blue-600 mt-2">
-                  From backend database
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <StarIcon className="h-8 w-8 text-yellow-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Avg. Rating</div>
-                    <div className="text-2xl font-bold mt-1">{stats.avgRating}</div>
-                  </div>
-                </div>
-                <div className="text-sm text-blue-600 mt-2">
-                  Based on all companies
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <GlobeAltIcon className="h-8 w-8 text-green-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Established</div>
-                    <div className="text-2xl font-bold mt-1">{stats.establishedCompanies}</div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Founded before 2000
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <MapPinIcon className="h-8 w-8 text-purple-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Cities</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {stats.uniqueCities}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Operating cities
-                </div>
-              </div>
-            </div>
-
+           
           
            
           </div>
