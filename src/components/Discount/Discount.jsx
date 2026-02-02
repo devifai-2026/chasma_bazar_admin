@@ -319,11 +319,11 @@ const Discount = () => {
                 <option value="expired">Expired</option>
                 <option value="percentage">Percentage Discounts</option>
               </select>
-              <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+              {/* <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                 <FunnelIcon className="h-5 w-5 mr-2" />
                 More Filters
                 <ChevronDownIcon className="h-4 w-4 ml-2" />
-              </button>
+              </button> */}
             </div>
 
             {/* Discounts Table */}

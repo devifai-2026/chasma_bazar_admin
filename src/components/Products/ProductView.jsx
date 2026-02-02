@@ -12,7 +12,15 @@ import {
   ArrowTrendingUpIcon,
   ClipboardDocumentListIcon,
   ExclamationTriangleIcon,
-  PhotoIcon
+  PhotoIcon,
+  BuildingOfficeIcon,
+  CalendarIcon,
+  ShieldCheckIcon,
+  StarIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  MapPinIcon,
+  CheckBadgeIcon
 } from '@heroicons/react/24/outline';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
@@ -24,15 +32,12 @@ const ProductView = () => {
   const [product, setProduct] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [salesData, setSalesData] = useState([]);
-  const [stockHistory, setStockHistory] = useState([]);
   const [selectedImage, setSelectedImage] = useState(0);
   const [imageGallery, setImageGallery] = useState([]);
+  const [showAllFeatures, setShowAllFeatures] = useState(false);
 
   useEffect(() => {
     loadProduct();
-    generateSalesData();
-    generateStockHistory();
   }, [id]);
 
   const loadProduct = async () => {
@@ -61,13 +66,20 @@ const ProductView = () => {
           dimensions: apiData.dimensions,
           weight: apiData.weight,
           features: [
-            `Shape: ${apiData.frameType?.shape || 'N/A'}`,
+            `Shape: ${apiData.frameType?.name || 'N/A'}`,
             `Material: ${apiData.material || 'N/A'}`,
             `Type: ${apiData.specsType || 'N/A'}`,
-            `Model: ${apiData.model || 'N/A'}`
+            `Model: ${apiData.model || 'N/A'}`,
+            `Size: ${apiData.frameType?.size || 'N/A'}`,
+            `Width: ${apiData.frameType?.width || 'N/A'}`,
+            `Age Group: ${apiData.ageGroup || 'N/A'}`,
+            `Weight: ${apiData.weight ? `${apiData.weight}g` : 'N/A'}`,
+            `Specs Type: ${apiData.specsType || 'N/A'}`,
           ].filter(f => !f.includes('N/A')),
-          supplier: 'Not specified',
-          supplierContact: 'N/A',
+          supplier: apiData.company?.name || 'Not specified',
+          supplierContact: apiData.company?.phone || 'N/A',
+          supplierEmail: apiData.company?.email || 'N/A',
+          supplierAddress: apiData.company?.address || {},
           revenue: `₹${apiData.price * (apiData.stock || 0)}`,
           totalSold: 0,
           margin: '0%',
@@ -80,7 +92,17 @@ const ProductView = () => {
           warranty: apiData.warranty,
           type: apiData.type,
           specsType: apiData.specsType,
-          model: apiData.model
+          model: apiData.model,
+          material: apiData.material,
+          ageGroup: apiData.ageGroup,
+          isFeatured: apiData.isFeatured,
+          createdAt: apiData.createdAt,
+          company: apiData.company,
+          pricing: response.pricing,
+          tags: apiData.tags,
+          totalRatings: apiData.totalRatings,
+          productDiscount: apiData.productDiscount,
+          frameDiscount: apiData.frameType?.frameDiscount
         };
         
         setProduct(productData);
@@ -92,7 +114,12 @@ const ProductView = () => {
             if (color.images && Array.isArray(color.images)) {
               color.images.forEach(img => {
                 if (img.url) {
-                  imageGalleryArray.push(img.url);
+                  imageGalleryArray.push({
+                    url: img.url,
+                    type: img.type || 'normal',
+                    color: color.color,
+                    hexCode: color.hexCode
+                  });
                 }
               });
             }
@@ -101,7 +128,12 @@ const ProductView = () => {
         
         // Fallback if no images found
         if (imageGalleryArray.length === 0) {
-          imageGalleryArray.push('https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=600&h=400&fit=crop');
+          imageGalleryArray.push({
+            url: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=600&h=400&fit=crop',
+            type: 'normal',
+            color: 'Default',
+            hexCode: '#000000'
+          });
         }
         
         setImageGallery(imageGalleryArray);
@@ -117,28 +149,9 @@ const ProductView = () => {
     }
   };
 
-  const generateSalesData = () => {
-    const data = [
-      { month: 'Jan', sales: 45 },
-      { month: 'Feb', sales: 52 },
-      { month: 'Mar', sales: 38 },
-      { month: 'Apr', sales: 61 },
-      { month: 'May', sales: 55 },
-      { month: 'Jun', sales: 48 },
-    ];
-    setSalesData(data);
-  };
+  
 
-  const generateStockHistory = () => {
-    const history = [
-      { date: '2024-01-15', action: 'Added', quantity: 100, user: 'Admin' },
-      { date: '2024-02-10', action: 'Sold', quantity: -25, user: 'System' },
-      { date: '2024-02-28', action: 'Sold', quantity: -18, user: 'System' },
-      { date: '2024-03-05', action: 'Restocked', quantity: 30, user: 'Admin' },
-      { date: '2024-03-10', action: 'Sold', quantity: -20, user: 'System' },
-    ];
-    setStockHistory(history);
-  };
+  
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
@@ -154,7 +167,7 @@ const ProductView = () => {
     return 'N/A';
   };
 
-  // Helper function to format weight object
+  // Helper function to format weight
   const formatWeight = (weight) => {
     if (!weight && weight !== 0) return 'N/A';
     if (typeof weight === 'string') return weight;
@@ -165,20 +178,30 @@ const ProductView = () => {
     return 'N/A';
   };
 
-  const restockProduct = () => {
-    const quantity = prompt('Enter quantity to restock:', '50');
-    if (quantity && !isNaN(quantity)) {
-      const updatedProduct = {
-        ...product,
-        stock: product.stock + parseInt(quantity),
-        status: product.stock + parseInt(quantity) > product.minStock ? 'In Stock' : 'Low Stock'
-      };
-      setProduct(updatedProduct);
-      
-      // In a real app, you would update localStorage here
-      alert(`Restocked ${quantity} units successfully.`);
-    }
+  // Helper function to format address
+  const formatAddress = (address) => {
+    if (!address) return 'N/A';
+    const parts = [];
+    if (address.street) parts.push(address.street);
+    if (address.city) parts.push(address.city);
+    if (address.state) parts.push(address.state);
+    if (address.country) parts.push(address.country);
+    if (address.pinCode) parts.push(address.pinCode);
+    return parts.join(', ') || 'N/A';
   };
+
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  
 
   if (loading) {
     return (
@@ -215,6 +238,8 @@ const ProductView = () => {
     );
   }
 
+  const visibleFeatures = showAllFeatures ? product.features : product.features.slice(0, 4);
+
   return (
     <div className="flex h-screen">
       <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
@@ -248,9 +273,10 @@ const ProductView = () => {
                     Back to Products
                   </Link>
                   
-                  {product.isDummy && (
-                    <span className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full">
-                      Demo Product
+                  {product.isFeatured && (
+                    <span className="px-3 py-1 text-sm bg-purple-100 text-purple-800 rounded-full flex items-center">
+                      <StarIcon className="h-4 w-4 mr-1" />
+                      Featured
                     </span>
                   )}
                 </div>
@@ -288,45 +314,41 @@ const ProductView = () => {
                 </div>
               </div>
 
-              {/* <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total Revenue</p>
-                    <p className="text-2xl font-bold mt-1">{product.revenue || '₹0.00'}</p>
+                    <p className="text-sm text-gray-600">Pricing</p>
+                    <p className="text-2xl font-bold mt-1">₹{product.price}</p>
                   </div>
                   <CurrencyRupeeIcon className="h-8 w-8 text-green-600" />
                 </div>
                 <div className="mt-4">
-                  <div className="flex items-center text-sm">
-                    <ArrowTrendingUpIcon className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-green-600">+12.5% from last month</span>
-                  </div>
-                  <p className="text-gray-600 text-sm mt-1">Total Sold: {product.totalSold || 0} units</p>
-                </div>
-              </div> */}
-
-              {/* <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Profit Margin</p>
-                    <p className="text-2xl font-bold mt-1">{product.margin || '0%'}</p>
-                  </div>
-                  <ChartPieIcon className="h-8 w-8 text-purple-600" />
-                </div>
-                <div className="mt-4">
-                  <div className="text-sm">
-                    <span className="text-gray-600">Cost: {product.cost || 'N/A'}</span>
-                    <span className="mx-2">•</span>
-                    <span className="text-gray-600">Price: {product.price}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div 
-                      className="h-2 rounded-full bg-purple-500"
-                      style={{ width: product.margin ? parseFloat(product.margin) + '%' : '0%' }}
-                    ></div>
+                  <div className="text-sm space-y-1">
+                    {product.pricing && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Original:</span>
+                          <span className="line-through">₹{product.pricing.originalPrice}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Discount:</span>
+                          <span className="text-green-600">₹{product.pricing.totalDiscount}</span>
+                        </div>
+                        <div className="flex justify-between font-medium">
+                          <span className="text-gray-700">Final:</span>
+                          <span className="text-gray-900">₹{product.pricing.finalPrice}</span>
+                        </div>
+                      </>
+                    )}
+                    {product.productDiscount > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Product Discount:</span>
+                        <span className="text-orange-600">{product.productDiscount}%</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div> */}
+              </div>
 
               {/* <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center justify-between">
@@ -339,6 +361,8 @@ const ProductView = () => {
                 <div className="mt-4">
                   <div className="flex items-center text-sm">
                     <span className="text-gray-600">{product.reviews || 0} reviews</span>
+                    <span className="mx-2">•</span>
+                    <span className="text-gray-600">{product.totalRatings || 0} ratings</span>
                   </div>
                   <div className="flex mt-1">
                     {[...Array(5)].map((_, i) => (
@@ -354,6 +378,29 @@ const ProductView = () => {
                   </div>
                 </div>
               </div> */}
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Warranty</p>
+                    <p className="text-2xl font-bold mt-1">
+                      {product.warranty?.duration || '0'} {product.warranty?.durationType || 'months'}
+                    </p>
+                  </div>
+                  <ShieldCheckIcon className="h-8 w-8 text-blue-600" />
+                </div>
+                <div className="mt-4">
+                  <div className="text-sm">
+                    <span className="text-gray-600">{product.warranty?.description || 'Standard warranty'}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                    <div 
+                      className="h-2 rounded-full bg-blue-500"
+                      style={{ width: '100%' }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Main Content with Image Gallery */}
@@ -370,15 +417,35 @@ const ProductView = () => {
                     <div className="mb-6">
                       <div className="bg-gray-100 rounded-lg overflow-hidden h-96 flex items-center justify-center">
                         {imageGallery.length > 0 ? (
-                          <img 
-                            src={imageGallery[selectedImage]} 
-                            alt={`${product.name} - View ${selectedImage + 1}`}
-                            className="w-full h-full object-contain"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=600&h=400&fit=crop';
-                            }}
-                          />
+                          <div className="relative w-full h-full">
+                            <img 
+                              src={imageGallery[selectedImage].url} 
+                              alt={`${product.name} - ${imageGallery[selectedImage].color} - ${imageGallery[selectedImage].type}`}
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=600&h=400&fit=crop';
+                              }}
+                            />
+                            <div className="absolute top-4 right-4 flex space-x-2">
+                              <span className={`px-3 py-1 text-xs rounded-full ${
+                                imageGallery[selectedImage].type === '3d' 
+                                  ? 'bg-purple-100 text-purple-800' 
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {imageGallery[selectedImage].type.toUpperCase()}
+                              </span>
+                              <span 
+                                className="px-3 py-1 text-xs rounded-full"
+                                style={{ 
+                                  backgroundColor: `${imageGallery[selectedImage].hexCode}20`,
+                                  color: imageGallery[selectedImage].hexCode
+                                }}
+                              >
+                                {imageGallery[selectedImage].color}
+                              </span>
+                            </div>
+                          </div>
                         ) : (
                           <div className="text-center text-gray-500">
                             <PhotoIcon className="h-20 w-20 mx-auto text-gray-300 mb-4" />
@@ -403,7 +470,7 @@ const ProductView = () => {
                               }`}
                             >
                               <img 
-                                src={img} 
+                                src={img.url} 
                                 alt={`Thumbnail ${index + 1}`}
                                 className="h-20 w-full object-cover"
                                 onError={(e) => {
@@ -414,28 +481,43 @@ const ProductView = () => {
                               {selectedImage === index && (
                                 <div className="absolute inset-0 bg-blue-500 bg-opacity-20"></div>
                               )}
+                              <div className="absolute bottom-1 left-1">
+                                <span className={`px-1 text-[10px] rounded ${
+                                  img.type === '3d' 
+                                    ? 'bg-purple-100 text-purple-800' 
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {img.type}
+                                </span>
+                              </div>
                             </button>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* Image Info */}
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium text-gray-900">Image Details</h3>
-                          <p className="text-sm text-gray-600">
-                            Showing {selectedImage + 1} of {imageGallery.length} images
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-500">ID: {product.id}</span>
-                          <span className="text-sm text-gray-500">|</span>
-                          <span className="text-sm text-gray-500">SKU: {product.sku || 'N/A'}</span>
+                    {/* Color Information */}
+                    {product.colors && product.colors.length > 0 && (
+                      <div className="mt-6 pt-6 border-t border-gray-200">
+                        <h3 className="font-medium text-gray-900 mb-3">Available Colors</h3>
+                        <div className="flex flex-wrap gap-3">
+                          {product.colors.map((color, index) => (
+                            <div 
+                              key={index}
+                              className="flex items-center space-x-2"
+                            >
+                              <div 
+                                className="h-6 w-6 rounded-full border border-gray-300"
+                                style={{ backgroundColor: color.hexCode }}
+                                title={color.color}
+                              />
+                              <span className="text-sm text-gray-600">{color.color}</span>
+                              <span className="text-xs text-gray-500">({color.hexCode})</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
@@ -465,23 +547,25 @@ const ProductView = () => {
                           </div>
                         </div>
                         <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                          <div className="flex items-center">
-                            <span className="text-gray-600">{product.brand || 'Unknown'}</span>
-                          </div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Product Type</label>
+                          <div className="text-gray-600 capitalize">{product.type || 'N/A'}</div>
+                        </div>
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Age Group</label>
+                          <div className="text-gray-600 capitalize">{product.ageGroup || 'N/A'}</div>
                         </div>
                       </div>
                       
                       <div>
                         <div className="mb-4">
                           <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
-                          <div className="font-mono text-gray-900">{product.sku || `PROD-${product.id.toString().padStart(5, '0')}`}</div>
+                          <div className="font-mono text-gray-900">{product.sku || `PROD-${product.id.slice(-5)}`}</div>
                         </div>
                         <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                          <div className="flex items-center">
-                            <CubeIcon className="h-4 w-4 text-gray-400 mr-2" />
-                            <span className="text-gray-600">{product.location || 'Not specified'}</span>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Frame Type</label>
+                          <div className="text-gray-600">
+                            {product.frameType?.name || 'N/A'} 
+                            {product.frameType?.size && ` (${product.frameType.size})`}
                           </div>
                         </div>
                         <div className="mb-4">
@@ -492,19 +576,53 @@ const ProductView = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">Weight</label>
                           <div className="text-gray-600">{formatWeight(product.weight)}</div>
                         </div>
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Created Date</label>
+                          <div className="text-gray-600 flex items-center">
+                            <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
+                            {formatDate(product.createdAt)}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
                     {/* Features */}
                     {product.features && product.features.length > 0 && (
                       <div className="mt-6 pt-6 border-t border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Features</h3>
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="text-lg font-semibold text-gray-900">Features & Specifications</h3>
+                          {product.features.length > 4 && (
+                            <button
+                              onClick={() => setShowAllFeatures(!showAllFeatures)}
+                              className="text-sm text-blue-600 hover:text-blue-800"
+                            >
+                              {showAllFeatures ? 'Show Less' : `Show All (${product.features.length})`}
+                            </button>
+                          )}
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {product.features.map((feature, index) => (
+                          {visibleFeatures.map((feature, index) => (
                             <div key={index} className="flex items-center">
-                              <div className="h-2 w-2 bg-blue-500 rounded-full mr-3"></div>
+                              <CheckBadgeIcon className="h-4 w-4 text-green-500 mr-3 flex-shrink-0" />
                               <span className="text-gray-600">{feature}</span>
                             </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tags */}
+                    {product.tags && product.tags.length > 0 && (
+                      <div className="mt-6 pt-6 border-t border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Tags</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {product.tags.map((tag, index) => (
+                            <span 
+                              key={index}
+                              className="px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full"
+                            >
+                              {tag}
+                            </span>
                           ))}
                         </div>
                       </div>
@@ -515,79 +633,134 @@ const ProductView = () => {
 
               {/* Right Column - Stats & Actions */}
               <div className="space-y-6">
-                {/* Sales Performance Card */}
+                {/* Company/Supplier Information Card */}
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                   <div className="px-6 py-4 border-b border-gray-200">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-lg font-semibold text-gray-900">Sales Performance</h2>
-                      <select className="text-sm border border-gray-300 rounded-lg px-3 py-1">
-                        <option>Last 6 months</option>
-                        <option>Last 3 months</option>
-                        <option>Last month</option>
-                        <option>This year</option>
-                      </select>
+                      <h2 className="text-lg font-semibold text-gray-900">Company Information</h2>
+                      {product.company?.logo?.url && (
+                        <img 
+                          src={product.company.logo.url} 
+                          alt={product.company.name}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      )}
                     </div>
                   </div>
                   <div className="p-6">
-                    <div className="flex items-center justify-between mb-6">
-                      <div>
-                        <p className="text-sm text-gray-600">Average Monthly Sales</p>
-                        <p className="text-2xl font-bold">48 units</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center text-green-600">
-                          <ArrowTrendingUpIcon className="h-5 w-5 mr-1" />
-                          <span>+15.2% growth</span>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">Compared to last period</p>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                      <div className="text-gray-900 font-medium flex items-center">
+                        <BuildingOfficeIcon className="h-5 w-5 mr-2 text-gray-400" />
+                        {product.company?.name || 'Not specified'}
                       </div>
                     </div>
                     
-                    <div className="space-y-4">
-                      {salesData.map((item, index) => (
-                        <div key={index} className="flex items-center">
-                          <div className="w-16 text-sm text-gray-600">{item.month}</div>
-                          <div className="flex-1">
-                            <div className="w-full bg-gray-200 rounded-full h-4">
-                              <div 
-                                className="h-4 rounded-full bg-blue-500"
-                                style={{ width: `${(item.sales / 70) * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                          <div className="w-16 text-right text-sm font-medium">{item.sales} units</div>
+                    {product.company?.email && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <div className="text-gray-600 flex items-center">
+                          <EnvelopeIcon className="h-4 w-4 mr-2 text-gray-400" />
+                          {product.company.email}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                      </div>
+                    )}
 
-                {/* Supplier Information Card */}
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold text-gray-900">Supplier Information</h2>
-                  </div>
-                  <div className="p-6">
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
-                      <div className="text-gray-900 font-medium">{product.supplier || 'Not specified'}</div>
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Contact</label>
-                      <div className="text-gray-600">{product.supplierContact || 'N/A'}</div>
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Lead Time</label>
-                      <div className="text-gray-600">5-7 business days</div>
-                    </div>
+                    {product.company?.phone && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                        <div className="text-gray-600 flex items-center">
+                          <PhoneIcon className="h-4 w-4 mr-2 text-gray-400" />
+                          {product.company.phone}
+                        </div>
+                      </div>
+                    )}
+
+                    {product.company?.address && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                        <div className="text-gray-600 flex items-start">
+                          <MapPinIcon className="h-4 w-4 mr-2 text-gray-400 mt-0.5 flex-shrink-0" />
+                          {formatAddress(product.company.address)}
+                        </div>
+                      </div>
+                    )}
+
+                    {product.company?.rating && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Company Rating</label>
+                        <div className="flex items-center">
+                          <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
+                          <span className="text-gray-900 font-medium">{product.company.rating}/5</span>
+                          <span className="text-gray-600 text-sm ml-2">({product.company.totalRatings} ratings)</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {product.company?.establishedYear && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Established Year</label>
+                        <div className="text-gray-600">{product.company.establishedYear}</div>
+                      </div>
+                    )}
+
                     <button className="w-full mt-4 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-center">
-                      View Supplier Details
+                      View Company Details
                     </button>
                   </div>
                 </div>
 
-                {/* Quick Actions Card */}
+                {/* Pricing Information Card */}
                 <div className="bg-white rounded-lg shadow overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h2 className="text-lg font-semibold text-gray-900">Pricing Details</h2>
+                  </div>
+                  <div className="p-6">
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Original Price:</span>
+                        <span className="font-medium">₹{product.pricing?.originalPrice || product.price}</span>
+                      </div>
+                      
+                      {product.productDiscount > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Product Discount:</span>
+                          <span className="text-orange-600 font-medium">{product.productDiscount}%</span>
+                        </div>
+                      )}
+
+                      {product.frameDiscount > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Frame Discount:</span>
+                          <span className="text-orange-600 font-medium">{product.frameDiscount}%</span>
+                        </div>
+                      )}
+
+                      {product.pricing?.totalDiscount > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Total Discount:</span>
+                          <span className="text-green-600 font-medium">₹{product.pricing.totalDiscount}</span>
+                        </div>
+                      )}
+
+                      <div className="pt-3 border-t border-gray-200">
+                        <div className="flex justify-between">
+                          <span className="text-gray-900 font-semibold">Final Price:</span>
+                          <span className="text-xl font-bold text-gray-900">₹{product.pricing?.finalPrice || product.price}</span>
+                        </div>
+                      </div>
+
+                      {product.pricing?.quantity && (
+                        <div className="text-sm text-gray-500 text-center">
+                          Quantity: {product.pricing.quantity}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Actions Card */}
+                {/* <div className="bg-white rounded-lg shadow overflow-hidden">
                   <div className="px-6 py-4 border-b border-gray-200">
                     <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
                   </div>
@@ -608,96 +781,15 @@ const ProductView = () => {
                         <ClipboardDocumentListIcon className="h-5 w-5 mr-2" />
                         Generate Report
                       </button>
+                      <button className="w-full flex items-center justify-center px-4 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50">
+                        <ShoppingCartIcon className="h-5 w-5 mr-2" />
+                        Create Order
+                      </button>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
-
-            {/* Additional Information & Alerts */}
-            {/* <div className="mt-8">
-              
-              <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
-                <div className="px-6 py-4 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900">Stock History</h2>
-                </div>
-                <div className="p-6">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead>
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Balance</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {stockHistory.map((item, index) => {
-                          const balance = stockHistory
-                            .slice(0, index + 1)
-                            .reduce((sum, hist) => sum + hist.quantity, 0);
-                          
-                          return (
-                            <tr key={index}>
-                              <td className="px-4 py-3 text-sm text-gray-900">{item.date}</td>
-                              <td className="px-4 py-3">
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  item.action === 'Sold' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                }`}>
-                                  {item.action}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-sm font-medium">
-                                <span className={item.action === 'Sold' ? 'text-red-600' : 'text-green-600'}>
-                                  {item.action === 'Sold' ? '-' : '+'}{Math.abs(item.quantity)}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-600">{item.user}</td>
-                              <td className="px-4 py-3 text-sm font-medium">{balance} units</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  <button className="w-full mt-4 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-center">
-                    View Full History
-                  </button>
-                </div>
-              </div>
-
-             
-              {(product.stock <= (product.minStock || 10) || product.status === 'Out of Stock') && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                  <div className="flex items-start">
-                    <ExclamationTriangleIcon className="h-6 w-6 text-red-600 mr-3 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-red-800 mb-1">
-                        {product.status === 'Out of Stock' ? 'Out of Stock Alert' : 'Low Stock Alert'}
-                      </h3>
-                      <p className="text-red-700 mb-3">
-                        {product.status === 'Out of Stock' 
-                          ? 'This product is currently out of stock. Consider restocking immediately.'
-                          : `Current stock (${product.stock} units) is below minimum threshold (${product.minStock || 10} units).`}
-                      </p>
-                      <div className="flex space-x-3">
-                        <button 
-                          onClick={restockProduct}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                        >
-                          Restock Now
-                        </button>
-                        <button className="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50">
-                          Notify Supplier
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div> */}
           </div>
         </main>
       </div>

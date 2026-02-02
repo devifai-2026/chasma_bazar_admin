@@ -208,7 +208,7 @@ const Products = () => {
                 <option value="Women">Women</option>
                 <option value="Kids">Kids</option>
               </select>
-              <select
+              {/* <select
                 value={filters.frameSize}
                 onChange={(e) => handleFilterChange('frameSize', e.target.value)}
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -218,7 +218,7 @@ const Products = () => {
                 <option value="medium">Medium</option>
                 <option value="large">Large</option>
                 <option value="xlarge">X-Large</option>
-              </select>
+              </select> */}
             </div>
 
             {/* Price Range Filter */}
@@ -237,7 +237,7 @@ const Products = () => {
                 onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              <select
+              {/* <select
                 value={filters.material}
                 onChange={(e) => handleFilterChange('material', e.target.value)}
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -248,7 +248,7 @@ const Products = () => {
                 <option value="Acetate">Acetate</option>
                 <option value="Titanium">Titanium</option>
                 <option value="Stainless Steel">Stainless Steel</option>
-              </select>
+              </select> */}
               <button
                 onClick={() => {
                   setFilters({

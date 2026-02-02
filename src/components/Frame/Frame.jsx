@@ -188,11 +188,11 @@ const deleteFrame = async (id) => {
                 <option value="discounted">Discounted (10%+)</option>
                 <option value="premium">Premium (₹1000+)</option>
               </select>
-              <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+              {/* <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                 <FunnelIcon className="h-5 w-5 mr-2" />
                 More Filters
                 <ChevronDownIcon className="h-4 w-4 ml-2" />
-              </button>
+              </button> */}
             </div>
 
             {/* Frames Table */}
