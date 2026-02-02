@@ -274,9 +274,7 @@ const MainContent = ({ sidebarOpen }) => {
           <div className="rounded-lg bg-white p-6 shadow">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Recent Users & Activity</h2>
-              <span className="text-xs text-gray-500">
-                {activeUsersCount} active now
-              </span>
+              
             </div>
 
 
@@ -319,12 +317,7 @@ const MainContent = ({ sidebarOpen }) => {
                           <p className="text-xs text-gray-500">{user.email}</p>
                         </div>
                       </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-medium ${user.isActive
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
-                        }`}>
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </span>
+                      
                     </div>
                   ))}
                 </div>

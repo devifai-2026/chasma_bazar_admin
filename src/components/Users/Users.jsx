@@ -20,7 +20,6 @@ import Navbar from "../Navbar";
 import { Link } from "react-router-dom";
 import {
   getUsers,
-  getUsersStatistics,
   deleteUser,
   toggleUserStatus,
 } from "../../Api/usersApi";
@@ -319,13 +318,6 @@ const Users = () => {
                     users found)
                   </p>
                 </div>
-                <Link
-                  to="/users/add"
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <PlusIcon className="h-5 w-5 mr-2" />
-                  Add User
-                </Link>
               </div>
             </div>
 

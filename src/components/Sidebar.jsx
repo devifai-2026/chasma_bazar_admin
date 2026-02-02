@@ -34,9 +34,12 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
     { name: 'PromoCode', icon: PromoCodeIcon, to: '/promoCode' }, // Changed icon
     { name: 'Banner', icon: PhotoIcon, to: '/banner' }, // Changed icon
     { name: 'Orders', icon: CreditCardIcon, to: '/orders' },
-    { name: 'Invoices', icon: ReceiptPercentIcon, to: '/invoices' },
     { name: 'Users', icon: UsersIcon, to: '/users' },
   ]
+
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  
 
   const handleToggle = () => {
     if (toggleSidebar) {
@@ -133,8 +136,8 @@ const Sidebar = ({ sidebarOpen, toggleSidebar, closeSidebar }) => {
               </div>
               {sidebarOpen && (
                 <div className="ml-3 flex-1">
-                  <p className="text-sm font-medium">Admin User</p>
-                  <p className="text-xs text-gray-500">admin@example.com</p>
+                  <p className="text-sm font-medium">{user?.username}</p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
                 </div>
               )}
             </div>

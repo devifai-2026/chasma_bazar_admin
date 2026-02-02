@@ -288,7 +288,7 @@ const ProductView = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
+              {/* <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Total Revenue</p>
@@ -303,9 +303,9 @@ const ProductView = () => {
                   </div>
                   <p className="text-gray-600 text-sm mt-1">Total Sold: {product.totalSold || 0} units</p>
                 </div>
-              </div>
+              </div> */}
 
-              <div className="bg-white rounded-lg shadow p-6">
+              {/* <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Profit Margin</p>
@@ -326,9 +326,9 @@ const ProductView = () => {
                     ></div>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
-              <div className="bg-white rounded-lg shadow p-6">
+              {/* <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Customer Rating</p>
@@ -353,7 +353,7 @@ const ProductView = () => {
                     ))}
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Main Content with Image Gallery */}
@@ -615,8 +615,8 @@ const ProductView = () => {
             </div>
 
             {/* Additional Information & Alerts */}
-            <div className="mt-8">
-              {/* Stock History Card - Full Width */}
+            {/* <div className="mt-8">
+              
               <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
                 <div className="px-6 py-4 border-b border-gray-200">
                   <h2 className="text-lg font-semibold text-gray-900">Stock History</h2>
@@ -668,7 +668,7 @@ const ProductView = () => {
                 </div>
               </div>
 
-              {/* Alerts & Notifications */}
+             
               {(product.stock <= (product.minStock || 10) || product.status === 'Out of Stock') && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-6">
                   <div className="flex items-start">
@@ -697,7 +697,7 @@ const ProductView = () => {
                   </div>
                 </div>
               )}
-            </div>
+            </div> */}
           </div>
         </main>
       </div>

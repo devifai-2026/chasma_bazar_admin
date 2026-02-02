@@ -431,16 +431,14 @@ const AddDiscount = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Applicable On *</label>
                     <select
+
                       name="applicableOn"
                       value={formData.applicableOn}
                       onChange={handleChange}
+                      disabled
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="global">Global (All Products)</option>
-                      <option value="product">Specific Products</option>
-                      <option value="frame">Specific Frames</option>
-                      <option value="company">Specific Companies</option>
-                      <option value="category">Specific Categories</option>
                     </select>
                   </div>
                 </div>

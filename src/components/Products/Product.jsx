@@ -334,13 +334,9 @@ const Products = () => {
                               <div className="flex items-center">
                                 <img
                                   className="h-10 w-10 rounded-lg object-cover"
-                                  src={product.image || "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=150&h=150&fit=crop"}
+                                  src={product.image || "N/A"}
                                   alt={product.name}
-                                  onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src =
-                                      "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=150&h=150&fit=crop";
-                                  }}
+                                  
                                 />
                                 <div className="ml-4">
                                   <div className="text-sm font-medium text-gray-900">
