@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useEffect } from 'react'
 import { 
   ArrowLeftIcon,
   RectangleStackIcon,
@@ -7,14 +8,20 @@ import {
   CurrencyDollarIcon,
   DocumentTextIcon,
   ExclamationCircleIcon,
-  ArrowsPointingOutIcon
+  ArrowsPointingOutIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline'
 import { Link, useNavigate } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
+import {createFrame} from '../../Api/frameapi'
+import {getAllDiscounts} from '../../Api/discountApi'
+import uploadToCloudinary from '../../utils/cloudinary'
+import toast from 'react-hot-toast'
 
 const AddFrame = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     shape: '',
@@ -27,13 +34,33 @@ const AddFrame = () => {
     templeLength: '',
     weight: '',
     price: '',
-    frameDiscount: ''
+    frameDiscount: '',
+    appliedDiscounts: '',
+    images: []
   })
+  const [imagePreviews, setImagePreviews] = useState([])
+  const [discounts, setDiscounts] = useState([])
   const [errors, setErrors] = useState({})
   const navigate = useNavigate()
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
   const closeSidebar = () => setSidebarOpen(false)
+
+  // Load discounts on component mount
+  useEffect(() => {
+    const loadDiscounts = async () => {
+      try {
+        const response = await getAllDiscounts()
+        // Adjust based on your API response structure
+        const discountsData = response.data || response
+        setDiscounts(Array.isArray(discountsData) ? discountsData : discountsData.discounts || [])
+      } catch (error) {
+        console.error('Error loading discounts:', error)
+        setDiscounts([])
+      }
+    }
+    loadDiscounts()
+  }, [])
 
   const handleChange = (e) => {
     const { name, value, type } = e.target
@@ -50,6 +77,14 @@ const AddFrame = () => {
         [name]: ''
       }))
     }
+  }
+
+  const handleDiscountChange = (e) => {
+    const selectedValue = e.target.value
+    setFormData(prev => ({
+      ...prev,
+      appliedDiscounts: selectedValue
+    }))
   }
 
   const validateForm = () => {
@@ -77,75 +112,95 @@ const AddFrame = () => {
     const validationErrors = validateForm()
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
+      toast.error('Please fix the errors in the form before submitting.')
       return
     }
 
-    // Prepare the frame data according to API structure
-    const newFrame = {
-      name: formData.name,
-      shape: formData.shape,
-      material: formData.material,
-      color: formData.color,
-      size: formData.size,
-      width: formData.width,
-      dimensions: formData.dimensions,
-      bridgeSize: formData.bridgeSize,
-      templeLength: formData.templeLength,
-      weight: parseFloat(formData.weight),
-      price: parseFloat(formData.price),
-      frameDiscount: parseFloat(formData.frameDiscount) || 0
-    }
-
+    setIsSubmitting(true)
+    
     try {
-      // Here you would make an API call to your backend
-      // For now, we'll simulate with localStorage
-      let existingFrames = []
-      try {
-        const storedFrames = localStorage.getItem('frames')
-        existingFrames = storedFrames ? JSON.parse(storedFrames) : []
-      } catch (error) {
-        console.error('Error reading from localStorage:', error)
-        existingFrames = []
+      // Upload images to Cloudinary
+      let images = []
+      if (formData.images.length > 0) {
+        const uploadPromises = formData.images.map((image) =>
+          uploadToCloudinary(image, { folder: 'chasma_bazar/frames' })
+        )
+        const uploadResponses = await Promise.all(uploadPromises)
+        images = uploadResponses.map((response) => ({
+          url: response.secure_url,
+          public_id: response.public_id,
+          alt: `${formData.name} image`
+        }))
       }
 
-      const updatedFrames = [newFrame, ...existingFrames]
-      localStorage.setItem('frames', JSON.stringify(updatedFrames))
+      // Prepare the frame data according to API structure
+      const frameData = {
+        name: formData.name,
+        shape: formData.shape,
+        material: formData.material,
+        color: formData.color,
+        size: formData.size,
+        width: formData.width,
+        dimensions: formData.dimensions,
+        bridgeSize: formData.bridgeSize,
+        templeLength: formData.templeLength,
+        weight: parseFloat(formData.weight),
+        price: parseFloat(formData.price),
+        frameDiscount: parseFloat(formData.frameDiscount) || 0,
+        images: images,
+        appliedDiscounts: formData.appliedDiscounts ? [formData.appliedDiscounts] : []
+      }
+
+      // Call the createFrame API
+      await createFrame(frameData)
+      
+      // Update localStorage to trigger refresh on the frame list page
       localStorage.setItem('frames_updated', Date.now().toString())
       
-      alert('Frame added successfully!')
+      toast.success('Frame added successfully!')
       navigate('/frame')
     } catch (error) {
       console.error('Error saving frame:', error)
-      alert('Error saving frame. Please try again.')
+      
+      // Handle specific error cases
+      if (error.response) {
+        // Server responded with error status
+        const errorMessage = error.response.data?.message || 'Server error occurred'
+        toast.error(`Error: ${errorMessage}`)
+      } else if (error.request) {
+        // Request was made but no response received
+        toast.error('No response from server. Please check your connection.')
+      } else {
+        // Something else happened
+        toast.error('Error saving frame. Please try again.')
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const shapes = [
-    'wayfarer',
-    'aviator',
     'round',
     'square',
     'rectangle',
     'oval',
     'cat-eye',
-    'butterfly',
-    'sports',
-    'browline',
+    'aviator',
+    'wayfarer',
     'clubmaster',
-    'geometric'
+    'geometric',
+    'other'
   ]
 
   const materials = [
-    'acetate',
-    'metal',
-    'titanium',
-    'stainless steel',
-    'monel',
     'plastic',
-    'tr-90',
-    'carbon fiber',
+    'metal',
+    'acetate',
+    'titanium',
     'wood',
-    'horn'
+    'carbon_fiber',
+    'mixed',
+    'other'
   ]
 
   const colors = [
@@ -164,6 +219,39 @@ const AddFrame = () => {
     'Two-tone',
     'Multi-color'
   ]
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files)
+    
+    // Create previews and store files
+    const newPreviews = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file)
+    }))
+    
+    setImagePreviews(prev => [...prev, ...newPreviews])
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...files]
+    }))
+    
+    // Reset input
+    e.target.value = ''
+  }
+
+  const removeImage = (index) => {
+    setImagePreviews(prev => {
+      const newPreviews = [...prev]
+      URL.revokeObjectURL(newPreviews[index].preview)
+      newPreviews.splice(index, 1)
+      return newPreviews
+    })
+    
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }))
+  }
 
   const sizes = [
     '48mm',
@@ -221,9 +309,10 @@ const AddFrame = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.name ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="e.g., Wayfarer Classic"
                     />
                     {errors.name && (
@@ -243,9 +332,10 @@ const AddFrame = () => {
                       name="shape"
                       value={formData.shape}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.shape ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     >
                       <option value="">Select shape</option>
                       {shapes.map(shape => (
@@ -271,9 +361,10 @@ const AddFrame = () => {
                       name="material"
                       value={formData.material}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.material ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     >
                       <option value="">Select material</option>
                       {materials.map(material => (
@@ -299,9 +390,10 @@ const AddFrame = () => {
                       name="color"
                       value={formData.color}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.color ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     >
                       <option value="">Select color</option>
                       {colors.map(color => (
@@ -335,9 +427,10 @@ const AddFrame = () => {
                       name="size"
                       value={formData.size}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.size ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     >
                       <option value="">Select size</option>
                       {sizes.map(size => (
@@ -362,9 +455,10 @@ const AddFrame = () => {
                       name="width"
                       value={formData.width}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.width ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="e.g., 145mm"
                     />
                     {errors.width && (
@@ -385,9 +479,10 @@ const AddFrame = () => {
                       name="dimensions"
                       value={formData.dimensions}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.dimensions ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="e.g., 52-18-145"
                     />
                     <p className="mt-1 text-sm text-gray-500">
@@ -411,9 +506,10 @@ const AddFrame = () => {
                       name="bridgeSize"
                       value={formData.bridgeSize}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.bridgeSize ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="e.g., 18mm"
                     />
                     {errors.bridgeSize && (
@@ -434,9 +530,10 @@ const AddFrame = () => {
                       name="templeLength"
                       value={formData.templeLength}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.templeLength ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                       placeholder="e.g., 145mm"
                     />
                     {errors.templeLength && (
@@ -463,9 +560,10 @@ const AddFrame = () => {
                         onChange={handleChange}
                         step="0.1"
                         min="0"
+                        disabled={isSubmitting}
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.weight ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         placeholder="e.g., 28"
                       />
                     </div>
@@ -503,9 +601,10 @@ const AddFrame = () => {
                         onChange={handleChange}
                         step="0.01"
                         min="0"
+                        disabled={isSubmitting}
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.price ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         placeholder="e.g., 500"
                       />
                     </div>
@@ -533,9 +632,10 @@ const AddFrame = () => {
                         onChange={handleChange}
                         min="0"
                         max="100"
+                        disabled={isSubmitting}
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.frameDiscount ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                         placeholder="e.g., 5"
                       />
                     </div>
@@ -549,20 +649,129 @@ const AddFrame = () => {
                 </div>
               </div>
 
+              {/* Applied Discounts Card */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                  <CurrencyDollarIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Applied Discounts
+                </h2>
+                
+                <div className="grid grid-cols-1 gap-6">
+                  {/* Applied Discounts Dropdown */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Discount (Optional)
+                    </label>
+                    <select
+                      name="appliedDiscounts"
+                      value={formData.appliedDiscounts}
+                      onChange={handleDiscountChange}
+                      disabled={isSubmitting}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.appliedDiscounts ? 'border-red-300' : 'border-gray-300'
+                      } ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    >
+                      <option value="">-- No Discount --</option>
+                      {discounts.map(discount => (
+                        <option key={discount._id} value={discount._id}>
+                          {discount.name} ({discount.discountPercentage}%)
+                        </option>
+                      ))}
+                    </select>
+                    {errors.appliedDiscounts && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.appliedDiscounts}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Images Card */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                  <PhotoIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Frame Images
+                </h2>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-4">
+                    Upload Frame Images
+                  </label>
+                  
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isSubmitting}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <div className="flex flex-col items-center justify-center">
+                        <PhotoIcon className="h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-sm font-medium text-gray-900">Click to upload images</p>
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 10MB</p>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  {/* Image Previews */}
+                  {imagePreviews.length > 0 && (
+                    <div className="mt-6">
+                      <h3 className="text-sm font-medium text-gray-900 mb-4">Uploaded Images ({imagePreviews.length})</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {imagePreviews.map((preview, index) => (
+                          <div key={index} className="relative group">
+                            <div className="h-32 w-full rounded-lg overflow-hidden border border-gray-200">
+                              <img
+                                src={preview.preview}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              disabled={isSubmitting}
+                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                              title="Remove image"
+                            >
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                            <p className="text-xs text-gray-500 mt-1 truncate">{preview.file.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Form Actions */}
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
                   <Link
                     to="/frame"
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-center"
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-center disabled:opacity-50"
                   >
                     Cancel
                   </Link>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    disabled={isSubmitting}
+                    className={`px-6 py-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      isSubmitting 
+                        ? 'bg-blue-400 cursor-not-allowed opacity-50' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                   >
-                    Add Frame
+                    {isSubmitting ? 'Adding Frame...' : 'Add Frame'}
                   </button>
                 </div>
               </div>

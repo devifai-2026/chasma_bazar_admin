@@ -17,6 +17,7 @@ import {
 import { Link, useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
+import { getCompanyById } from "../../Api/companyApi";
 
 const ViewCompany = () => {
   const { id } = useParams();
@@ -36,56 +37,24 @@ const ViewCompany = () => {
   const fetchCompany = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // For demo purposes, check localStorage first
-      const savedCompanies = JSON.parse(localStorage.getItem("companies") || "[]");
-      const dummyCompanies = [
-        {
-          id: 1,
-          name: "Premium Eyewear Co.",
-          description: "Premium eyewear brand specializing in designer frames. We offer high-quality prescription glasses, sunglasses, and contact lenses with advanced lens technology.",
-          pinCode: "110001",
-          email: "contact@premiumeyewear.com",
-          phone: "9876543210",
-          address: {
-            street: "123 Business Park",
-            city: "Mumbai",
-            state: "Maharashtra",
-            country: "India",
-            pinCode: "110001"
-          },
-          logo: {
-            url: "https://images.unsplash.com/photo-1567446537710-0c5ff5a6ac32?w=400&h=400&fit=crop",
-            public_id: "logo_123"
-          },
-          establishedYear: 2010,
-          rating: 4.5,
-          totalRatings: 120,
-          weblinks: [
-            { url: "https://premiumeyewear.com", label: "Website" },
-            { url: "https://facebook.com/premiumeyewear", label: "Facebook" },
-            { url: "https://instagram.com/premiumeyewear", label: "Instagram" }
-          ],
-          isDummy: true,
-          products: ["Designer Frames", "Sunglasses", "Prescription Lenses"],
-          employees: 150,
-          annualRevenue: "$50M",
-          certifications: ["ISO 9001", "FDA Approved"],
-          shippingCountries: ["India", "USA", "UK", "UAE", "Australia"]
-        }
-      ];
-
-      const allCompanies = [...dummyCompanies, ...savedCompanies];
-      const foundCompany = allCompanies.find(c => c.id === parseInt(id));
-
-      if (foundCompany) {
-        setCompany(foundCompany);
+      // Fetch company data from API
+      const response = await getCompanyById(id);
+      console.log("Fetched company data:", response);
+      
+      if (response && response.data) {
+        setCompany(response.data);
+      } else if (response && response.company) {
+        setCompany(response.company);
+      } else if (response) {
+        setCompany(response);
       } else {
         setError("Company not found");
       }
     } catch (err) {
       console.error("Error fetching company:", err);
-      setError("Failed to load company details");
+      setError(err.response?.data?.message || "Failed to load company details");
     } finally {
       setLoading(false);
     }
@@ -93,10 +62,7 @@ const ViewCompany = () => {
 
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this company?")) {
-      // Delete logic - for demo, we'll just navigate back
-      const savedCompanies = JSON.parse(localStorage.getItem("companies") || "[]");
-      const updatedCompanies = savedCompanies.filter(c => c.id !== parseInt(id));
-      localStorage.setItem("companies", JSON.stringify(updatedCompanies));
+      // Delete logic will be added when deleteCompany API is integrated
       navigate("/company");
     }
   };
@@ -185,7 +151,7 @@ const ViewCompany = () => {
                     <div className="mb-6">
                       <img
                         className="w-full h-64 object-cover rounded-lg border"
-                        src={company.logo.url}
+                        src={company.logo?.url || "https://via.placeholder.com/400x300?text=Company+Logo"}
                         alt={company.name}
                         onError={(e) => {
                           e.target.onerror = null;
@@ -199,7 +165,7 @@ const ViewCompany = () => {
                       <div className="space-y-2">
                         <div className="flex items-center">
                           <BuildingOfficeIcon className="h-5 w-5 text-blue-600 mr-2" />
-                          <span className="text-sm">Established: {company.establishedYear}</span>
+                          <span className="text-sm">Established: {company.establishedYear || "N/A"}</span>
                         </div>
                         <div className="flex items-center">
                           <UserGroupIcon className="h-5 w-5 text-blue-600 mr-2" />
@@ -219,8 +185,8 @@ const ViewCompany = () => {
                     <div className="mb-6">
                       <div className="flex items-center mb-2">
                         <StarIcon className="h-6 w-6 text-yellow-500" />
-                        <span className="ml-2 text-xl font-bold">{company.rating}</span>
-                        <span className="ml-2 text-gray-600">({company.totalRatings} ratings)</span>
+                        <span className="ml-2 text-xl font-bold">{company.rating || 0}</span>
+                        <span className="ml-2 text-gray-600">({company.totalRatings || 0} ratings)</span>
                       </div>
                       <div className="flex">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -241,7 +207,7 @@ const ViewCompany = () => {
                     {/* Description */}
                     <div className="mb-6">
                       <h3 className="text-lg font-semibold mb-2">Description</h3>
-                      <p className="text-gray-700">{company.description}</p>
+                      <p className="text-gray-700">{company.description || "No description available"}</p>
                     </div>
 
                     {/* Contact Information */}
@@ -271,9 +237,15 @@ const ViewCompany = () => {
                         <div className="flex items-start">
                           <MapPinIcon className="h-5 w-5 text-gray-400 mr-3 mt-1" />
                           <div>
-                            <p className="font-medium">{company.address.street}</p>
-                            <p className="text-gray-600">{company.address.city}, {company.address.state}</p>
-                            <p className="text-gray-600">{company.address.country} - {company.address.pinCode}</p>
+                            {company.address ? (
+                              <>
+                                <p className="font-medium">{company.address.street || "N/A"}</p>
+                                <p className="text-gray-600">{company.address.city || ""}, {company.address.state || ""}</p>
+                                <p className="text-gray-600">{company.address.country || ""} - {company.address.pinCode || ""}</p>
+                              </>
+                            ) : (
+                              <p className="text-gray-600">No address available</p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -352,7 +324,7 @@ const ViewCompany = () => {
                   <div>
                     <div className="text-sm text-gray-600">Years in Business</div>
                     <div className="text-2xl font-bold mt-1">
-                      {new Date().getFullYear() - company.establishedYear} years
+                      {company.establishedYear ? new Date().getFullYear() - company.establishedYear : 'N/A'} {company.establishedYear ? 'years' : ''}
                     </div>
                   </div>
                 </div>
@@ -363,7 +335,7 @@ const ViewCompany = () => {
                   <StarIcon className="h-8 w-8 text-yellow-500 mr-3" />
                   <div>
                     <div className="text-sm text-gray-600">Customer Rating</div>
-                    <div className="text-2xl font-bold mt-1">{company.rating}/5</div>
+                    <div className="text-2xl font-bold mt-1">{company.rating || 0}/5</div>
                   </div>
                 </div>
               </div>

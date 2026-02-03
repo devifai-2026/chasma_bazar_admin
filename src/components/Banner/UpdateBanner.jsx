@@ -3,13 +3,14 @@ import { ArrowLeftIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
+import {getBannerById , updateBanner} from "../../Api/bannerApi";
+import toast from 'react-hot-toast'
 
 const UpdateBanner = () => {
   const { id } = useParams();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isDummyBanner, setIsDummyBanner] = useState(false);
 
   const navigate = useNavigate();
 
@@ -17,71 +18,13 @@ const UpdateBanner = () => {
     loadBannerData();
   }, [id]);
 
-  const loadBannerData = () => {
+  const loadBannerData = async () => {
     try {
-      // Get all banners
-      const allBanners = JSON.parse(localStorage.getItem("banners") || "[]");
-      const dummyBanners = [
-        {
-          id: 1,
-          title: "Summer Sale 2025",
-          description: "Get 50% off on all sunglasses",
-          image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200&h-400&fit=crop",
-          buttonText: "Shop Now",
-          buttonLink: "/products/sale",
-          pages: ["home", "products"],
-          position: "top",
-          priority: 10,
-          isActive: true,
-          startDate: "2025-01-01T00:00:00.000Z",
-          endDate: "2025-12-31T23:59:59.000Z",
-          createdAt: "2024-12-01T10:30:00Z",
-          isDummy: true
-        },
-        {
-          id: 2,
-          title: "Winter Collection Launch",
-          description: "New winter frames now available",
-          image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=1200&h=400&fit=crop",
-          buttonText: "Explore",
-          buttonLink: "/products/winter-collection",
-          pages: ["home"],
-          position: "middle",
-          priority: 5,
-          isActive: true,
-          startDate: "2024-11-01T00:00:00.000Z",
-          endDate: "2025-02-28T23:59:59.000Z",
-          createdAt: "2024-10-25T14:20:00Z",
-          isDummy: true
-        },
-        {
-          id: 3,
-          title: "Limited Time Offer",
-          description: "Buy one get one free on selected items",
-          image: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200&h=400&fit=crop",
-          buttonText: "Grab Deal",
-          buttonLink: "/products/bogo",
-          pages: ["home", "products", "cart"],
-          position: "bottom",
-          priority: 8,
-          isActive: false,
-          startDate: "2024-10-01T00:00:00.000Z",
-          endDate: "2024-10-31T23:59:59.000Z",
-          createdAt: "2024-09-28T09:15:00Z",
-          isDummy: true
-        }
-      ];
-
-      // Combine banners
-      const allCombinedBanners = [...dummyBanners, ...allBanners];
+      const response = await getBannerById(id);
       
-      // Find the banner to edit
-      const bannerToEdit = allCombinedBanners.find(banner => banner.id === parseInt(id));
-
-      if (bannerToEdit) {
-        // Check if it's a dummy banner
-        setIsDummyBanner(bannerToEdit.isDummy || false);
-
+      if (response && response.data) {
+        const bannerToEdit = response.data;
+        
         // Format dates for input fields
         const startDate = bannerToEdit.startDate ? bannerToEdit.startDate.split('T')[0] : '';
         const endDate = bannerToEdit.endDate ? bannerToEdit.endDate.split('T')[0] : '';
@@ -91,13 +34,22 @@ const UpdateBanner = () => {
           startDate,
           endDate
         });
-      } else {
-        alert("Banner not found!");
-        navigate("/banner");
+      } else if (response) {
+        const bannerToEdit = response;
+        
+        // Format dates for input fields
+        const startDate = bannerToEdit.startDate ? bannerToEdit.startDate.split('T')[0] : '';
+        const endDate = bannerToEdit.endDate ? bannerToEdit.endDate.split('T')[0] : '';
+
+        setFormData({
+          ...bannerToEdit,
+          startDate,
+          endDate
+        });
       }
     } catch (error) {
       console.error("Error loading banner:", error);
-      alert("Error loading banner data");
+      toast.error('Error loading banner data');
       navigate("/banner");
     } finally {
       setLoading(false);
@@ -132,70 +84,30 @@ const UpdateBanner = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Get all user banners from localStorage
-    const allBanners = JSON.parse(localStorage.getItem("banners") || "[]");
-    
-    // If editing a dummy banner, we need to create a new user banner
-    if (isDummyBanner) {
-      // Create new banner with dummy data as base
-      const newBanner = {
+    try {
+      // Prepare the banner data for API
+      const bannerData = {
         ...formData,
-        id: Date.now(), // New ID
-        isDummy: false, // Not a dummy anymore
         // Convert dates back to full ISO string
         startDate: new Date(formData.startDate + 'T00:00:00.000Z').toISOString(),
         endDate: new Date(formData.endDate + 'T23:59:59.000Z').toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
       };
 
-      // Remove isDummy property before saving
-      const { isDummy, ...bannerToSave } = newBanner;
+      // Call the update API
+      const response = await updateBanner(id, bannerData);
 
-      // Add to user banners
-      allBanners.push(bannerToSave);
-      
-      // Save to localStorage
-      localStorage.setItem("banners", JSON.stringify(allBanners));
-      
-      // Show success message
-      alert("Banner updated successfully! Demo banner has been converted to a user banner.");
-    } else {
-      // For existing user banners, find and update
-      const bannerIndex = allBanners.findIndex(banner => banner.id === formData.id);
-      
-      if (bannerIndex === -1) {
-        alert("Banner not found!");
-        return;
+      if (response.success || response.message) {
+        toast.success('Banner updated successfully!');
+        navigate("/banner");
       }
-
-      // Update the banner
-      const updatedBanner = {
-        ...formData,
-        // Convert dates back to full ISO string
-        startDate: new Date(formData.startDate + 'T00:00:00.000Z').toISOString(),
-        endDate: new Date(formData.endDate + 'T23:59:59.000Z').toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      // Remove isDummy property as it's not needed in saved data
-      const { isDummy, ...bannerToSave } = updatedBanner;
-
-      // Update the array
-      allBanners[bannerIndex] = bannerToSave;
-      
-      // Save to localStorage
-      localStorage.setItem("banners", JSON.stringify(allBanners));
-      
-      // Show success message
-      alert("Banner updated successfully!");
+    } catch (error) {
+      console.error("Error updating banner:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Failed to update banner";
+      toast.error('Error updating banner: ' + errorMessage);
     }
-    
-    // Navigate back to banners list
-    navigate("/banner");
   };
 
   if (loading) {
@@ -246,27 +158,12 @@ const UpdateBanner = () => {
                     <ArrowLeftIcon className="h-4 w-4 mr-2" />
                     Back to Banners
                   </Link>
-                  <div className="flex items-center justify-between">
                     <div>
                       <h1 className="text-2xl font-bold text-gray-900">Update Banner</h1>
                       <p className="text-gray-600">
                         Edit banner: {formData.title}
                       </p>
                     </div>
-                    {isDummyBanner && (
-                      <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                        Demo Banner
-                      </div>
-                    )}
-                  </div>
-                  {isDummyBanner && (
-                    <div className="mt-2 text-sm text-blue-600 bg-blue-50 p-3 rounded-lg">
-                      <p>
-                        <strong>Note:</strong> You are editing a demo banner. When you save changes, 
-                        it will be converted to a user banner and saved to your local storage.
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -544,7 +441,7 @@ const UpdateBanner = () => {
                     type="submit"
                     className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    {isDummyBanner ? 'Save as New Banner' : 'Update Banner'}
+                    Update Banner
                   </button>
                 </div>
               </div>

@@ -14,17 +14,33 @@ import {
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
+import { getDiscountById, updateDiscount } from '../../Api/discountApi';
+import toast from 'react-hot-toast'
 
 const UpdateDiscount = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [formData, setFormData] = useState({
+    name: '',
+    description: '',
     discountValue: '',
-    isActive: true
+    maxDiscount: '',
+    applicableOn: 'global',
+    priority: '',
+    canStackWithOther: false,
+    canStackWithPromo: false,
+    startDate: '',
+    endDate: '',
+    usageLimit: '',
+    minOrderValue: '',
+    minQuantity: '',
+    isActive: true,
+    isAutoApplied: false
   });
   const [originalData, setOriginalData] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [isDummyDiscount, setIsDummyDiscount] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -32,102 +48,42 @@ const UpdateDiscount = () => {
     loadDiscount();
   }, [id]);
 
-  const loadDiscount = () => {
+  const loadDiscount = async () => {
     try {
-      const allDiscounts = JSON.parse(localStorage.getItem('discounts') || '[]');
+      setLoading(true);
+      setLoadError(null);
+      const response = await getDiscountById(id);
+      console.log({response});
       
-      // Also check dummy data
-      const dummyDiscounts = [
-        {
-          id: 1,
-          name: "Summer Sale 20%",
-          description: "20% discount for summer season",
-          discountType: "percentage",
-          discountValue: 20,
-          maxDiscount: 1000,
-          applicableOn: "global",
-          priority: 10,
-          canStackWithOther: false,
-          canStackWithPromo: true,
-          startDate: "2024-12-01T00:00:00Z",
-          endDate: "2024-12-31T23:59:59Z",
-          isActive: true,
-          isAutoApplied: false,
-          isDummy: true
-        },
-        {
-          id: 2,
-          name: "Winter Clearance ₹500 Off",
-          description: "Fixed ₹500 off on winter collection",
-          discountType: "fixed",
-          discountValue: 500,
-          maxDiscount: null,
-          applicableOn: "category",
-          priority: 5,
-          canStackWithOther: true,
-          canStackWithPromo: false,
-          startDate: "2024-11-15T00:00:00Z",
-          endDate: "2024-12-15T23:59:59Z",
-          isActive: true,
-          isAutoApplied: true,
-          isDummy: true
-        },
-        {
-          id: 3,
-          name: "Buy 1 Get 1 Free",
-          description: "Buy one frame, get one free",
-          discountType: "buy_x_get_y",
-          discountValue: 100,
-          maxDiscount: null,
-          applicableOn: "product",
-          priority: 1,
-          canStackWithOther: false,
-          canStackWithPromo: false,
-          startDate: "2024-10-01T00:00:00Z",
-          endDate: "2024-10-31T23:59:59Z",
-          isActive: false,
-          isAutoApplied: false,
-          isDummy: true
-        },
-        {
-          id: 4,
-          name: "Free Shipping All Orders",
-          description: "Free shipping on all orders",
-          discountType: "free_shipping",
-          discountValue: 0,
-          maxDiscount: null,
-          applicableOn: "global",
-          priority: 20,
-          canStackWithOther: true,
-          canStackWithPromo: true,
-          startDate: "2024-09-01T00:00:00Z",
-          endDate: "2024-12-31T23:59:59Z",
-          isActive: true,
-          isAutoApplied: true,
-          isDummy: true
-        }
-      ];
-
-      const allData = [...dummyDiscounts, ...allDiscounts.filter(d => !d.isDummy)];
-      const foundDiscount = allData.find(d => d.id === parseInt(id));
-
-      if (foundDiscount) {
-        // Track if it's a dummy discount
-        setIsDummyDiscount(foundDiscount.isDummy || false);
-
-        setOriginalData(foundDiscount);
+      // API returns { success: true, discount: {...} }
+      if (response && response.discount) {
+        const discount = response.discount;
+        setOriginalData(discount);
         setFormData({
-          discountValue: foundDiscount.discountValue.toString(),
-          isActive: foundDiscount.isActive
+          name: discount.name || '',
+          description: discount.description || '',
+          discountValue: discount.discountValue.toString(),
+          maxDiscount: discount.maxDiscount?.toString() || '',
+          applicableOn: discount.applicableOn || 'global',
+          priority: discount.priority?.toString() || '',
+          canStackWithOther: discount.canStackWithOther || false,
+          canStackWithPromo: discount.canStackWithPromo || false,
+          startDate: discount.startDate ? new Date(discount.startDate).toISOString().slice(0, 16) : '',
+          endDate: discount.endDate ? new Date(discount.endDate).toISOString().slice(0, 16) : '',
+          usageLimit: discount.usageLimit?.toString() || '',
+          minOrderValue: discount.minOrderValue?.toString() || '',
+          minQuantity: discount.minQuantity?.toString() || '',
+          isActive: discount.isActive || false,
+          isAutoApplied: discount.isAutoApplied || false
         });
+        setIsDummyDiscount(false);
       } else {
-        alert('Discount not found!');
-        navigate('/discount');
+        throw new Error('Discount not found');
       }
     } catch (error) {
-      console.error('Error loading discount:', error);
-      alert('Error loading discount data');
-      navigate('/discount');
+      console.error('Error loading discount from API:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to load discount data. Please try again.';
+      setLoadError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -156,12 +112,52 @@ const UpdateDiscount = () => {
   const validateForm = () => {
     const newErrors = {};
     
+    if (!formData.name || formData.name.trim() === '') {
+      newErrors.name = 'Discount name is required';
+    }
+    
+    if (!formData.description || formData.description.trim() === '') {
+      newErrors.description = 'Description is required';
+    }
+    
     if (!formData.discountValue || parseFloat(formData.discountValue) < 0) {
       newErrors.discountValue = 'Valid discount value is required';
     }
     
-    if (originalData.discountType === 'percentage' && parseFloat(formData.discountValue) > 100) {
+    if (originalData?.discountType === 'percentage' && parseFloat(formData.discountValue) > 100) {
       newErrors.discountValue = 'Percentage cannot exceed 100%';
+    }
+    
+    if (formData.maxDiscount && parseFloat(formData.maxDiscount) < 0) {
+      newErrors.maxDiscount = 'Max discount cannot be negative';
+    }
+    
+    if (!formData.priority || parseFloat(formData.priority) < 0) {
+      newErrors.priority = 'Valid priority is required';
+    }
+    
+    if (!formData.startDate) {
+      newErrors.startDate = 'Start date is required';
+    }
+    
+    if (!formData.endDate) {
+      newErrors.endDate = 'End date is required';
+    }
+    
+    if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
+      newErrors.endDate = 'End date must be after start date';
+    }
+    
+    if (formData.usageLimit && parseFloat(formData.usageLimit) < 0) {
+      newErrors.usageLimit = 'Usage limit cannot be negative';
+    }
+    
+    if (formData.minOrderValue && parseFloat(formData.minOrderValue) < 0) {
+      newErrors.minOrderValue = 'Minimum order value cannot be negative';
+    }
+    
+    if (formData.minQuantity && parseFloat(formData.minQuantity) < 0) {
+      newErrors.minQuantity = 'Minimum quantity cannot be negative';
     }
 
     return newErrors;
@@ -173,60 +169,42 @@ const UpdateDiscount = () => {
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      toast.error('Please fix the errors in the form before submitting.');
       return;
     }
 
     try {
-      // Get current discounts
-      const existingDiscounts = JSON.parse(localStorage.getItem('discounts') || '[]');
+      setLoading(true);
       
-      // If editing a dummy discount, create a new user discount
-      if (isDummyDiscount) {
-        // Create a new user discount based on the dummy
-        const newDiscount = {
-          ...originalData,
-          id: Date.now(), // New ID
-          isDummy: false, // Convert to user discount
-          discountValue: parseFloat(formData.discountValue),
-          isActive: formData.isActive,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
+      const updateData = {
+        name: formData.name,
+        description: formData.description,
+        discountValue: parseFloat(formData.discountValue),
+        maxDiscount: formData.maxDiscount ? parseFloat(formData.maxDiscount) : null,
+        applicableOn: formData.applicableOn,
+        priority: parseFloat(formData.priority),
+        canStackWithOther: formData.canStackWithOther,
+        canStackWithPromo: formData.canStackWithPromo,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        usageLimit: formData.usageLimit ? parseFloat(formData.usageLimit) : null,
+        minOrderValue: formData.minOrderValue ? parseFloat(formData.minOrderValue) : null,
+        minQuantity: formData.minQuantity ? parseFloat(formData.minQuantity) : null,
+        isActive: formData.isActive,
+        isAutoApplied: formData.isAutoApplied
+      };
 
-        // Remove isDummy property before saving
-        const { isDummy, ...discountToSave } = newDiscount;
-
-        // Add to user discounts
-        existingDiscounts.push(discountToSave);
-        
-        // Save to localStorage
-        localStorage.setItem('discounts', JSON.stringify(existingDiscounts));
-        
-        alert('Demo discount converted to user discount and updated successfully!');
+      const response = await updateDiscount(id, updateData);
+      
+      if (response) {
+        toast.success('Discount updated successfully!');
         navigate('/discount');
-      } else {
-        // For existing user discounts, find and update
-        const updatedDiscounts = existingDiscounts.map(discount => {
-          if (discount.id === parseInt(id)) {
-            return {
-              ...discount,
-              discountValue: parseFloat(formData.discountValue),
-              isActive: formData.isActive,
-              updatedAt: new Date().toISOString()
-            };
-          }
-          return discount;
-        });
-
-        // Save back to localStorage
-        localStorage.setItem('discounts', JSON.stringify(updatedDiscounts));
-        
-        alert('Discount updated successfully!');
-        navigate(`/discount/view/${id}`);
       }
     } catch (error) {
       console.error('Error updating discount:', error);
-      alert('Error updating discount. Please try again.');
+      toast.error(error.response?.data?.message || 'Error updating discount. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -267,8 +245,44 @@ const UpdateDiscount = () => {
     );
   }
 
-  if (!originalData) {
-    return null;
+  if (loadError) {
+    return (
+      <div className="flex h-screen">
+        <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+          <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+            <div className="mx-auto max-w-4xl">
+              <div className="flex items-center justify-center h-64">
+                <div className="bg-white rounded-lg shadow p-8 max-w-md w-full">
+                  <div className="text-center">
+                    <ExclamationCircleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2">
+                      Error Loading Discount
+                    </h2>
+                    <p className="text-gray-600 mb-4">{loadError}</p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={loadDiscount}
+                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      >
+                        Retry
+                      </button>
+                      <Link
+                        to="/discount"
+                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-center"
+                      >
+                        Go Back
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -306,18 +320,10 @@ const UpdateDiscount = () => {
                         Edit discount: {originalData.name}
                       </p>
                     </div>
-                    {isDummyDiscount && (
-                      <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                        Demo Discount
-                      </div>
-                    )}
                   </div>
                   {isDummyDiscount && (
-                    <div className="mt-2 text-sm text-blue-600 bg-blue-50 p-3 rounded-lg">
-                      <p>
-                        <strong>Note:</strong> You are editing a demo discount. When you save changes, 
-                        it will be converted to a user discount and saved to your local storage.
-                      </p>
+                    <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                      Demo Discount
                     </div>
                   )}
                 </div>
@@ -325,77 +331,96 @@ const UpdateDiscount = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Current Information Card */}
+              {/* Basic Information Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
                   <InformationCircleIcon className="h-5 w-5 mr-2 text-blue-500" />
-                  Current Information
+                  Basic Information
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Name */}
                   <div>
-                    <div className="text-sm text-gray-500">Discount Name</div>
-                    <div className="text-lg font-medium text-gray-900">
-                      {originalData.name}
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Discount Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.name ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="e.g., Summer Sale 40%"
+                    />
+                    {errors.name && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.name}
+                      </p>
+                    )}
                   </div>
                   
+                  {/* Description */}
                   <div>
-                    <div className="text-sm text-gray-500">Description</div>
-                    <div className="text-lg font-medium text-gray-900">
-                      {originalData.description}
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description *
+                    </label>
+                    <input
+                      type="text"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.description ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Brief description of the discount"
+                    />
+                    {errors.description && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.description}
+                      </p>
+                    )}
                   </div>
                   
+                  {/* Discount Type (Read-only) */}
                   <div>
-                    <div className="text-sm text-gray-500">Discount Type</div>
-                    <div className="text-lg font-medium text-gray-900">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Discount Type
+                    </label>
+                    <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
                       {getDiscountTypeLabel()}
                     </div>
                   </div>
                   
+                  {/* Applicable On */}
                   <div>
-                    <div className="text-sm text-gray-500">Applicable On</div>
-                    <div className="text-lg font-medium text-gray-900">
-                      {originalData.applicableOn}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="text-sm text-gray-500">Start Date</div>
-                    <div className="text-lg font-medium text-gray-900">
-                      {formatDate(originalData.startDate)}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="text-sm text-gray-500">End Date</div>
-                    <div className="text-lg font-medium text-gray-900">
-                      {formatDate(originalData.endDate)}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="text-sm text-gray-500">Priority</div>
-                    <div className="text-lg font-medium text-gray-900">
-                      {originalData.priority}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="text-sm text-gray-500">Stackable</div>
-                    <div className="text-lg font-medium text-gray-900">
-                      {originalData.canStackWithOther ? 'Yes' : 'No'}
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Applicable On
+                    </label>
+                    <select
+                      name="applicableOn"
+                      value={formData.applicableOn}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="global">Global</option>
+                      <option value="category">Category</option>
+                      <option value="product">Product</option>
+                      <option value="company">Company</option>
+                      <option value="frame">Frame</option>
+                    </select>
                   </div>
                 </div>
               </div>
 
-              {/* Update Fields Card */}
+              {/* Discount Value & Limits Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
                   <CurrencyDollarIcon className="h-5 w-5 mr-2 text-blue-500" />
-                  Update Discount Details
+                  Discount Value & Limits
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -406,9 +431,9 @@ const UpdateDiscount = () => {
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        {originalData.discountType === 'percentage' ? (
+                        {originalData?.discountType === 'percentage' ? (
                           <span className="text-gray-500">%</span>
-                        ) : originalData.discountType === 'fixed' ? (
+                        ) : originalData?.discountType === 'fixed' ? (
                           <CurrencyDollarIcon className="h-5 w-5 text-gray-400" />
                         ) : (
                           <TagIcon className="h-5 w-5 text-gray-400" />
@@ -419,20 +444,14 @@ const UpdateDiscount = () => {
                         name="discountValue"
                         value={formData.discountValue}
                         onChange={handleChange}
-                        step={originalData.discountType === 'percentage' ? '0.1' : '1'}
+                        step={originalData?.discountType === 'percentage' ? '0.1' : '1'}
                         min="0"
-                        max={originalData.discountType === 'percentage' ? '100' : undefined}
+                        max={originalData?.discountType === 'percentage' ? '100' : undefined}
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.discountValue ? 'border-red-300' : 'border-gray-300'
                         }`}
-                        placeholder={originalData.discountType === 'percentage' ? 'e.g., 20' : 'e.g., 500'}
+                        placeholder={originalData?.discountType === 'percentage' ? 'e.g., 40' : 'e.g., 500'}
                       />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                        <div className="text-sm text-gray-500">
-                          Current: {originalData.discountValue}
-                          {originalData.discountType === 'percentage' ? '%' : '₹'}
-                        </div>
-                      </div>
                     </div>
                     {errors.discountValue && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -440,127 +459,260 @@ const UpdateDiscount = () => {
                         {errors.discountValue}
                       </p>
                     )}
-                    <div className="mt-2 text-sm text-gray-500">
-                      {originalData.discountType === 'percentage' ? (
-                        'Enter new percentage value (0-100)'
-                      ) : originalData.discountType === 'fixed' ? (
-                        'Enter new fixed amount in ₹'
-                      ) : (
-                        'For free shipping, value should be 0'
-                      )}
-                    </div>
                   </div>
 
-                  {/* Max Discount for percentage type */}
-                  {originalData.discountType === 'percentage' && originalData.maxDiscount && (
-                    <div>
-                      <div className="text-sm text-gray-700 mb-2">Maximum Discount Limit</div>
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                        <div className="flex items-center">
-                          <InformationCircleIcon className="h-4 w-4 text-blue-500 mr-2" />
-                          <div className="text-sm text-blue-700">
-                            Maximum discount limited to ₹{originalData.maxDiscount}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Active Status */}
-                  <div className="md:col-span-2">
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        name="isActive"
-                        checked={formData.isActive}
-                        onChange={handleChange}
-                        className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                      />
-                      <span className="ml-3 text-sm font-medium text-gray-700">
-                        Set as active discount
-                      </span>
+                  {/* Max Discount */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Maximum Discount Limit (₹)
                     </label>
-                    <p className="mt-2 text-sm text-gray-500">
-                      {formData.isActive ? 'This discount will be available for use' : 'This discount will be inactive'}
-                    </p>
+                    <input
+                      type="number"
+                      name="maxDiscount"
+                      value={formData.maxDiscount}
+                      onChange={handleChange}
+                      min="0"
+                      step="1"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.maxDiscount ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="e.g., 3000"
+                    />
+                    {errors.maxDiscount && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.maxDiscount}
+                      </p>
+                    )}
                   </div>
 
-                  {/* Special fields for specific types */}
-                  {originalData.discountType === 'buy_x_get_y' && (
-                    <div className="md:col-span-2">
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                        <div className="flex items-center">
-                          <StarIcon className="h-5 w-5 text-amber-500 mr-2" />
-                          <div className="text-sm text-amber-700">
-                            <p className="font-medium">Buy 1 Get 1 Free Discount</p>
-                            <p className="mt-1">
-                              This is a special promotional discount. The value represents the percentage off on the second item.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Min Order Value */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Minimum Order Value (₹)
+                    </label>
+                    <input
+                      type="number"
+                      name="minOrderValue"
+                      value={formData.minOrderValue}
+                      onChange={handleChange}
+                      min="0"
+                      step="1"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.minOrderValue ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="e.g., 1000"
+                    />
+                    {errors.minOrderValue && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.minOrderValue}
+                      </p>
+                    )}
+                  </div>
 
-                  {originalData.isAutoApplied && (
-                    <div className="md:col-span-2">
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div className="flex items-center">
-                          <BoltIcon className="h-5 w-5 text-green-500 mr-2" />
-                          <div className="text-sm text-green-700">
-                            <p className="font-medium">Auto-Applied Discount</p>
-                            <p className="mt-1">
-                              This discount is automatically applied when conditions are met.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {/* Min Quantity */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Minimum Quantity
+                    </label>
+                    <input
+                      type="number"
+                      name="minQuantity"
+                      value={formData.minQuantity}
+                      onChange={handleChange}
+                      min="0"
+                      step="1"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.minQuantity ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="e.g., 1"
+                    />
+                    {errors.minQuantity && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.minQuantity}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Usage Limit */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Usage Limit
+                    </label>
+                    <input
+                      type="number"
+                      name="usageLimit"
+                      value={formData.usageLimit}
+                      onChange={handleChange}
+                      min="0"
+                      step="1"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.usageLimit ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="e.g., 100"
+                    />
+                    {errors.usageLimit && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.usageLimit}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Priority */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Priority *
+                    </label>
+                    <input
+                      type="number"
+                      name="priority"
+                      value={formData.priority}
+                      onChange={handleChange}
+                      min="0"
+                      step="1"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.priority ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="e.g., 1"
+                    />
+                    {errors.priority && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.priority}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Update Summary Card */}
+              {/* Date & Time Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                  <TagIcon className="h-5 w-5 mr-2 text-blue-500" />
-                  Update Summary
+                  <CalendarIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Validity Period
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Start Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Start Date & Time *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      name="startDate"
+                      value={formData.startDate}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.startDate ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors.startDate && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.startDate}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* End Date */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      End Date & Time *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      name="endDate"
+                      value={formData.endDate}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.endDate ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    />
+                    {errors.endDate && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.endDate}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Stacking & Settings Card */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+                  <BoltIcon className="h-5 w-5 mr-2 text-blue-500" />
+                  Stacking & Settings
                 </h2>
                 
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-                    <div className="text-sm text-gray-700">Current Discount Value</div>
-                    <div className="text-lg font-bold text-gray-900">
-                      {originalData.discountValue}
-                      {originalData.discountType === 'percentage' ? '%' : originalData.discountType === 'fixed' ? '₹' : ''}
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-sm text-blue-700">New Discount Value</div>
-                    <div className="text-lg font-bold text-blue-900">
-                      {formData.discountValue || 'Not set'}
-                      {formData.discountValue && originalData.discountType === 'percentage' ? '%' : ''}
-                      {formData.discountValue && originalData.discountType === 'fixed' ? '₹' : ''}
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-sm text-green-700">Status</div>
-                    <div className="text-lg font-bold">
-                      {formData.isActive ? (
-                        <span className="text-green-900 flex items-center">
-                          <CheckCircleIcon className="h-5 w-5 mr-2" />
-                          Active
-                        </span>
-                      ) : (
-                        <span className="text-red-900 flex items-center">
-                          <XCircleIcon className="h-5 w-5 mr-2" />
-                          Inactive
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="canStackWithOther"
+                      checked={formData.canStackWithOther}
+                      onChange={handleChange}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="ml-3 text-sm font-medium text-gray-700">
+                      Can Stack with Other Discounts
+                    </span>
+                  </label>
+                  <p className="text-sm text-gray-500 ml-7">
+                    Allow this discount to be combined with other discounts
+                  </p>
+
+                  <label className="flex items-center mt-4">
+                    <input
+                      type="checkbox"
+                      name="canStackWithPromo"
+                      checked={formData.canStackWithPromo}
+                      onChange={handleChange}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="ml-3 text-sm font-medium text-gray-700">
+                      Can Stack with Promo Codes
+                    </span>
+                  </label>
+                  <p className="text-sm text-gray-500 ml-7">
+                    Allow this discount to be combined with promo codes
+                  </p>
+
+                  <label className="flex items-center mt-4">
+                    <input
+                      type="checkbox"
+                      name="isAutoApplied"
+                      checked={formData.isAutoApplied}
+                      onChange={handleChange}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <span className="ml-3 text-sm font-medium text-gray-700">
+                      Auto-Apply Discount
+                    </span>
+                  </label>
+                  <p className="text-sm text-gray-500 ml-7">
+                    Automatically apply this discount when conditions are met
+                  </p>
+
+                  <label className="flex items-center mt-4">
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      checked={formData.isActive}
+                      onChange={handleChange}
+                      className="h-4 w-4 text-green-600 rounded border-gray-300 focus:ring-green-500"
+                    />
+                    <span className="ml-3 text-sm font-medium text-gray-700">
+                      Set as Active
+                    </span>
+                  </label>
+                  <p className="text-sm text-gray-500 ml-7">
+                    {formData.isActive ? 'This discount is currently active' : 'This discount is currently inactive'}
+                  </p>
                 </div>
               </div>
 
@@ -581,9 +733,10 @@ const UpdateDiscount = () => {
                     </Link>
                     <button
                       type="submit"
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      disabled={loading}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {isDummyDiscount ? 'Save as New Discount' : 'Update Discount'}
+                      {loading ? 'Updating...' : 'Update Discount'}
                     </button>
                   </div>
                 </div>

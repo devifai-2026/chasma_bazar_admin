@@ -11,11 +11,15 @@ import {
   BeakerIcon,
   ScaleIcon,
   CurrencyDollarIcon,
-  ArrowsPointingOutIcon
+  ArrowsPointingOutIcon,
+  PhotoIcon,
+  TagIcon
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
+import { getFrames, deleteFrame as deleteFrameAPI } from "../../Api/frameapi";
+import toast from 'react-hot-toast'
 
 const Frame = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -23,130 +27,42 @@ const Frame = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
 
-  // Dummy frames data
-  const dummyFrames = [
-    {
-      id: 1,
-      name: "Wayfarer Classic",
-      shape: "wayfarer",
-      material: "acetate",
-      color: "Black",
-      size: "52mm",
-      width: "145mm",
-      dimensions: "52-18-145",
-      bridgeSize: "18mm",
-      templeLength: "145mm",
-      weight: 28,
-      price: 500,
-      frameDiscount: 5,
-      isDummy: true
-    },
-    {
-      id: 2,
-      name: "Aviator Gold",
-      shape: "aviator",
-      material: "metal",
-      color: "Gold",
-      size: "58mm",
-      width: "150mm",
-      dimensions: "58-18-150",
-      bridgeSize: "18mm",
-      templeLength: "150mm",
-      weight: 32,
-      price: 750,
-      frameDiscount: 10,
-      isDummy: true
-    },
-    {
-      id: 3,
-      name: "Round Tortoise",
-      shape: "round",
-      material: "acetate",
-      color: "Tortoise",
-      size: "50mm",
-      width: "140mm",
-      dimensions: "50-19-140",
-      bridgeSize: "19mm",
-      templeLength: "140mm",
-      weight: 26,
-      price: 450,
-      frameDiscount: 8,
-      isDummy: true
-    },
-    {
-      id: 4,
-      name: "Sports Titanium",
-      shape: "sports",
-      material: "titanium",
-      color: "Gunmetal",
-      size: "56mm",
-      width: "155mm",
-      dimensions: "56-20-155",
-      bridgeSize: "20mm",
-      templeLength: "155mm",
-      weight: 22,
-      price: 1200,
-      frameDiscount: 15,
-      isDummy: true
-    }
-  ];
-
-  // Load frames from localStorage
-  useEffect(() => {
-    loadFramesFromStorage();
-  }, []);
-
-  const loadFramesFromStorage = () => {
+  // Load frames from API
+  const loadFrames = async () => {
     try {
-      const savedFrames = JSON.parse(
-        localStorage.getItem("frames") || "[]"
-      );
-
-      // Filter out any dummy frames that might have been saved previously
-      const userFrames = savedFrames.filter((frame) => !frame.isDummy);
-
-      // Combine dummy frames with user's frames (dummy first, then user's)
-      const allFrames = [...dummyFrames, ...userFrames];
-
-      setFrames(allFrames);
-
-      // Only save if we need to initialize or update
-      if (savedFrames.length === 0) {
-        localStorage.setItem("frames", JSON.stringify(userFrames));
-      }
+      const response = await getFrames();
+      const apiFrames = response.data || response;
+      setFrames(Array.isArray(apiFrames) ? apiFrames : []);
     } catch (error) {
       console.error("Error loading frames:", error);
-      // If error, just show dummy frames
-      setFrames(dummyFrames);
+      setFrames([]);
     }
   };
 
-  // Save only user frames to localStorage whenever frames change
   useEffect(() => {
-    if (frames.length > 0) {
-      // Filter out dummy frames before saving
-      const userFrames = frames.filter((frame) => !frame.isDummy);
-      localStorage.setItem("frames", JSON.stringify(userFrames));
-    }
-  }, [frames]);
+    loadFrames();
+  }, []);
+
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
 
-const deleteFrame = (id) => {
-  if (window.confirm("Are you sure you want to delete this frame?")) {
-    const frameToDelete = frames.find((f) => f.id === id);
+const deleteFrame = async (id) => {
+ 
+    const frameToDelete = frames.find((f) => f.id === id || f._id === id);
 
-    // Show extra warning for demo frames
-    if (frameToDelete?.isDummy) {
-      if (!window.confirm("This is a demo frame. Are you sure you want to delete it?")) {
-        return;
-      }
+    try {
+      // Call the delete endpoint
+      const frameId = frameToDelete._id || id;
+      await deleteFrameAPI(frameId);
+      const updatedFrames = frames.filter((frame) => frame._id !== frameId && frame.id !== id);
+      setFrames(updatedFrames);
+      toast.success('Frame deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting frame:', error);
+      toast.error('Error deleting frame. Please try again.');
     }
 
-    const updatedFrames = frames.filter((frame) => frame.id !== id);
-    setFrames(updatedFrames);
-  }
 };
 
   // Filter frames based on search and filter
@@ -165,16 +81,14 @@ const deleteFrame = (id) => {
 
   // Calculate statistics
   const calculateStats = () => {
-    const userFrames = frames.filter(f => !f.isDummy);
     const totalFrames = frames.length;
-    const userAdded = userFrames.length;
     const avgWeight = frames.length > 0 
-      ? (frames.reduce((sum, f) => sum + f.weight, 0) / frames.length).toFixed(1)
+      ? (frames.reduce((sum, f) => sum + (f.weight || 0), 0) / frames.length).toFixed(1)
       : "0.0";
-    const totalDiscount = frames.reduce((sum, f) => sum + f.frameDiscount, 0);
+    const totalDiscount = frames.reduce((sum, f) => sum + (f.frameDiscount || 0), 0);
     const avgDiscount = frames.length > 0 ? (totalDiscount / frames.length).toFixed(1) : "0";
 
-    return { totalFrames, userAdded, avgWeight, avgDiscount };
+    return { totalFrames, avgWeight, avgDiscount };
   };
 
   const stats = calculateStats();
@@ -238,12 +152,6 @@ const deleteFrame = (id) => {
                   <p className="text-gray-600">
                     Manage eyewear frames inventory
                   </p>
-                  <div className="mt-2 text-sm text-gray-500">
-                    <span className="inline-flex items-center">
-                      <span className="h-2 w-2 bg-blue-500 rounded-full mr-2"></span>
-                      Blue border indicates demo frames
-                    </span>
-                  </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Link
@@ -253,6 +161,60 @@ const deleteFrame = (id) => {
                     <PlusIcon className="h-5 w-5 mr-2" />
                     Add Frame
                   </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <RectangleStackIcon className="h-8 w-8 text-blue-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Total Frames</div>
+                    <div className="text-2xl font-bold mt-1">{stats.totalFrames}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <ScaleIcon className="h-8 w-8 text-purple-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Avg. Weight</div>
+                    <div className="text-2xl font-bold mt-1">{stats.avgWeight}g</div>
+                  </div>
+                </div>
+                <div className="text-sm text-blue-600 mt-2">
+                  Based on all frames
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <BeakerIcon className="h-8 w-8 text-green-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Materials</div>
+                    <div className="text-2xl font-bold mt-1">
+                      {[...new Set(frames.map(f => f.material))].length}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  Unique materials
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <CurrencyDollarIcon className="h-8 w-8 text-yellow-500 mr-3" />
+                  <div>
+                    <div className="text-sm text-gray-600">Avg. Discount</div>
+                    <div className="text-2xl font-bold mt-1">{stats.avgDiscount}%</div>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  Average discount rate
                 </div>
               </div>
             </div>
@@ -281,11 +243,11 @@ const deleteFrame = (id) => {
                 <option value="discounted">Discounted (10%+)</option>
                 <option value="premium">Premium (₹1000+)</option>
               </select>
-              <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+              {/* <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                 <FunnelIcon className="h-5 w-5 mr-2" />
                 More Filters
                 <ChevronDownIcon className="h-4 w-4 ml-2" />
-              </button>
+              </button> */}
             </div>
 
             {/* Frames Table */}
@@ -298,6 +260,9 @@ const deleteFrame = (id) => {
                         Frame Details
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Images
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Dimensions
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -307,6 +272,9 @@ const deleteFrame = (id) => {
                         Pricing
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Applied Discounts
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -314,7 +282,7 @@ const deleteFrame = (id) => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredFrames.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="px-6 py-12 text-center">
+                        <td colSpan="7" className="px-6 py-12 text-center">
                           <div className="text-gray-500">
                             No frames found. Click "Add Frame" to get started.
                           </div>
@@ -323,10 +291,8 @@ const deleteFrame = (id) => {
                     ) : (
                       filteredFrames.map((frame) => (
                         <tr
-                          key={frame.id}
-                          className={`hover:bg-gray-50 ${
-                            frame.isDummy ? "border-l-4 border-blue-500" : ""
-                          }`}
+                          key={frame._id || frame.id}
+                          className="hover:bg-gray-50"
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-center">
@@ -338,25 +304,51 @@ const deleteFrame = (id) => {
                                   <div className="text-sm font-medium text-gray-900">
                                     {frame.name}
                                   </div>
-                                  {frame.isDummy && (
-                                    <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
-                                      Demo
+                                </div>
+                                <div className="mt-1 flex flex-wrap gap-2">
+                                  {frame.shape && (
+                                    <span className={`text-xs px-2 py-1 rounded-full ${getShapeColor(frame.shape)}`}>
+                                      {frame.shape.charAt(0).toUpperCase() + frame.shape.slice(1)}
+                                    </span>
+                                  )}
+                                  {frame.material && (
+                                    <span className={`text-xs px-2 py-1 rounded-full ${getMaterialColor(frame.material)}`}>
+                                      {frame.material.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                    </span>
+                                  )}
+                                  {frame.color && (
+                                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
+                                      {frame.color}
                                     </span>
                                   )}
                                 </div>
-                                <div className="mt-1 flex flex-wrap gap-2">
-                                  <span className={`text-xs px-2 py-1 rounded-full ${getShapeColor(frame.shape)}`}>
-                                    {frame.shape.charAt(0).toUpperCase() + frame.shape.slice(1)}
-                                  </span>
-                                  <span className={`text-xs px-2 py-1 rounded-full ${getMaterialColor(frame.material)}`}>
-                                    {frame.material.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                                  </span>
-                                  <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
-                                    {frame.color}
-                                  </span>
-                                </div>
                               </div>
                             </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            {frame.images && frame.images.length > 0 ? (
+                              <div className="flex items-center space-x-2">
+                                <div className="flex items-center -space-x-2">
+                                  {frame.images.slice(0, 3).map((img, idx) => (
+                                    <img
+                                      key={idx}
+                                      src={img.url}
+                                      alt={img.alt || `Frame image ${idx + 1}`}
+                                      className="h-10 w-10 rounded-lg border border-gray-200 object-cover"
+                                      title={img.alt}
+                                    />
+                                  ))}
+                                </div>
+                                {frame.images.length > 3 && (
+                                  <span className="text-xs text-gray-500 font-medium">+{frame.images.length - 3}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex items-center text-gray-400">
+                                <PhotoIcon className="h-5 w-5 mr-2" />
+                                <span className="text-sm text-gray-500">No images</span>
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <div className="space-y-1">
@@ -418,24 +410,43 @@ const deleteFrame = (id) => {
                               )}
                             </div>
                           </td>
+                          <td className="px-6 py-4">
+                            {frame.appliedDiscounts && frame.appliedDiscounts.length > 0 ? (
+                              <div className="space-y-1">
+                                {frame.appliedDiscounts.slice(0, 2).map((discount, idx) => (
+                                  <div key={idx} className="inline-flex items-center bg-green-50 px-2 py-1 rounded text-xs text-green-700 mr-1 mb-1">
+                                    <TagIcon className="h-3 w-3 mr-1" />
+                                    <span className="font-medium">
+                                      {typeof discount === 'string' ? `Discount ${idx + 1}` : discount.name || `Discount ${idx + 1}`}
+                                    </span>
+                                  </div>
+                                ))}
+                                {frame.appliedDiscounts.length > 2 && (
+                                  <div className="text-xs text-gray-500">+{frame.appliedDiscounts.length - 2} more</div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">None</span>
+                            )}
+                          </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
   <div className="flex items-center space-x-2">
     <Link
-      to={`/frame/view/${frame.id}`}
+      to={`/frame/view/${frame._id || frame.id}`}
       className="p-1 text-blue-600 hover:text-blue-800"
       title="View"
     >
       <EyeIcon className="h-5 w-5" />
     </Link>
     <Link
-      to={`/frame/update/${frame.id}`}
+      to={`/frame/update/${frame._id || frame.id}`}
       className="p-1 text-green-600 hover:text-green-800"
       title="Edit Frame"
     >
       <PencilIcon className="h-5 w-5" />
     </Link>
     <button
-      onClick={() => deleteFrame(frame.id)}
+      onClick={() => deleteFrame(frame._id || frame.id)}
       className="p-1 text-red-600 hover:text-red-800"
       title="Delete Frame"
     >
@@ -457,9 +468,6 @@ const deleteFrame = (id) => {
                 Showing <span className="font-medium">1</span> to{" "}
                 <span className="font-medium">{filteredFrames.length}</span> of{" "}
                 <span className="font-medium">{frames.length}</span> frames
-                <span className="ml-2 text-gray-500">
-                  ({frames.filter((f) => !f.isDummy).length} user-added)
-                </span>
               </div>
               <div className="flex space-x-2">
                 <button
@@ -490,62 +498,7 @@ const deleteFrame = (id) => {
               </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <RectangleStackIcon className="h-8 w-8 text-blue-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Total Frames</div>
-                    <div className="text-2xl font-bold mt-1">{stats.totalFrames}</div>
-                  </div>
-                </div>
-                <div className="text-sm text-green-600 mt-2">
-                  {stats.userAdded} user-added
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <ScaleIcon className="h-8 w-8 text-purple-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Avg. Weight</div>
-                    <div className="text-2xl font-bold mt-1">{stats.avgWeight}g</div>
-                  </div>
-                </div>
-                <div className="text-sm text-blue-600 mt-2">
-                  Based on all frames
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <BeakerIcon className="h-8 w-8 text-green-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Materials</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {[...new Set(frames.map(f => f.material))].length}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Unique materials
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <CurrencyDollarIcon className="h-8 w-8 text-yellow-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Avg. Discount</div>
-                    <div className="text-2xl font-bold mt-1">{stats.avgDiscount}%</div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600 mt-2">
-                  Average discount rate
-                </div>
-              </div>
-            </div>
+            
           </div>
         </main>
       </div>

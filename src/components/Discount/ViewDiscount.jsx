@@ -18,6 +18,7 @@ import {
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
+import { getDiscountById } from '../../Api/discountApi'
 
 const ViewDiscount = () => {
   const { id } = useParams()
@@ -34,119 +35,20 @@ const ViewDiscount = () => {
     loadDiscountDetails()
   }, [id])
 
-  const loadDiscountDetails = () => {
+  const loadDiscountDetails = async () => {
     setLoading(true)
     try {
-      // Load from localStorage
-      const savedDiscounts = JSON.parse(localStorage.getItem('discounts') || '[]')
+      // Call the API to fetch discount details
+      const response = await getDiscountById(id)
       
-      // Find the discount by ID
-      const foundDiscount = savedDiscounts.find(d => d.id === parseInt(id))
-      
-      if (foundDiscount) {
-        setDiscount(foundDiscount)
+      if (response.success && response.discount) {
+        setDiscount(response.discount)
       } else {
-        // Check in dummy data
-        const dummyDiscounts = [
-          {
-            id: 1,
-            name: "Summer Sale 20%",
-            description: "20% discount for summer season on all eyewear products",
-            discountType: "percentage",
-            discountValue: 20,
-            maxDiscount: 1000,
-            applicableOn: "global",
-            priority: 10,
-            canStackWithOther: false,
-            canStackWithPromo: true,
-            startDate: "2024-12-01T00:00:00Z",
-            endDate: "2024-12-31T23:59:59Z",
-            isActive: true,
-            isAutoApplied: false,
-            usageCount: 245,
-            totalDiscountGiven: 12500,
-            createdBy: "Admin User",
-            createdAt: "2024-11-01T10:00:00Z",
-            isDummy: true
-          },
-          {
-            id: 2,
-            name: "Winter Clearance ₹500 Off",
-            description: "Fixed ₹500 off on winter collection frames",
-            discountType: "fixed",
-            discountValue: 500,
-            maxDiscount: null,
-            applicableOn: "category",
-            applicableCategories: ["Winter", "Clearance"],
-            priority: 5,
-            canStackWithOther: true,
-            canStackWithPromo: false,
-            startDate: "2024-11-15T00:00:00Z",
-            endDate: "2024-12-15T23:59:59Z",
-            isActive: true,
-            isAutoApplied: true,
-            usageCount: 89,
-            totalDiscountGiven: 44500,
-            createdBy: "Marketing Team",
-            createdAt: "2024-10-20T14:30:00Z",
-            isDummy: true
-          },
-          {
-            id: 3,
-            name: "Buy 1 Get 1 Free",
-            description: "Buy one premium frame, get one free (lower value item free)",
-            discountType: "buy_x_get_y",
-            discountValue: 100,
-            maxDiscount: null,
-            applicableOn: "product",
-            applicableProducts: ["Premium-001", "Premium-002"],
-            priority: 1,
-            canStackWithOther: false,
-            canStackWithPromo: false,
-            startDate: "2024-10-01T00:00:00Z",
-            endDate: "2024-10-31T23:59:59Z",
-            isActive: false,
-            isAutoApplied: false,
-            usageCount: 45,
-            totalDiscountGiven: 22500,
-            createdBy: "Sales Team",
-            createdAt: "2024-09-15T09:15:00Z",
-            isDummy: true
-          },
-          {
-            id: 4,
-            name: "Free Shipping All Orders",
-            description: "Free shipping on all orders above ₹999",
-            discountType: "free_shipping",
-            discountValue: 0,
-            maxDiscount: null,
-            applicableOn: "global",
-            minOrderValue: 999,
-            priority: 20,
-            canStackWithOther: true,
-            canStackWithPromo: true,
-            startDate: "2024-09-01T00:00:00Z",
-            endDate: "2024-12-31T23:59:59Z",
-            isActive: true,
-            isAutoApplied: true,
-            usageCount: 312,
-            totalDiscountGiven: 18720,
-            createdBy: "Operations",
-            createdAt: "2024-08-25T11:45:00Z",
-            isDummy: true
-          }
-        ]
-
-        const dummyDiscount = dummyDiscounts.find(d => d.id === parseInt(id))
-        if (dummyDiscount) {
-          setDiscount(dummyDiscount)
-        } else {
-          setError('Discount not found')
-        }
+        setError(response.message || 'Discount not found')
       }
     } catch (error) {
       console.error('Error loading discount:', error)
-      setError('Failed to load discount details')
+      setError(error.message || 'Failed to load discount details')
     } finally {
       setLoading(false)
     }
@@ -296,7 +198,7 @@ const ViewDiscount = () => {
                     <p className="text-gray-600">View complete discount information</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
+                {/* <div className="flex items-center space-x-3">
                   {discount.isDummy && (
                     <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
                       Demo Discount
@@ -313,7 +215,7 @@ const ViewDiscount = () => {
                   >
                     Edit Discount
                   </Link>
-                </div>
+                </div> */}
               </div>
 
               {/* Status Banner */}

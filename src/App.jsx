@@ -1,5 +1,5 @@
 import './App.css'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import Dashboard from './components/Dashboard'
 import Orders from './components/Orders/Orders'
 import Product from './components/Products/Product'
@@ -37,49 +37,78 @@ import UpdateFrame from './components/Frame/UpdateFrame'
 import ViewFrame from './components/Frame/ViewFrame'
 import ViewCompany from './components/Company/ViewCompany'
 import UpdateCompany from './components/Company/UpdateCompany'
+import { isAuthenticated } from './utils/auth';
+import { Toaster } from 'react-hot-toast'
+
+// Improved PrivateRoute with debugging
+const PrivateRoute = () => {
+  const authenticated = isAuthenticated();
+  
+  if (!authenticated) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <Outlet />;
+};
 
 function App() {
   return (
     <Router>
+    <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          duration: 1000,
+        }}
+      />
       <div className="min-h-screen bg-gray-50">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/products" element={<Product />} />
-          <Route path="products/add" element={<AddProduct />} />
-          <Route path="/products/view/:id" element={<ProductView />} />
-           <Route path="/products/edit/:id" element={<ProductEdit />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/categories/add" element={<AddCategory />} />
-          <Route path="/orders" element={<Orders />} />
-               <Route path="/orders/view/:id" element={<OrderView />} /> 
-                 <Route path="/orders/update/:id" element={<OrderUpdate />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/invoices/view/:id" element={<InvoiceView />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/users/add" element={<UserAdd />} />
-          <Route path="/users/edit/:id" element={<UserEdit />} /> 
-           <Route path="/my-profile" element={<MyProfile />} /> 
-           <Route path="/login" element={<Login />} /> 
-           <Route path="/company" element={<Company />} /> 
-           <Route path="/company/add" element={<AddCompany />} /> 
-           <Route path="/company/view/:id" element={<ViewCompany />} /> 
-           <Route path="/company/update/:id" element={<UpdateCompany />} /> 
-           <Route path="/frame" element={<Frame />} /> 
-           <Route path="/frame/add" element={<AddFrame />} /> 
-           <Route path="/frame/update/:id" element={<UpdateFrame />} /> 
-           <Route path="/frame/view/:id" element={<ViewFrame />} /> 
-           <Route path="/discount" element={<Discount/>} /> 
-           <Route path="/discount/add" element={<AddDiscount/>} /> 
-           <Route path="/discount/view/:id" element={<ViewDiscount/>} /> 
-           <Route path="/discount/update/:id" element={<UpdateDiscount/>} /> 
-           <Route path="/promoCode" element={<PromoCode/>} /> 
-           <Route path="/promoCode/add" element={<AddPromo/>} /> 
-           <Route path="/promoCode/update/:id" element={<UpdatePromo/>} /> 
-           <Route path="/promoCode/view/:id" element={<ViewPromo/>} /> 
-           <Route path="/banner" element={<Banner/>} /> 
-           <Route path="/banner/add" element={<AddBanner/>} /> 
-           <Route path="/banner/update/:id" element={<UpdateBanner/>} /> 
-           <Route path="/banner/view/:id" element={<ViewBanner/>} /> 
+          {/* Public routes */}
+          <Route path="/" element={<Login />} />
+          
+          
+          {/* All protected routes */}
+          <Route element={<PrivateRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/products" element={<Product />} />
+            <Route path="/products/add" element={<AddProduct />} />
+            <Route path="/products/view/:id" element={<ProductView />} />
+            <Route path="/products/edit/:id" element={<ProductEdit />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/categories/add" element={<AddCategory />} />
+            <Route path="/orders" element={<Orders />} />
+            <Route path="/orders/view/:id" element={<OrderView />} />
+            <Route path="/orders/update/:id" element={<OrderUpdate />} />
+            <Route path="/invoices" element={<Invoices />} />
+            <Route path="/invoices/view/:id" element={<InvoiceView />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/users/add" element={<UserAdd />} />
+            <Route path="/users/edit/:id" element={<UserEdit />} />
+            <Route path="/my-profile" element={<MyProfile />} />
+            <Route path="/company" element={<Company />} />
+            <Route path="/company/add" element={<AddCompany />} />
+            <Route path="/company/view/:id" element={<ViewCompany />} />
+            <Route path="/company/update/:id" element={<UpdateCompany />} />
+            <Route path="/frame" element={<Frame />} />
+            <Route path="/frame/add" element={<AddFrame />} />
+            <Route path="/frame/update/:id" element={<UpdateFrame />} />
+            <Route path="/frame/view/:id" element={<ViewFrame />} />
+            <Route path="/discount" element={<Discount />} />
+            <Route path="/discount/add" element={<AddDiscount />} />
+            <Route path="/discount/view/:id" element={<ViewDiscount />} />
+            <Route path="/discount/update/:id" element={<UpdateDiscount />} />
+            <Route path="/promoCode" element={<PromoCode />} />
+            <Route path="/promoCode/add" element={<AddPromo />} />
+            <Route path="/promoCode/update/:id" element={<UpdatePromo />} />
+            <Route path="/promoCode/view/:id" element={<ViewPromo />} />
+            <Route path="/banner" element={<Banner />} />
+            <Route path="/banner/add" element={<AddBanner />} />
+            <Route path="/banner/update/:id" element={<UpdateBanner />} />
+            <Route path="/banner/view/:id" element={<ViewBanner />} />
+          </Route>
+          
+          {/* Catch-all route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </Router>

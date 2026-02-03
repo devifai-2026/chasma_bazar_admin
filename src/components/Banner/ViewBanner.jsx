@@ -12,6 +12,7 @@ import {
 import { Link, useParams } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
+import {getBannerById} from "../../Api/bannerApi";
 
 const ViewBanner = () => {
   const { id } = useParams();
@@ -23,69 +24,14 @@ const ViewBanner = () => {
     loadBannerData();
   }, [id]);
 
-  const loadBannerData = () => {
+  const loadBannerData = async () => {
     try {
-      // Get all banners
-      const allBanners = JSON.parse(localStorage.getItem("banners") || "[]");
-      const dummyBanners = [
-        {
-          id: 1,
-          title: "Summer Sale 2025",
-          description: "Get 50% off on all sunglasses",
-          image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200&h-400&fit=crop",
-          buttonText: "Shop Now",
-          buttonLink: "/products/sale",
-          pages: ["home", "products"],
-          position: "top",
-          priority: 10,
-          isActive: true,
-          startDate: "2025-01-01T00:00:00.000Z",
-          endDate: "2025-12-31T23:59:59.000Z",
-          createdAt: "2024-12-01T10:30:00Z",
-          isDummy: true
-        },
-        {
-          id: 2,
-          title: "Winter Collection Launch",
-          description: "New winter frames now available",
-          image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=1200&h=400&fit=crop",
-          buttonText: "Explore",
-          buttonLink: "/products/winter-collection",
-          pages: ["home"],
-          position: "middle",
-          priority: 5,
-          isActive: true,
-          startDate: "2024-11-01T00:00:00.000Z",
-          endDate: "2025-02-28T23:59:59.000Z",
-          createdAt: "2024-10-25T14:20:00Z",
-          isDummy: true
-        },
-        {
-          id: 3,
-          title: "Limited Time Offer",
-          description: "Buy one get one free on selected items",
-          image: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200&h=400&fit=crop",
-          buttonText: "Grab Deal",
-          buttonLink: "/products/bogo",
-          pages: ["home", "products", "cart"],
-          position: "bottom",
-          priority: 8,
-          isActive: false,
-          startDate: "2024-10-01T00:00:00.000Z",
-          endDate: "2024-10-31T23:59:59.000Z",
-          createdAt: "2024-09-28T09:15:00Z",
-          isDummy: true
-        }
-      ];
-
-      // Combine banners
-      const allCombinedBanners = [...dummyBanners, ...allBanners];
+      const response = await getBannerById(id);
       
-      // Find the banner to view
-      const bannerToView = allCombinedBanners.find(banner => banner.id === parseInt(id));
-
-      if (bannerToView) {
-        setBanner(bannerToView);
+      if (response && response.data) {
+        setBanner(response.data);
+      } else if (response) {
+        setBanner(response);
       }
     } catch (error) {
       console.error("Error loading banner:", error);
@@ -215,16 +161,7 @@ const ViewBanner = () => {
                       <h1 className="text-2xl font-bold text-gray-900">{banner.title}</h1>
                       <p className="text-gray-600">Banner Details</p>
                     </div>
-                    <div className="flex items-center space-x-3">
-                      {!banner.isDummy && (
-                        <Link
-                          to={`/banner/update/${banner.id}`}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                        >
-                          Edit Banner
-                        </Link>
-                      )}
-                    </div>
+                    
                   </div>
                 </div>
               </div>

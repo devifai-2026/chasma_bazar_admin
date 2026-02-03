@@ -13,6 +13,8 @@ import {
 import { Link, useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
+import { getCompanyById, updateCompany as updateCompanyAPI } from "../../Api/companyApi";
+import toast from 'react-hot-toast'
 
 const UpdateCompany = () => {
   const { id } = useParams();
@@ -59,75 +61,45 @@ const UpdateCompany = () => {
   const fetchCompany = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // For demo purposes, check localStorage first
-      const savedCompanies = JSON.parse(localStorage.getItem("companies") || "[]");
-      const dummyCompanies = [
-        {
-          id: 1,
-          name: "Premium Eyewear Co.",
-          description: "Premium eyewear brand specializing in designer frames",
-          pinCode: "110001",
-          email: "contact@premiumeyewear.com",
-          phone: "9876543210",
-          address: {
-            street: "123 Business Park",
-            city: "Mumbai",
-            state: "Maharashtra",
-            country: "India",
-            pinCode: "110001"
-          },
-          logo: {
-            url: "https://images.unsplash.com/photo-1567446537710-0c5ff5a6ac32?w-400&h=400&fit=crop",
-            public_id: "logo_123"
-          },
-          establishedYear: 2010,
-          rating: 4.5,
-          totalRatings: 120,
-          weblinks: [
-            { url: "https://premiumeyewear.com", label: "Website" },
-            { url: "https://facebook.com/premiumeyewear", label: "Facebook" }
-          ],
-          isDummy: true
-        }
-      ];
-
-      const allCompanies = [...dummyCompanies, ...savedCompanies];
-      const foundCompany = allCompanies.find(c => c.id === parseInt(id));
-
-      if (foundCompany) {
+      const response = await getCompanyById(id);
+      
+      if (response.success && response.data) {
+        const company = response.data;
         setFormData({
-          name: foundCompany.name || "",
-          description: foundCompany.description || "",
-          email: foundCompany.email || "",
-          phone: foundCompany.phone || "",
-          establishedYear: foundCompany.establishedYear || "",
-          rating: foundCompany.rating || "",
-          totalRatings: foundCompany.totalRatings || "",
-          employees: foundCompany.employees || "",
-          annualRevenue: foundCompany.annualRevenue || "",
+          name: company.name || "",
+          description: company.description || "",
+          email: company.email || "",
+          phone: company.phone || "",
+          establishedYear: company.establishedYear || "",
+          rating: company.rating || "",
+          totalRatings: company.totalRatings || "",
+          employees: company.employees || "",
+          annualRevenue: company.annualRevenue || "",
           address: {
-            street: foundCompany.address?.street || "",
-            city: foundCompany.address?.city || "",
-            state: foundCompany.address?.state || "",
-            country: foundCompany.address?.country || "",
-            pinCode: foundCompany.address?.pinCode || foundCompany.pinCode || ""
+            street: company.address?.street || "",
+            city: company.address?.city || "",
+            state: company.address?.state || "",
+            country: company.address?.country || "",
+            pinCode: company.address?.pinCode || ""
           },
           logo: {
-            url: foundCompany.logo?.url || "",
-            public_id: foundCompany.logo?.public_id || ""
+            url: company.logo?.url || "",
+            public_id: company.logo?.public_id || ""
           },
-          weblinks: foundCompany.weblinks || [{ url: "", label: "" }],
-          products: foundCompany.products || [""],
-          certifications: foundCompany.certifications || [""],
-          shippingCountries: foundCompany.shippingCountries || [""]
+          weblinks: company.weblinks && company.weblinks.length > 0 ? company.weblinks : [{ url: "", label: "" }],
+          products: company.products && company.products.length > 0 ? company.products : [""],
+          certifications: company.certifications && company.certifications.length > 0 ? company.certifications : [""],
+          shippingCountries: company.shippingCountries && company.shippingCountries.length > 0 ? company.shippingCountries : [""]
         });
       } else {
-        setError("Company not found");
+        setError("Failed to load company details");
       }
     } catch (err) {
       console.error("Error fetching company:", err);
-      setError("Failed to load company details");
+      setError(err.message || "Failed to load company details");
+      toast.error(err.message || "Failed to load company details");
     } finally {
       setLoading(false);
     }
@@ -203,46 +175,41 @@ const UpdateCompany = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
+    setError(null);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare the data for API call
+      const updateData = {
+        name: formData.name,
+        description: formData.description,
+        email: formData.email,
+        phone: formData.phone,
+        establishedYear: formData.establishedYear,
+        rating: formData.rating,
+        totalRatings: formData.totalRatings,
+        employees: formData.employees,
+        annualRevenue: formData.annualRevenue,
+        address: formData.address,
+        logo: formData.logo,
+        weblinks: formData.weblinks.filter(link => link.url || link.label),
+        products: formData.products.filter(p => p.trim()),
+        certifications: formData.certifications.filter(c => c.trim()),
+        shippingCountries: formData.shippingCountries.filter(c => c.trim())
+      };
+
+      const response = await updateCompanyAPI(id, updateData);
       
-      // For demo, update in localStorage
-      const savedCompanies = JSON.parse(localStorage.getItem("companies") || "[]");
-      const companyIndex = savedCompanies.findIndex(c => c.id === parseInt(id));
-      
-      if (companyIndex !== -1) {
-        const updatedCompany = {
-          ...savedCompanies[companyIndex],
-          ...formData,
-          pinCode: formData.address.pinCode, // Keep backward compatibility
-          id: parseInt(id)
-        };
-        
-        savedCompanies[companyIndex] = updatedCompany;
-        localStorage.setItem("companies", JSON.stringify(savedCompanies));
-        
-        alert("Company updated successfully!");
+      if (response.success) {
+        toast.success("Company updated successfully!");
         navigate(`/company/view/${id}`);
       } else {
-        // For dummy companies, add as new company
-        const newCompany = {
-          ...formData,
-          id: Date.now(), // New ID for the company
-          pinCode: formData.address.pinCode,
-          isDummy: false
-        };
-        
-        savedCompanies.push(newCompany);
-        localStorage.setItem("companies", JSON.stringify(savedCompanies));
-        
-        alert("Company created successfully!");
-        navigate("/company");
+        setError(response.message || "Failed to update company");
+        toast.error(response.message || "Failed to update company");
       }
     } catch (error) {
       console.error("Error updating company:", error);
-      setError("Failed to update company");
+      setError(error.message || "Failed to update company");
+      toast.error(error.message || "Failed to update company");
     } finally {
       setSaving(false);
     }

@@ -1,25 +1,33 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   ArrowLeftIcon,
-  PhotoIcon,
   TagIcon,
   CurrencyDollarIcon,
   CubeIcon,
   DocumentTextIcon,
   ExclamationCircleIcon,
-  EyeIcon,
-  UserGroupIcon,
   BuildingOfficeIcon,
   ShieldCheckIcon,
   SparklesIcon,
-  BeakerIcon
+  PhotoIcon
 } from '@heroicons/react/24/outline'
 import { Link, useNavigate } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
+import {getFrames} from '../../Api/frameapi';
+import {getAllCompanies} from '../../Api/companyApi';
+import {createProduct} from '../../Api/productApi';
+import uploadToCloudinary from '../../utils/cloudinary';
+import toast from 'react-hot-toast'
 
 const AddProduct = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [frames, setFrames] = useState([])
+  const [companies, setCompanies] = useState([])
+  const [loadingFrames, setLoadingFrames] = useState(false)
+  const [loadingCompanies, setLoadingCompanies] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [imagePreviews, setImagePreviews] = useState({})
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
@@ -28,9 +36,19 @@ const AddProduct = () => {
     userCategory: '',
     description: '',
     price: '',
-    productDiscount: '',
+    productDiscount: 0,
+    appliedDiscounts: [],
     company: '',
-    colors: [{ color: '', hexCode: '#000000', images: [{ type: 'normal', url: '', public_id: '', alt: '' }, { type: '3d', url: '', public_id: '', alt: '' }] }],
+    colors: [{ 
+      color: '', 
+      hexCode: '#000000', 
+      imageSets: [
+        {
+          normalImages: [{ url: '', public_id: '', alt: '' }],
+          image3d: { url: '', public_id: '', alt: '' }
+        }
+      ]
+    }],
     stock: '',
     specsType: 'eyeglasses',
     model: '',
@@ -40,13 +58,42 @@ const AddProduct = () => {
     warranty: { duration: '', durationType: 'months', description: '' },
     isFeatured: false,
     tags: '',
-    ageGroup: 'adults'
+    ageGroup: 'all'
   })
   const [errors, setErrors] = useState({})
   const navigate = useNavigate()
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
   const closeSidebar = () => setSidebarOpen(false)
+
+  // Fetch frames and companies on component mount
+  useEffect(() => {
+    const fetchFramesAndCompanies = async () => {
+      try {
+        setLoadingFrames(true)
+        const framesData = await getFrames()
+        setFrames(framesData?.data || [])
+      } catch (error) {
+        console.error('Error fetching frames:', error)
+        setFrames([])
+      } finally {
+        setLoadingFrames(false)
+      }
+
+      try {
+        setLoadingCompanies(true)
+        const companiesData = await getAllCompanies()
+        setCompanies(companiesData?.data || [])
+      } catch (error) {
+        console.error('Error fetching companies:', error)
+        setCompanies([])
+      } finally {
+        setLoadingCompanies(false)
+      }
+    }
+
+    fetchFramesAndCompanies()
+  }, [])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -98,10 +145,153 @@ const AddProduct = () => {
     setFormData(prev => ({ ...prev, colors: updatedColors }))
   }
 
-  const handleImageUrlChange = (colorIndex, imageIndex, field, value) => {
+  const handleImageUrlChange = (colorIndex, setIndex, imageIndex, field, value) => {
     const updatedColors = [...formData.colors]
-    updatedColors[colorIndex].images[imageIndex][field] = value
+    updatedColors[colorIndex].imageSets[setIndex].normalImages[imageIndex][field] = value
     setFormData(prev => ({ ...prev, colors: updatedColors }))
+  }
+
+  const handle3dImageUrlChange = (colorIndex, setIndex, field, value) => {
+    const updatedColors = [...formData.colors]
+    updatedColors[colorIndex].imageSets[setIndex].image3d[field] = value
+    setFormData(prev => ({ ...prev, colors: updatedColors }))
+  }
+
+  const handleNormalImageUpload = (colorIndex, setIndex, imageIndex, files) => {
+    if (!files || files.length === 0) return
+    
+    const updatedColors = [...formData.colors]
+    const newPreviews = { ...imagePreviews }
+    const imageSet = updatedColors[colorIndex].imageSets[setIndex]
+    
+    // Ensure normalImages array exists
+    if (!imageSet.normalImages) {
+      imageSet.normalImages = []
+    }
+    
+    // Ensure the imageIndex exists in the array
+    if (!imageSet.normalImages[imageIndex]) {
+      imageSet.normalImages[imageIndex] = { url: '', public_id: '', alt: '' }
+    }
+    
+    // Process all selected files
+    Array.from(files).forEach((file, fileIndex) => {
+      const preview = URL.createObjectURL(file)
+      
+      if (fileIndex === 0) {
+        // Replace the first image at the current index
+        const key = `normal-${colorIndex}-${setIndex}-${imageIndex}`
+        newPreviews[key] = { file, preview }
+        imageSet.normalImages[imageIndex].file = file
+      } else {
+        // Add remaining files as new image entries
+        const key = `normal-${colorIndex}-${setIndex}-${imageSet.normalImages.length}`
+        newPreviews[key] = { file, preview }
+        imageSet.normalImages.push({ 
+          url: '', 
+          public_id: '', 
+          alt: '',
+          file: file 
+        })
+      }
+    })
+    
+    setImagePreviews(newPreviews)
+    setFormData(prev => ({ ...prev, colors: updatedColors }))
+  }
+
+  const handle3dImageUpload = (colorIndex, setIndex, files) => {
+    if (!files || files.length === 0) return
+    
+    const file = files[0]
+    const preview = URL.createObjectURL(file)
+    
+    // Store preview and file
+    const key = `3d-${colorIndex}-${setIndex}`
+    setImagePreviews(prev => ({
+      ...prev,
+      [key]: { file, preview }
+    }))
+    
+    // Update formData with the file object
+    const updatedColors = [...formData.colors]
+    updatedColors[colorIndex].imageSets[setIndex].image3d.file = file
+    setFormData(prev => ({ ...prev, colors: updatedColors }))
+  }
+
+  const removeNormalImagePreview = (colorIndex, setIndex, imageIndex) => {
+    const key = `normal-${colorIndex}-${setIndex}-${imageIndex}`
+    if (imagePreviews[key]) {
+      URL.revokeObjectURL(imagePreviews[key].preview)
+    }
+    
+    setImagePreviews(prev => {
+      const newPreviews = { ...prev }
+      delete newPreviews[key]
+      return newPreviews
+    })
+    
+    // Clear from formData
+    const updatedColors = [...formData.colors]
+    updatedColors[colorIndex].imageSets[setIndex].normalImages[imageIndex].file = null
+    setFormData(prev => ({ ...prev, colors: updatedColors }))
+  }
+
+  const remove3dImagePreview = (colorIndex, setIndex) => {
+    const key = `3d-${colorIndex}-${setIndex}`
+    if (imagePreviews[key]) {
+      URL.revokeObjectURL(imagePreviews[key].preview)
+    }
+    
+    setImagePreviews(prev => {
+      const newPreviews = { ...prev }
+      delete newPreviews[key]
+      return newPreviews
+    })
+    
+    // Clear from formData
+    const updatedColors = [...formData.colors]
+    updatedColors[colorIndex].imageSets[setIndex].image3d.file = null
+    setFormData(prev => ({ ...prev, colors: updatedColors }))
+  }
+
+  const addNormalImage = (colorIndex, setIndex) => {
+    const updatedColors = [...formData.colors]
+    const imageSet = updatedColors[colorIndex].imageSets[setIndex]
+    if (imageSet && !imageSet.normalImages) {
+      imageSet.normalImages = []
+    }
+    if (imageSet && imageSet.normalImages) {
+      imageSet.normalImages.push({ url: '', public_id: '', alt: '' })
+    }
+    setFormData(prev => ({ ...prev, colors: updatedColors }))
+  }
+
+  const removeNormalImage = (colorIndex, setIndex, imageIndex) => {
+    const updatedColors = [...formData.colors]
+    const imageSet = updatedColors[colorIndex].imageSets[setIndex]
+    if (imageSet && imageSet.normalImages && imageSet.normalImages.length > 1) {
+      removeNormalImagePreview(colorIndex, setIndex, imageIndex)
+      imageSet.normalImages.splice(imageIndex, 1)
+      setFormData(prev => ({ ...prev, colors: updatedColors }))
+    }
+  }
+
+  const addImageSet = (colorIndex) => {
+    const updatedColors = [...formData.colors]
+    updatedColors[colorIndex].imageSets.push({
+      normalImages: [{ url: '', public_id: '', alt: '' }],
+      image3d: { url: '', public_id: '', alt: '' }
+    })
+    setFormData(prev => ({ ...prev, colors: updatedColors }))
+  }
+
+  const removeImageSet = (colorIndex, setIndex) => {
+    const updatedColors = [...formData.colors]
+    if (updatedColors[colorIndex].imageSets.length > 1) {
+      updatedColors[colorIndex].imageSets.splice(setIndex, 1)
+      setFormData(prev => ({ ...prev, colors: updatedColors }))
+    }
   }
 
   const addColor = () => {
@@ -110,10 +300,12 @@ const AddProduct = () => {
       colors: [...prev.colors, { 
         color: '', 
         hexCode: '#000000', 
-        images: [
-          { type: 'normal', url: '', public_id: '', alt: '' }, 
-          { type: '3d', url: '', public_id: '', alt: '' }
-        ] 
+        imageSets: [
+          {
+            normalImages: [{ url: '', public_id: '', alt: '' }],
+            image3d: { url: '', public_id: '', alt: '' }
+          }
+        ]
       }]
     }))
   }
@@ -130,12 +322,14 @@ const AddProduct = () => {
     
     if (!formData.name.trim()) newErrors.name = 'Product name is required'
     if (!formData.sku.trim()) newErrors.sku = 'SKU is required'
-    if (!formData.price || formData.price <= 0) newErrors.price = 'Valid price is required'
-    if (!formData.productDiscount || formData.productDiscount < 0) newErrors.productDiscount = 'Valid discount is required'
-    if (!formData.stock || formData.stock < 0) newErrors.stock = 'Valid stock quantity is required'
-    if (!formData.company) newErrors.company = 'Company is required'
-    if (!formData.frameType) newErrors.frameType = 'Frame type is required'
     if (!formData.type) newErrors.type = 'Product type is required'
+    if (!formData.frameType) newErrors.frameType = 'Frame type is required'
+    if (!formData.userCategory) newErrors.userCategory = 'User category is required'
+    if (!formData.description.trim()) newErrors.description = 'Product description is required'
+    if (!formData.price || formData.price <= 0) newErrors.price = 'Valid price is required'
+    if (formData.productDiscount < 0 || formData.productDiscount > 100) newErrors.productDiscount = 'Discount must be between 0-100'
+    if (!formData.company) newErrors.company = 'Company is required'
+    if (!formData.stock || formData.stock < 0) newErrors.stock = 'Valid stock quantity is required'
     if (!formData.specsType) newErrors.specsType = 'Specs type is required'
     if (!formData.model.trim()) newErrors.model = 'Model is required'
     if (!formData.material.trim()) newErrors.material = 'Material is required'
@@ -146,7 +340,7 @@ const AddProduct = () => {
     if (!formData.warranty.duration || formData.warranty.duration <= 0) newErrors.warranty_duration = 'Valid warranty duration is required'
     if (!formData.ageGroup) newErrors.ageGroup = 'Age group is required'
     
-    // Validate colors
+    // Validate colors and images (check for files, not URLs)
     formData.colors.forEach((color, index) => {
       if (!color.color.trim()) {
         newErrors[`color_${index}`] = 'Color name is required'
@@ -154,14 +348,29 @@ const AddProduct = () => {
       if (!color.hexCode.trim()) {
         newErrors[`hexCode_${index}`] = 'Hex code is required'
       }
-      color.images.forEach((img, imgIndex) => {
-        if (!img.url.trim()) {
-          newErrors[`image_url_${index}_${imgIndex}`] = 'Image URL is required'
-        }
-        if (!img.alt.trim()) {
-          newErrors[`image_alt_${index}_${imgIndex}`] = 'Image alt text is required'
-        }
-      })
+      // Validate image sets
+      if (!color.imageSets || color.imageSets.length === 0) {
+        newErrors[`imageSets_${index}`] = 'At least one image set is required'
+      } else {
+        color.imageSets.forEach((imageSet, setIndex) => {
+          // Validate normal images (at least one required)
+          if (!imageSet.normalImages || imageSet.normalImages.length === 0 || !imageSet.normalImages.some(img => img.file)) {
+            newErrors[`normal_images_${index}_${setIndex}`] = 'At least one normal image is required'
+          }
+          imageSet.normalImages?.forEach((img, imgIndex) => {
+            if (img.file && !img.alt.trim()) {
+              newErrors[`normal_image_alt_${index}_${setIndex}_${imgIndex}`] = 'Image alt text is required'
+            }
+          })
+          // Validate 3D image (exactly one required)
+          if (!imageSet.image3d?.file) {
+            newErrors[`image_3d_${index}_${setIndex}`] = '3D image is required'
+          }
+          if (imageSet.image3d?.file && !imageSet.image3d.alt.trim()) {
+            newErrors[`image_3d_alt_${index}_${setIndex}`] = '3D image alt text is required'
+          }
+        })
+      }
     })
 
     return newErrors
@@ -170,82 +379,117 @@ const AddProduct = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    // First, validate basic form data (without image URLs)
     const validationErrors = validateForm()
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
+      toast.error('Please fix the errors in the form before submitting.', validationErrors)
       return
     }
 
-    // Prepare the product data according to API structure
-    const newProduct = {
-      name: formData.name,
-      sku: formData.sku,
-      type: formData.type,
-      frameType: formData.frameType,
-      userCategory: formData.userCategory,
-      description: formData.description,
-      price: parseFloat(formData.price),
-      productDiscount: parseFloat(formData.productDiscount) || 0,
-      company: formData.company,
-      colors: formData.colors.map(color => ({
-        color: color.color,
-        hexCode: color.hexCode,
-        images: color.images.filter(img => img.url.trim() !== '') // Only include images with URLs
-      })),
-      stock: parseInt(formData.stock),
-      specsType: formData.specsType,
-      model: formData.model,
-      material: formData.material,
-      weight: parseFloat(formData.weight),
-      dimensions: {
-        height: parseFloat(formData.dimensions.height),
-        width: parseFloat(formData.dimensions.width),
-        depth: parseFloat(formData.dimensions.depth)
-      },
-      warranty: {
-        duration: parseInt(formData.warranty.duration),
-        durationType: formData.warranty.durationType,
-        description: formData.warranty.description
-      },
-      isFeatured: formData.isFeatured,
-      tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-      ageGroup: formData.ageGroup
-    }
+    setIsSubmitting(true)
 
     try {
-      // Here you would make an API call to your backend
-      // For now, we'll simulate with localStorage
-      let existingProducts = []
-      try {
-        const storedProducts = localStorage.getItem('api_products')
-        existingProducts = storedProducts ? JSON.parse(storedProducts) : []
-      } catch (error) {
-        console.error('Error reading from localStorage:', error)
-        existingProducts = []
+      // Upload images to Cloudinary FIRST
+      const uploadedColors = await Promise.all(
+        formData.colors.map(async (color) => {
+          // Flatten imageSets into a single images array with type field
+          const uploadedImages = []
+          
+          for (const imageSet of color.imageSets) {
+            // Upload normal images
+            for (const image of imageSet.normalImages) {
+              if (image.file) {
+                const uploadResponse = await uploadToCloudinary(image.file, {
+                  folder: 'chasma_bazar/products'
+                })
+                uploadedImages.push({
+                  type: 'normal',
+                  url: uploadResponse.secure_url,
+                  public_id: uploadResponse.public_id,
+                  alt: image.alt
+                })
+              }
+            }
+            
+            // Upload 3D image
+            if (imageSet.image3d?.file) {
+              const uploadResponse = await uploadToCloudinary(imageSet.image3d.file, {
+                folder: 'chasma_bazar/products/3d'
+              })
+              uploadedImages.push({
+                type: '3d',
+                url: uploadResponse.secure_url,
+                public_id: uploadResponse.public_id,
+                alt: imageSet.image3d.alt
+              })
+            }
+          }
+          
+          return {
+            color: color.color,
+            hexCode: color.hexCode,
+            images: uploadedImages
+          }
+        })
+      )
+
+      // Prepare the product data with uploaded images
+      const newProduct = {
+        name: formData.name,
+        sku: formData.sku,
+        type: formData.type,
+        frameType: formData.frameType,
+        userCategory: formData.userCategory,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        productDiscount: parseFloat(formData.productDiscount) || 0,
+        appliedDiscounts: formData.appliedDiscounts,
+        company: formData.company,
+        colors: uploadedColors,
+        stock: parseInt(formData.stock),
+        specsType: formData.specsType,
+        model: formData.model,
+        material: formData.material,
+        weight: parseFloat(formData.weight),
+        dimensions: {
+          height: parseFloat(formData.dimensions.height),
+          width: parseFloat(formData.dimensions.width),
+          depth: parseFloat(formData.dimensions.depth)
+        },
+        warranty: {
+          duration: parseInt(formData.warranty.duration),
+          durationType: formData.warranty.durationType,
+          description: formData.warranty.description
+        },
+        isFeatured: formData.isFeatured,
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        ageGroup: formData.ageGroup
       }
 
-      const updatedProducts = [newProduct, ...existingProducts]
-      localStorage.setItem('api_products', JSON.stringify(updatedProducts))
-      localStorage.setItem('products_updated', Date.now().toString())
-      
-      alert('Product added successfully!')
-      navigate('/products')
+      // Send to API with Cloudinary URLs
+      const response = await createProduct(newProduct)
+      if (response.success) {
+        toast.success('Product created successfully!')
+        navigate('/products')
+      } else {
+        toast.error(response.message || 'Error creating product')
+      }
     } catch (error) {
-      console.error('Error saving product:', error)
-      alert('Error saving product. Please try again.')
+      const errorMessage = error.response?.data?.message || error.message || 'Error creating product'
+      console.error('Error creating product:', error)
+
+      toast.error(errorMessage)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const productTypes = ['optical', 'sunglasses', 'reading_glasses', 'sports_glasses']
-  const frameTypes = [
-    { value: 'full_rim', label: 'Full Rim' },
-    { value: 'half_rim', label: 'Half Rim' },
-    { value: 'rimless', label: 'Rimless' },
-    { value: 'sports', label: 'Sports' }
-  ]
-  const userCategories = ['Men', 'Women', 'Unisex', 'Kids']
-  const specTypes = ['eyeglasses', 'sunglasses']
-  const ageGroups = ['kids', 'teens', 'adults', 'seniors']
+  const userCategories = ['Men', 'Women', 'Kids']
+  const materialOptions = ['Metal', 'Plastic', 'Acetate', 'Titanium', 'Stainless Steel', 'Aluminum', 'TR90', 'Carbon Fiber', 'Wood', 'Nylon', 'Polycarbonate', 'Mixed Materials']
+  const specTypes = ['eyeglasses', 'sunglasses', 'computer_glasses', 'reading_glasses']
+  const ageGroups = ['children', 'teens', 'adults', 'seniors', 'all']
   const durationTypes = ['days', 'months', 'years']
   const imageTypes = ['normal', '3d']
 
@@ -371,11 +615,12 @@ const AddProduct = () => {
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.frameType ? 'border-red-300' : 'border-gray-300'
                       }`}
+                      disabled={loadingFrames}
                     >
-                      <option value="">Select frame type</option>
-                      {frameTypes.map(type => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
+                      <option value="">{loadingFrames ? 'Loading frames...' : 'Select frame type'}</option>
+                      {frames.map(frame => (
+                        <option key={frame._id} value={frame._id}>
+                          {frame.name}
                         </option>
                       ))}
                     </select>
@@ -390,19 +635,27 @@ const AddProduct = () => {
                   {/* User Category */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      User Category
+                      User Category *
                     </label>
                     <select
                       name="userCategory"
                       value={formData.userCategory}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.userCategory ? 'border-red-300' : 'border-gray-300'
+                      }`}
                     >
                       <option value="">Select category</option>
                       {userCategories.map(cat => (
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
                     </select>
+                    {errors.userCategory && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                        {errors.userCategory}
+                      </p>
+                    )}
                   </div>
 
                   {/* Price */}
@@ -468,22 +721,28 @@ const AddProduct = () => {
                   {/* Company */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Company ID *
+                      Company *
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
                       </div>
-                      <input
-                        type="text"
+                      <select
                         name="company"
                         value={formData.company}
                         onChange={handleChange}
                         className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                           errors.company ? 'border-red-300' : 'border-gray-300'
                         }`}
-                        placeholder="Enter company ID"
-                      />
+                        disabled={loadingCompanies}
+                      >
+                        <option value="">{loadingCompanies ? 'Loading companies...' : 'Select company'}</option>
+                        {companies.map(company => (
+                          <option key={company._id} value={company._id}>
+                            {company.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     {errors.company && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -530,9 +789,8 @@ const AddProduct = () => {
                         errors.specsType ? 'border-red-300' : 'border-gray-300'
                       }`}
                     >
-                      <option value="">Select specs type</option>
                       {specTypes.map(type => (
-                        <option key={type} value={type}>{type}</option>
+                        <option key={type} value={type}>{type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</option>
                       ))}
                     </select>
                     {errors.specsType && (
@@ -571,16 +829,19 @@ const AddProduct = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Material *
                     </label>
-                    <input
-                      type="text"
+                    <select
                       name="material"
                       value={formData.material}
                       onChange={handleChange}
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                         errors.material ? 'border-red-300' : 'border-gray-300'
                       }`}
-                      placeholder="e.g., Acetate"
-                    />
+                    >
+                      <option value="">Select material</option>
+                      {materialOptions.map(material => (
+                        <option key={material} value={material}>{material}</option>
+                      ))}
+                    </select>
                     {errors.material && (
                       <p className="mt-1 text-sm text-red-600 flex items-center">
                         <ExclamationCircleIcon className="h-4 w-4 mr-1" />
@@ -627,7 +888,6 @@ const AddProduct = () => {
                         errors.ageGroup ? 'border-red-300' : 'border-gray-300'
                       }`}
                     >
-                      <option value="">Select age group</option>
                       {ageGroups.map(group => (
                         <option key={group} value={group}>
                           {group.charAt(0).toUpperCase() + group.slice(1)}
@@ -646,16 +906,24 @@ const AddProduct = () => {
                 {/* Description */}
                 <div className="mt-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
+                    Description *
                   </label>
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
                     rows="4"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.description ? 'border-red-300' : 'border-gray-300'
+                    }`}
                     placeholder="Enter product description..."
                   />
+                  {errors.description && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <ExclamationCircleIcon className="h-4 w-4 mr-1" />
+                      {errors.description}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -738,93 +1006,179 @@ const AddProduct = () => {
                     {/* Images for this color */}
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-4">
-                        Images *
+                        Image Sets *
                       </label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {color.images.map((image, imageIndex) => (
-                          <div key={imageIndex} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-4">
-                              <h4 className="font-medium text-gray-700 capitalize">
-                                {image.type} Image
-                              </h4>
-                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
-                                {image.type === 'normal' ? 'Front View' : '3D View'}
+
+                      {color.imageSets && color.imageSets.map((imageSet, setIndex) => (
+                        <div key={setIndex} className="mb-6 p-4 bg-white border-2 border-indigo-300 rounded-lg">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-medium text-gray-700 text-base flex items-center">
+                              <div className="h-4 w-4 rounded-full bg-indigo-500 mr-2"></div>
+                              Image Set {setIndex + 1}
+                            </h4>
+                            {color.imageSets.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeImageSet(colorIndex, setIndex)}
+                                className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
+                              >
+                                Remove Set
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Normal Images Section */}
+                          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center justify-between mb-3">
+                              <h5 className="font-medium text-gray-700 flex items-center text-sm">
+                                <PhotoIcon className="h-4 w-4 mr-1 text-blue-500" />
+                                Normal Images (Multiple)
+                              </h5>
+                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">
+                                {imageSet.normalImages?.length || 0} images
                               </span>
                             </div>
                             
-                            <div className="space-y-4">
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Image URL *
-                                </label>
-                                <input
-                                  type="url"
-                                  value={image.url}
-                                  onChange={(e) => handleImageUrlChange(colorIndex, imageIndex, 'url', e.target.value)}
-                                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                    errors[`image_url_${colorIndex}_${imageIndex}`] ? 'border-red-300' : 'border-gray-300'
-                                  }`}
-                                  placeholder="https://example.com/image.jpg"
-                                />
-                                {errors[`image_url_${colorIndex}_${imageIndex}`] && (
-                                  <p className="mt-1 text-sm text-red-600">
-                                    {errors[`image_url_${colorIndex}_${imageIndex}`]}
-                                  </p>
-                                )}
-                              </div>
-                              
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Public ID
-                                </label>
-                                <input
-                                  type="text"
-                                  value={image.public_id}
-                                  onChange={(e) => handleImageUrlChange(colorIndex, imageIndex, 'public_id', e.target.value)}
-                                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  placeholder="e.g., black_front_123"
-                                />
-                              </div>
-                              
-                              <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Alt Text *
-                                </label>
-                                <input
-                                  type="text"
-                                  value={image.alt}
-                                  onChange={(e) => handleImageUrlChange(colorIndex, imageIndex, 'alt', e.target.value)}
-                                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                    errors[`image_alt_${colorIndex}_${imageIndex}`] ? 'border-red-300' : 'border-gray-300'
-                                  }`}
-                                  placeholder="e.g., Black frame front view"
-                                />
-                                {errors[`image_alt_${colorIndex}_${imageIndex}`] && (
-                                  <p className="mt-1 text-sm text-red-600">
-                                    {errors[`image_alt_${colorIndex}_${imageIndex}`]}
-                                  </p>
-                                )}
-                              </div>
-                              
-                              {image.url && (
-                                <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Image Preview
-                                  </label>
-                                  <img
-                                    src={image.url}
-                                    alt={image.alt}
-                                    className="h-32 w-32 object-cover rounded-lg border mx-auto"
-                                    onError={(e) => {
-                                      e.target.src = 'https://via.placeholder.com/150?text=Image+Error'
-                                    }}
+                            {imageSet.normalImages && imageSet.normalImages.map((image, imageIndex) => (
+                              <div key={imageIndex} className="mb-3 p-2 bg-white rounded border border-gray-200">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs text-gray-600">Image {imageIndex + 1}</span>
+                                  {imageSet.normalImages.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeNormalImage(colorIndex, setIndex, imageIndex)}
+                                      className="text-red-500 hover:text-red-700 text-xs"
+                                    >
+                                      Remove
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div className="space-y-2">
+                                  <div>
+                                    <input
+                                      type="file"
+                                      multiple
+                                      accept="image/*"
+                                      onChange={(e) => handleNormalImageUpload(colorIndex, setIndex, imageIndex, e.target.files)}
+                                      disabled={isSubmitting}
+                                      className="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-blue-400"
+                                    />
+                                  </div>
+                                  
+                                  <input
+                                    type="text"
+                                    value={image.public_id}
+                                    onChange={(e) => handleImageUrlChange(colorIndex, setIndex, imageIndex, 'public_id', e.target.value)}
+                                    disabled={isSubmitting}
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                    placeholder="Public ID"
                                   />
+                                  
+                                  <input
+                                    type="text"
+                                    value={image.alt}
+                                    onChange={(e) => handleImageUrlChange(colorIndex, setIndex, imageIndex, 'alt', e.target.value)}
+                                    disabled={isSubmitting}
+                                    className="w-full px-2 py-1 text-xs border rounded"
+                                    placeholder="Alt text *"
+                                  />
+                                  
+                                  {imagePreviews[`normal-${colorIndex}-${setIndex}-${imageIndex}`] && (
+                                    <div className="relative inline-block">
+                                      <img
+                                        src={imagePreviews[`normal-${colorIndex}-${setIndex}-${imageIndex}`].preview}
+                                        alt={image.alt}
+                                        className="h-20 w-20 object-cover rounded border"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => removeNormalImagePreview(colorIndex, setIndex, imageIndex)}
+                                        disabled={isSubmitting}
+                                        className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-full hover:bg-red-600 text-xs"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+
+                            <button
+                              type="button"
+                              onClick={() => addNormalImage(colorIndex, setIndex)}
+                              className="w-full mt-2 py-1 border border-blue-300 rounded text-blue-600 hover:bg-blue-50 text-xs"
+                            >
+                              + Add Normal Image
+                            </button>
+                          </div>
+
+                          {/* 3D Image Section */}
+                          <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                            <div className="flex items-center justify-between mb-3">
+                              <h5 className="font-medium text-gray-700 flex items-center text-sm">
+                                <CubeIcon className="h-4 w-4 mr-1 text-purple-500" />
+                                3D Image (Single)
+                              </h5>
+                            </div>
+
+                            <div className="space-y-2">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handle3dImageUpload(colorIndex, setIndex, e.target.files)}
+                                disabled={isSubmitting}
+                                className="w-full px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-purple-400"
+                              />
+                              
+                              <input
+                                type="text"
+                                value={imageSet.image3d?.public_id || ''}
+                                onChange={(e) => handle3dImageUrlChange(colorIndex, setIndex, 'public_id', e.target.value)}
+                                disabled={isSubmitting}
+                                className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                placeholder="Public ID"
+                              />
+                              
+                              <input
+                                type="text"
+                                value={imageSet.image3d?.alt || ''}
+                                onChange={(e) => handle3dImageUrlChange(colorIndex, setIndex, 'alt', e.target.value)}
+                                disabled={isSubmitting}
+                                className="w-full px-2 py-1 text-xs border rounded"
+                                placeholder="Alt text *"
+                              />
+                              
+                              {imagePreviews[`3d-${colorIndex}-${setIndex}`] && (
+                                <div className="relative inline-block">
+                                  <img
+                                    src={imagePreviews[`3d-${colorIndex}-${setIndex}`].preview}
+                                    alt={imageSet.image3d?.alt || 'preview'}
+                                    className="h-20 w-20 object-cover rounded border"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => remove3dImagePreview(colorIndex, setIndex)}
+                                    disabled={isSubmitting}
+                                    className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-full hover:bg-red-600 text-xs"
+                                  >
+                                    ✕
+                                  </button>
                                 </div>
                               )}
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
+
+                      <button
+                        type="button"
+                        onClick={() => addImageSet(colorIndex)}
+                        className="w-full mt-3 py-2 border-2 border-dashed border-indigo-300 rounded text-indigo-600 hover:bg-indigo-50 text-sm"
+                      >
+                        + Add Another Image Set
+                      </button>
                     </div>
                   </div>
                 ))}

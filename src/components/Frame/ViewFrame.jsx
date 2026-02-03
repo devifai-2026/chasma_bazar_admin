@@ -13,6 +13,7 @@ import {
 import { Link, useParams } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
+import { getFrameById } from '../../Api/frameapi';
 
 const ViewFrame = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -26,88 +27,26 @@ const ViewFrame = () => {
 
   const loadFrame = () => {
     try {
-      const allFrames = JSON.parse(localStorage.getItem('frames') || '[]');
-      
-      // Also check dummy data
-      const dummyFrames = [
-        {
-          id: 1,
-          name: "Wayfarer Classic",
-          shape: "wayfarer",
-          material: "acetate",
-          color: "Black",
-          size: "52mm",
-          width: "145mm",
-          dimensions: "52-18-145",
-          bridgeSize: "18mm",
-          templeLength: "145mm",
-          weight: 28,
-          price: 500,
-          frameDiscount: 5,
-          isDummy: true
-        },
-        {
-          id: 2,
-          name: "Aviator Gold",
-          shape: "aviator",
-          material: "metal",
-          color: "Gold",
-          size: "58mm",
-          width: "150mm",
-          dimensions: "58-18-150",
-          bridgeSize: "18mm",
-          templeLength: "150mm",
-          weight: 32,
-          price: 750,
-          frameDiscount: 10,
-          isDummy: true
-        },
-        {
-          id: 3,
-          name: "Round Tortoise",
-          shape: "round",
-          material: "acetate",
-          color: "Tortoise",
-          size: "50mm",
-          width: "140mm",
-          dimensions: "50-19-140",
-          bridgeSize: "19mm",
-          templeLength: "140mm",
-          weight: 26,
-          price: 450,
-          frameDiscount: 8,
-          isDummy: true
-        },
-        {
-          id: 4,
-          name: "Sports Titanium",
-          shape: "sports",
-          material: "titanium",
-          color: "Gunmetal",
-          size: "56mm",
-          width: "155mm",
-          dimensions: "56-20-155",
-          bridgeSize: "20mm",
-          templeLength: "155mm",
-          weight: 22,
-          price: 1200,
-          frameDiscount: 15,
-          isDummy: true
-        }
-      ];
-
-      const allData = [...dummyFrames, ...allFrames.filter(f => !f.isDummy)];
-      const foundFrame = allData.find(f => f.id === parseInt(id));
-
-      if (foundFrame) {
-        setFrame(foundFrame);
-      }
+      // First try to fetch from API
+      fetchFrameFromAPI();
     } catch (error) {
       console.error('Error loading frame:', error);
-    } finally {
       setLoading(false);
     }
   };
+
+  const fetchFrameFromAPI = async () => {
+    try {
+      const data = await getFrameById(id);
+      setFrame(data.data || data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching frame from API:', error);
+      
+    }
+  };
+
+  
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);

@@ -3,9 +3,15 @@ import { ArrowLeftIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { Link, useNavigate } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
+import { createBanner } from '../../Api/bannerApi';
+import uploadToCloudinary from '../../utils/cloudinary';
+import toast from 'react-hot-toast'
 
 const AddBanner = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -50,36 +56,72 @@ const AddBanner = () => {
     });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Generate ID and timestamps
-    const newBanner = {
-      ...formData,
-      id: Date.now(),
-      createdAt: new Date().toISOString(),
-      isDummy: false,
-      // Convert dates to full ISO string
-      startDate: new Date(formData.startDate + 'T00:00:00.000Z').toISOString(),
-      endDate: new Date(formData.endDate + 'T23:59:59.000Z').toISOString(),
-    };
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    // Get existing banners from localStorage
-    const existingBanners = JSON.parse(localStorage.getItem("banners") || "[]");
-    const updatedBanners = [...existingBanners, newBanner];
-    
-    // Save to localStorage
-    localStorage.setItem("banners", JSON.stringify(updatedBanners));
-    
-    // Show success message
-    alert("Banner created successfully!");
-    
-    // Navigate back to banners list
-    navigate("/banner");
+    setImageUploading(true);
+    setError("");
+
+    try {
+      const res = await uploadToCloudinary(file);
+
+      setFormData(prev => ({
+        ...prev,
+        image: res.url   // ✅ STRING URL ONLY
+      }));
+    } catch (err) {
+      setError("Failed to upload image");
+      toast.error('Error uploading image. Please try again.');
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      // Prepare banner data for API
+      const bannerData = {
+        title: formData.title,
+        description: formData.description,
+        image: formData.image,
+        buttonText: formData.buttonText,
+        buttonLink: formData.buttonLink,
+        pages: formData.pages && formData.pages.length > 0 ? formData.pages : ['all'],
+        position: formData.position,
+        isActive: formData.isActive,
+        priority: formData.priority,
+        startDate: formData.startDate ? new Date(formData.startDate + 'T00:00:00.000Z') : null,
+        endDate: formData.endDate ? new Date(formData.endDate + 'T23:59:59.000Z') : null,
+      };
+
+      // Call API to create banner
+      await createBanner(bannerData);
+
+      // Show success message
+       toast.success('Banner created successfully!');
+
+
+      // Navigate back to banners list
+      navigate("/banner");
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || "Failed to create banner";
+      setError(errorMessage);
+      console.error("Error creating banner:", err);
+      toast.error('Error creating banner. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="flex h-screen">
+    
       <Sidebar
         sidebarOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
@@ -89,10 +131,10 @@ const AddBanner = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
+
         <main
-          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${
-            sidebarOpen ? "lg:pl-6" : "lg:pl-6"
-          }`}
+          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? "lg:pl-6" : "lg:pl-6"
+            }`}
         >
           <div className="mx-auto max-w-4xl">
             {/* Header */}
@@ -118,7 +160,13 @@ const AddBanner = () => {
               {/* Banner Details Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Banner Details</h2>
-                
+
+                {error && (
+                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-800">{error}</p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Title */}
                   <div className="md:col-span-2">
@@ -155,37 +203,32 @@ const AddBanner = () => {
                   {/* Image URL */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Banner Image URL *
+                      Banner Image *
                     </label>
-                    <div className="flex space-x-4">
-                      <input
-                        type="url"
-                        name="image"
-                        value={formData.image}
-                        onChange={handleChange}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="https://example.com/banner-image.jpg"
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
-                        onClick={() => {
-                          // In a real app, this would open a media uploader
-                          const sampleImages = [
-                            "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200&h=400&fit=crop",
-                            "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=1200&h=400&fit=crop",
-                            "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200&h=400&fit=crop"
-                          ];
-                          setFormData(prev => ({ ...prev, image: sampleImages[Math.floor(Math.random() * sampleImages.length)] }));
-                        }}
-                      >
-                        <PhotoIcon className="h-5 w-5 mr-2" />
-                        Sample
-                      </button>
+                    <div className="space-y-4">
+                      {/* File Upload */}
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-2">Upload from Device:</label>
+                        <div className="flex items-center space-x-4">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={imageUploading}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                          />
+                          {imageUploading && (
+                            <span className="text-sm text-blue-600">Uploading...</span>
+                          )}
+                        </div>
+                      </div>
+
+
+
+
                     </div>
                     <p className="mt-2 text-sm text-gray-500">
-                      Enter a direct URL to your banner image (recommended size: 1200x400px)
+                      Recommended size: 1200x400px | Max file size: 5MB
                     </p>
                     {formData.image && (
                       <div className="mt-4">
@@ -197,7 +240,7 @@ const AddBanner = () => {
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               e.target.onerror = null;
-                              e.target.src = "https://via.placeholder.com/1200x400/cccccc/969696?text=Invalid+Image+URL";
+                              e.target.src = "https://via.placeholder.com/1200x400/cccccc/969696?text=Invalid+Image";
                             }}
                           />
                         </div>
@@ -211,6 +254,7 @@ const AddBanner = () => {
                       Button Text *
                     </label>
                     <input
+                      readOnly
                       type="text"
                       name="buttonText"
                       value={formData.buttonText}
@@ -227,6 +271,7 @@ const AddBanner = () => {
                       Button Link *
                     </label>
                     <input
+                      readOnly
                       type="text"
                       name="buttonLink"
                       value={formData.buttonLink}
@@ -242,7 +287,7 @@ const AddBanner = () => {
               {/* Display Settings Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Display Settings</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Pages */}
                   <div>
@@ -250,7 +295,7 @@ const AddBanner = () => {
                       Display on Pages *
                     </label>
                     <div className="space-y-2">
-                      {['home', 'products', 'cart', 'checkout', 'about'].map((page) => (
+                      {['all', 'home', 'products', 'product-detail', 'cart', 'wishlist', 'checkout', 'orders', 'profile'].map((page) => (
                         <label key={page} className="flex items-center">
                           <input
                             type="checkbox"
@@ -260,7 +305,7 @@ const AddBanner = () => {
                             className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                           />
                           <span className="ml-3 text-sm text-gray-700 capitalize">
-                            {page} Page
+                            {page === 'product-detail' ? 'Product Detail' : page === 'all' ? 'All Pages' : (page.charAt(0).toUpperCase() + page.slice(1)) + ' Page'}
                           </span>
                         </label>
                       ))}
@@ -286,6 +331,8 @@ const AddBanner = () => {
                         <option value="top">Top of Page</option>
                         <option value="middle">Middle of Page</option>
                         <option value="bottom">Bottom of Page</option>
+                        <option value="sidebar">Sidebar</option>
+                        <option value="popup">Popup</option>
                       </select>
                     </div>
 
@@ -299,13 +346,12 @@ const AddBanner = () => {
                         name="priority"
                         value={formData.priority}
                         onChange={handleChange}
-                        min="1"
-                        max="100"
+                        min="0"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
                       <p className="mt-2 text-sm text-gray-500">
-                        Lower numbers have higher priority (1 is highest)
+                        Higher numbers have higher priority in display order
                       </p>
                     </div>
                   </div>
@@ -315,7 +361,7 @@ const AddBanner = () => {
               {/* Schedule Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Schedule & Status</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Start Date */}
                   <div>
@@ -378,9 +424,10 @@ const AddBanner = () => {
                 </Link>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  disabled={loading}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
                 >
-                  Create Banner
+                  {loading ? "Creating..." : "Create Banner"}
                 </button>
               </div>
             </form>
