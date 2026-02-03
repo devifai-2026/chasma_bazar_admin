@@ -14,6 +14,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
 import { getUserById, updateUser, deleteUser } from '../../Api/usersApi';
+import toast from 'react-hot-toast'
 
 const UserEdit = () => {
   const { id } = useParams();
@@ -73,12 +74,12 @@ const UserEdit = () => {
           setOriginalData(userFormData);
           setJoinDate(userData.createdAt || '');
         } else {
-          alert('User not found!');
+          toast.error('User not found!');
           navigate('/users');
         }
       } catch (error) {
         console.error('Error loading user:', error);
-        alert(`Error loading user data: ${error.message || 'Unknown error'}`);
+        toast.error(`Error loading user data: ${error.message || 'Unknown error'}`);
         navigate('/users');
       } finally {
         setLoading(false);
@@ -182,7 +183,7 @@ const UserEdit = () => {
       const response = await updateUser(id, updateData);
 
       if (response && response.status === 'success') {
-        alert(`User "${formData.username}" has been updated successfully!`);
+        toast.success(`User "${formData.username}" has been updated successfully!`);
         navigate('/users');
       } else {
         // Handle backend validation errors
@@ -209,7 +210,7 @@ const UserEdit = () => {
         }
       }
       
-      alert(`Error updating user: ${errorMessage}`);
+      toast.error(`Error updating user: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
@@ -226,7 +227,7 @@ const UserEdit = () => {
       const response = await deleteUser(id);
 
       if (response && response.status === 'success') {
-        alert(`User "${formData.username || formData.email}" has been deleted successfully!`);
+        toast.success(`User "${formData.username || formData.email}" has been deleted successfully!`);
         navigate('/users');
       } else {
         throw new Error(response?.message || 'Failed to delete user');
@@ -234,7 +235,7 @@ const UserEdit = () => {
 
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert(`Error deleting user: ${error.message || 'Please try again.'}`);
+      toast.error(`Error deleting user: ${error.message || 'Please try again.'}`);
     } finally {
       setDeleting(false);
       setShowDeleteModal(false);

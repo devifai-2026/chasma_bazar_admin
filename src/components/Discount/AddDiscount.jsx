@@ -236,12 +236,11 @@ const AddDiscount = () => {
           backendErrors.general = response.message
         }
         setErrors(prev => ({ ...prev, ...backendErrors }))
-        // alert(`Error: ${response.message}`)
+
         toast.error(`Error: ${response.message}`);
       }
     } catch (error) {
       console.error('Error saving discount:', error)
-      // alert('Error saving discount. Please try again.')
       toast.error('Error saving discount. Please try again.');
       
     } finally {

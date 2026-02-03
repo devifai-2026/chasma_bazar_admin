@@ -104,7 +104,6 @@ const AddBanner = () => {
       await createBanner(bannerData);
 
       // Show success message
-      // alert("Banner created successfully!");
        toast.success('Banner created successfully!');
 
 

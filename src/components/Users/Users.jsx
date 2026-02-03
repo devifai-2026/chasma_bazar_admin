@@ -23,6 +23,7 @@ import {
   deleteUser,
   toggleUserStatus,
 } from "../../Api/usersApi";
+import toast from 'react-hot-toast'
 
 const Users = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -191,16 +192,15 @@ const Users = () => {
   };
 
   const handleDelete = async (id, name) => {
-    if (window.confirm(`Are you sure you want to delete user "${name}"?`)) {
       try {
         await deleteUser(id);
-        alert(`User "${name}" has been deleted successfully.`);
+        toast.success(`User "${name}" has been deleted successfully.`);
         fetchUsersAndStats(); // Refresh the list
       } catch (error) {
         console.error("Error deleting user:", error);
-        alert(`Failed to delete user "${name}". Please try again.`);
+        toast.error(`Failed to delete user "${name}". Please try again.`);
       }
-    }
+
   };
 
   const handleStatusToggle = async (id, currentStatus) => {
@@ -209,7 +209,7 @@ const Users = () => {
       fetchUsersAndStats(); // Refresh the list
     } catch (error) {
       console.error("Error toggling user status:", error);
-      alert("Failed to update user status. Please try again.");
+      toast.error("Failed to update user status. Please try again.");
     }
   };
 

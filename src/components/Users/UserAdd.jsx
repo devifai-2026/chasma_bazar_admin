@@ -12,6 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
+import toast from 'react-hot-toast'
 
 const UserAdd = () => {
   const navigate = useNavigate();
@@ -150,14 +151,14 @@ const UserAdd = () => {
     window.dispatchEvent(new Event('storage'));
     
     // Show success message
-    alert(`User "${formData.name}" has been added successfully!`);
+    toast.success(`User "${formData.name}" has been added successfully!`);
     
     // Navigate back to users list
     navigate('/users');
     
   } catch (error) {
     console.error('Error saving user:', error);
-    alert('Error saving user. Please try again.');
+    toast.error('Error saving user. Please try again.');
   } finally {
     setLoading(false);
   }

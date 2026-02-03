@@ -163,7 +163,7 @@ const UpdatePromo = () => {
       }
     } catch (error) {
       console.error('Error updating promo code:', error);
-      toast.error('Error updating promo code. Please try again.'); // ✅ REPLACED alert
+      toast.error('Error updating promo code. Please try again.');
     } finally {
       setSubmitting(false);
     }
