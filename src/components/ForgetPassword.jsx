@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { XMarkIcon, EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { forgetPasswordApi, resetPasswordApi } from '../Api/authApi';
+import toast from 'react-hot-toast'
 
 const ForgotPasswordModal = ({ isOpen, onClose }) => {
   const [step, setStep] = useState(1); // 1: Enter email, 2: Enter new password
@@ -38,6 +39,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
       if (response.success) {
         // Store the token internally (not shown to user)
         setResetToken(response.data.resetToken);
+        toast.success('Password reset link has been sent successfully!');
         // setSuccess('Password reset link has been sent successfully! Please check step 2 to set your new password.');
         // Move to next step
         setStep(2);
@@ -45,6 +47,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
     } catch (err) {
       console.error('Forgot password error:', err);
       setError(err.response?.data?.message || 'Failed to send reset link. Please try again.');
+      toast.error(err.response?.data?.message || 'Failed to send reset link. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -84,6 +87,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
       
       if (response.success) {
         setSuccess('Password reset successfully! You can now login with your new password.');
+        toast.success('Password reset successfully! You can now login with your new password.');
         // Reset form and close after delay
         setTimeout(() => {
           resetForm();
@@ -100,6 +104,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         setError('Reset token has expired. Please request a new one.');
         setStep(1);
         setResetToken('');
+        toast.error('Reset token has expired. Please request a new one.');
       } else {
         setError(err.response?.data?.message || 'Failed to reset password. Please try again.');
       }
@@ -126,6 +131,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }) => {
         // Store the new token internally
         setResetToken(response.data.resetToken);
         setSuccess('New reset token has been generated successfully!');
+        toast.success('New reset token has been generated successfully!');
       }
     } catch (err) {
       console.error('Resend token error:', err);

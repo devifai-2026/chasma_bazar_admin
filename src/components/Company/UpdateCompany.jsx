@@ -14,6 +14,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import { getCompanyById, updateCompany as updateCompanyAPI } from "../../Api/companyApi";
+import toast from 'react-hot-toast'
 
 const UpdateCompany = () => {
   const { id } = useParams();
@@ -98,6 +99,7 @@ const UpdateCompany = () => {
     } catch (err) {
       console.error("Error fetching company:", err);
       setError(err.message || "Failed to load company details");
+      toast.error(err.message || "Failed to load company details");
     } finally {
       setLoading(false);
     }
@@ -198,14 +200,16 @@ const UpdateCompany = () => {
       const response = await updateCompanyAPI(id, updateData);
       
       if (response.success) {
-        alert("Company updated successfully!");
+        toast.success("Company updated successfully!");
         navigate(`/company/view/${id}`);
       } else {
         setError(response.message || "Failed to update company");
+        toast.error(response.message || "Failed to update company");
       }
     } catch (error) {
       console.error("Error updating company:", error);
       setError(error.message || "Failed to update company");
+      toast.error(error.message || "Failed to update company");
     } finally {
       setSaving(false);
     }

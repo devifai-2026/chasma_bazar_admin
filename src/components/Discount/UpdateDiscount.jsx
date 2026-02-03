@@ -15,6 +15,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
 import { getDiscountById, updateDiscount } from '../../Api/discountApi';
+import toast from 'react-hot-toast'
 
 const UpdateDiscount = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -168,6 +169,7 @@ const UpdateDiscount = () => {
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      toast.error('Please fix the errors in the form before submitting.');
       return;
     }
 
@@ -195,12 +197,12 @@ const UpdateDiscount = () => {
       const response = await updateDiscount(id, updateData);
       
       if (response) {
-        alert('Discount updated successfully!');
+        toast.success('Discount updated successfully!');
         navigate('/discount');
       }
     } catch (error) {
       console.error('Error updating discount:', error);
-      alert(error.response?.data?.message || 'Error updating discount. Please try again.');
+      toast.error(error.response?.data?.message || 'Error updating discount. Please try again.');
     } finally {
       setLoading(false);
     }

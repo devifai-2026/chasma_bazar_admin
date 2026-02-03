@@ -19,6 +19,7 @@ import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import { getFrames, deleteFrame as deleteFrameAPI } from "../../Api/frameapi";
+import toast from 'react-hot-toast'
 
 const Frame = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -47,7 +48,7 @@ const Frame = () => {
   const closeSidebar = () => setSidebarOpen(false);
 
 const deleteFrame = async (id) => {
-  if (window.confirm("Are you sure you want to delete this frame?")) {
+ 
     const frameToDelete = frames.find((f) => f.id === id || f._id === id);
 
     try {
@@ -56,12 +57,12 @@ const deleteFrame = async (id) => {
       await deleteFrameAPI(frameId);
       const updatedFrames = frames.filter((frame) => frame._id !== frameId && frame.id !== id);
       setFrames(updatedFrames);
-      alert('Frame deleted successfully!');
+      toast.success('Frame deleted successfully!');
     } catch (error) {
       console.error('Error deleting frame:', error);
-      alert('Error deleting frame. Please try again.');
+      toast.error('Error deleting frame. Please try again.');
     }
-  }
+
 };
 
   // Filter frames based on search and filter

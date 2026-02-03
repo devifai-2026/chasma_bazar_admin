@@ -17,6 +17,7 @@ import Navbar from '../Navbar'
 import {createFrame} from '../../Api/frameapi'
 import {getAllDiscounts} from '../../Api/discountApi'
 import uploadToCloudinary from '../../utils/cloudinary'
+import toast from 'react-hot-toast'
 
 const AddFrame = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -111,6 +112,7 @@ const AddFrame = () => {
     const validationErrors = validateForm()
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
+      toast.error('Please fix the errors in the form before submitting.')
       return
     }
 
@@ -155,7 +157,7 @@ const AddFrame = () => {
       // Update localStorage to trigger refresh on the frame list page
       localStorage.setItem('frames_updated', Date.now().toString())
       
-      alert('Frame added successfully!')
+      toast.success('Frame added successfully!')
       navigate('/frame')
     } catch (error) {
       console.error('Error saving frame:', error)
@@ -164,13 +166,13 @@ const AddFrame = () => {
       if (error.response) {
         // Server responded with error status
         const errorMessage = error.response.data?.message || 'Server error occurred'
-        alert(`Error: ${errorMessage}`)
+        toast.error(`Error: ${errorMessage}`)
       } else if (error.request) {
         // Request was made but no response received
-        alert('No response from server. Please check your connection.')
+        toast.error('No response from server. Please check your connection.')
       } else {
         // Something else happened
-        alert('Error saving frame. Please try again.')
+        toast.error('Error saving frame. Please try again.')
       }
     } finally {
       setIsSubmitting(false)

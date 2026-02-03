@@ -5,6 +5,7 @@ import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import { createBanner } from '../../Api/bannerApi';
 import uploadToCloudinary from '../../utils/cloudinary';
+import toast from 'react-hot-toast'
 
 const AddBanner = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -59,34 +60,24 @@ const AddBanner = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError("Please upload a valid image file");
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image size must be less than 5MB");
-      return;
-    }
-
     setImageUploading(true);
     setError("");
 
     try {
-      const imageUrl = await uploadToCloudinary(file);
+      const res = await uploadToCloudinary(file);
+
       setFormData(prev => ({
         ...prev,
-        image: imageUrl
+        image: res.url   // ✅ STRING URL ONLY
       }));
     } catch (err) {
-      setError(err.message || "Failed to upload image");
-      console.error("Image upload error:", err);
+      setError("Failed to upload image");
+      toast.error('Error uploading image. Please try again.');
     } finally {
       setImageUploading(false);
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,7 +89,7 @@ const AddBanner = () => {
       const bannerData = {
         title: formData.title,
         description: formData.description,
-        image: formData.image.url,
+        image: formData.image,
         buttonText: formData.buttonText,
         buttonLink: formData.buttonLink,
         pages: formData.pages && formData.pages.length > 0 ? formData.pages : ['all'],
@@ -113,7 +104,9 @@ const AddBanner = () => {
       await createBanner(bannerData);
 
       // Show success message
-      alert("Banner created successfully!");
+      // alert("Banner created successfully!");
+       toast.success('Banner created successfully!');
+
 
       // Navigate back to banners list
       navigate("/banner");
@@ -121,6 +114,7 @@ const AddBanner = () => {
       const errorMessage = err.response?.data?.message || err.message || "Failed to create banner";
       setError(errorMessage);
       console.error("Error creating banner:", err);
+      toast.error('Error creating banner. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -128,6 +122,7 @@ const AddBanner = () => {
 
   return (
     <div className="flex h-screen">
+    
       <Sidebar
         sidebarOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
@@ -137,10 +132,10 @@ const AddBanner = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
+
         <main
-          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${
-            sidebarOpen ? "lg:pl-6" : "lg:pl-6"
-          }`}
+          className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? "lg:pl-6" : "lg:pl-6"
+            }`}
         >
           <div className="mx-auto max-w-4xl">
             {/* Header */}
@@ -166,13 +161,13 @@ const AddBanner = () => {
               {/* Banner Details Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Banner Details</h2>
-                
+
                 {error && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                     <p className="text-sm text-red-800">{error}</p>
                   </div>
                 )}
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Title */}
                   <div className="md:col-span-2">
@@ -230,8 +225,8 @@ const AddBanner = () => {
                       </div>
 
 
-                      
-                      
+
+
                     </div>
                     <p className="mt-2 text-sm text-gray-500">
                       Recommended size: 1200x400px | Max file size: 5MB
@@ -260,7 +255,7 @@ const AddBanner = () => {
                       Button Text *
                     </label>
                     <input
-                    readOnly
+                      readOnly
                       type="text"
                       name="buttonText"
                       value={formData.buttonText}
@@ -277,7 +272,7 @@ const AddBanner = () => {
                       Button Link *
                     </label>
                     <input
-                    readOnly
+                      readOnly
                       type="text"
                       name="buttonLink"
                       value={formData.buttonLink}
@@ -293,7 +288,7 @@ const AddBanner = () => {
               {/* Display Settings Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Display Settings</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Pages */}
                   <div>
@@ -367,7 +362,7 @@ const AddBanner = () => {
               {/* Schedule Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Schedule & Status</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Start Date */}
                   <div>

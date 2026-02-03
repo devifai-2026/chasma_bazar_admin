@@ -19,6 +19,7 @@ import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import { getAllCompanies, deleteCompany as deleteCompanyAPI } from "../../Api/companyApi";
+import toast from 'react-hot-toast'
 
 const Companies = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -95,18 +96,18 @@ const Companies = () => {
   };
 
   const deleteCompany = async (id) => {
-    if (window.confirm("Are you sure you want to delete this company?")) {
+    
       try {
         await deleteCompanyAPI(id);
-        alert("Company deleted successfully!");
+        toast.success("Company deleted successfully!");
         // Refresh the list after deletion
         setPage(1);
         fetchCompanies();
       } catch (err) {
         console.error("Error deleting company:", err);
-        alert("Failed to delete company");
+        toast.error(err.message || "Failed to delete company.");
       }
-    }
+
   };
 
   return (

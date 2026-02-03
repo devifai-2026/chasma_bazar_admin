@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import { getAllProducts, deleteProduct as deleteProductAPI } from "../../Api/productApi";
-import { toast, Toaster } from "react-hot-toast";
+import toast from 'react-hot-toast'
 
 const Products = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -105,7 +105,7 @@ const Products = () => {
   };
 
   const handleDeleteProduct = async (id) => {
-    if (window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+    
       try {
         const response = await deleteProductAPI(id);
         
@@ -120,7 +120,7 @@ const Products = () => {
         console.error('Error deleting product:', error);
         toast.error('Error deleting product: ' + (error.message || 'Please try again.'));
       }
-    }
+
   };
 
   // Calculate status based on stock
@@ -150,7 +150,7 @@ const Products = () => {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-        <Toaster position="top-right" />
+
 
         <main
           className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? "lg:pl-6" : "lg:pl-6"

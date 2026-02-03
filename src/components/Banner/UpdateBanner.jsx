@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import {getBannerById , updateBanner} from "../../Api/bannerApi";
+import toast from 'react-hot-toast'
 
 const UpdateBanner = () => {
   const { id } = useParams();
@@ -48,7 +49,7 @@ const UpdateBanner = () => {
       }
     } catch (error) {
       console.error("Error loading banner:", error);
-      alert("Error loading banner data");
+      toast.error('Error loading banner data');
       navigate("/banner");
     } finally {
       setLoading(false);
@@ -99,13 +100,13 @@ const UpdateBanner = () => {
       const response = await updateBanner(id, bannerData);
 
       if (response.success || response.message) {
-        alert("Banner updated successfully!");
+        toast.success('Banner updated successfully!');
         navigate("/banner");
       }
     } catch (error) {
       console.error("Error updating banner:", error);
       const errorMessage = error.response?.data?.message || error.message || "Failed to update banner";
-      alert("Error: " + errorMessage);
+      toast.error('Error updating banner: ' + errorMessage);
     }
   };
 

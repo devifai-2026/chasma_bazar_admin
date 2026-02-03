@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import { getAllBanners, deleteBanner } from "../../Api/bannerApi";
+import toast from 'react-hot-toast'
 
 const Banner = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -30,6 +31,10 @@ const Banner = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalBanners, setTotalBanners] = useState(0);
   const [pageSize] = useState(10);
+
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedPromoId, setSelectedPromoId] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
   // Load banners from API
   useEffect(() => {
@@ -70,6 +75,7 @@ const Banner = () => {
       const errorMessage = err.response?.data?.message || err.message || "Failed to load banners";
       setError(errorMessage);
       console.error("Error fetching banners:", err);
+      toast.error("Failed to load banners: " + errorMessage);
       setBanners([]);
     } finally {
       setLoading(false);
@@ -80,19 +86,20 @@ const Banner = () => {
   const closeSidebar = () => setSidebarOpen(false);
 
   const deleteBannerHandler = async (id) => {
-    if (window.confirm("Are you sure you want to delete this banner?")) {
+    
       try {
         const response = await deleteBanner(id);
 
         if (response.success) {
+          toast.success('Banner deleted successfully');
           // Refresh the products list
           fetchBanners(currentPage);
         }
       } catch (error) {
-        console.error('Error deleting product:', error);
-
+        console.error('Error deleting banner:', error);
+        toast.error('Failed to delete banner');
       }
-    }
+    
   };
 
   // Filter banners by search term (client-side)

@@ -21,6 +21,7 @@ import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
 import cloudinary from '../../utils/cloudinary'
 import { createCompany } from '../../Api/companyApi'
+import toast from 'react-hot-toast'
 
 const AddCompany = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -192,6 +193,7 @@ const AddCompany = () => {
         ...prev,
         logo_url: 'Invalid file type. Please upload an image (JPEG, PNG, GIF, WebP, SVG).'
       }))
+
       return
     }
 
@@ -283,6 +285,7 @@ const AddCompany = () => {
     console.log('Validation errors:', validationErrors) // Debug
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
+      toast.error('Please fix the errors in the form before submitting.')
       console.log('Form validation failed - Errors:', validationErrors) // Debug
       return
     }
@@ -322,13 +325,14 @@ const AddCompany = () => {
       
       if (response.success) {
         setSubmitSuccess(true)
-        
+        toast.success('Company created successfully!')
         // Show success message for 2 seconds before navigating
         setTimeout(() => {
-          navigate('/companies')
+          navigate('/company')
         }, 2000)
       } else {
         setSubmitError(response.message || 'Failed to create company')
+        toast.error(response.message || 'Failed to create company')
       }
     } catch (error) {
       console.error('Error creating company:', error)

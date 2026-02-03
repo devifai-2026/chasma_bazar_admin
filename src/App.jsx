@@ -38,6 +38,7 @@ import ViewFrame from './components/Frame/ViewFrame'
 import ViewCompany from './components/Company/ViewCompany'
 import UpdateCompany from './components/Company/UpdateCompany'
 import { isAuthenticated } from './utils/auth';
+import { Toaster } from 'react-hot-toast'
 
 // Improved PrivateRoute with debugging
 const PrivateRoute = () => {
@@ -53,6 +54,13 @@ const PrivateRoute = () => {
 function App() {
   return (
     <Router>
+    <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          duration: 1000,
+        }}
+      />
       <div className="min-h-screen bg-gray-50">
         <Routes>
           {/* Public routes */}

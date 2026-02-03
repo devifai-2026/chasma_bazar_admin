@@ -16,6 +16,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 import Navbar from '../Navbar';
 import {getPromoCodeById , updatePromoCode } from '../../Api/promoCodeApi';
+import toast from 'react-hot-toast'
 
 const UpdatePromo = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -69,6 +70,7 @@ const UpdatePromo = () => {
       }
     } catch (error) {
       console.error('Error loading promo code:', error);
+      toast.error('Failed to load promo code');
       navigate('/promoCode');
     } finally {
       setLoading(false);
@@ -131,6 +133,7 @@ const UpdatePromo = () => {
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      toast.error('Please fix the highlighted errors'); // ✅
       return;
     }
 
@@ -155,12 +158,12 @@ const UpdatePromo = () => {
       const response = await updatePromoCode(id, updateData);
       
       if (response) {
-        alert('Promo code updated successfully!');
+        toast.success('Promo code updated successfully!');
         navigate(`/promoCode/view/${id}`);
       }
     } catch (error) {
       console.error('Error updating promo code:', error);
-      alert('Error updating promo code. Please try again.');
+      toast.error('Error updating promo code. Please try again.'); // ✅ REPLACED alert
     } finally {
       setSubmitting(false);
     }

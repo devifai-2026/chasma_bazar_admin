@@ -17,6 +17,7 @@ import Navbar from '../Navbar';
 import { getFrameById, updateFrame as updateFrameAPI } from '../../Api/frameapi';
 import { getAllDiscounts } from '../../Api/discountApi';
 import uploadToCloudinary  from '../../utils/cloudinary';
+import toast from 'react-hot-toast'
 
 const UpdateFrame = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -100,12 +101,12 @@ const UpdateFrame = () => {
           images: []
         });
       } else {
-        alert('Frame not found!');
+        toast.error('Frame not found!');
         navigate('/frame');
       }
     } catch (error) {
       console.error('Error loading frame:', error);
-      alert('Error loading frame data');
+      toast.error('Error loading frame data');
       navigate('/frame');
     } finally {
       setLoading(false);
@@ -288,6 +289,7 @@ const UpdateFrame = () => {
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      toast.error('Please fix the validation errors before submitting.');
       return;
     }
 
@@ -337,11 +339,11 @@ const UpdateFrame = () => {
 
       await updateFrameAPI(id, updateData);
       
-      alert('Frame updated successfully!');
+      toast.success('Frame updated successfully!');
       navigate(`/frame/view/${id}`);
     } catch (error) {
       console.error('Error updating frame:', error);
-      alert('Error updating frame. Please try again.');
+      toast.error('Error updating frame. Please try again.');
     } finally {
       setSubmitting(false);
     }

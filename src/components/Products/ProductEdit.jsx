@@ -18,7 +18,7 @@ import { getProductById, updateProduct, deleteProduct } from '../../Api/productA
 import { getFrames } from '../../Api/frameapi';
 import { getAllCompanies } from '../../Api/companyApi';
 import uploadToCloudinary from '../../utils/cloudinary';
-import { toast, Toaster } from "react-hot-toast";
+import toast from 'react-hot-toast'
 
 const ProductEdit = () => {
   const { id } = useParams();
@@ -64,7 +64,7 @@ const ProductEdit = () => {
     tags: '',
     ageGroup: 'all'
   });
-  const [errors, setErrors] = useState({});
+
 
   // Product type options
   const productTypes = ['optical', 'sunglasses', 'reading_glasses', 'sports_glasses'];
@@ -553,7 +553,7 @@ const ProductEdit = () => {
       <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-        <Toaster position="top-right" />
+
         
         <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
           <div className="mx-auto max-w-6xl">

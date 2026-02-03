@@ -19,7 +19,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import Sidebar from '../Sidebar'
 import Navbar from '../Navbar'
 import { createDiscount } from '../../Api/discountApi'
-import { toast, Toaster } from "react-hot-toast";
+import toast from 'react-hot-toast'
 
 const AddDiscount = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -183,6 +183,7 @@ const AddDiscount = () => {
     const validationErrors = validateForm()
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
+      toast.error('Please fix the errors in the form before submitting.');
       return
     }
 
@@ -287,7 +288,7 @@ const AddDiscount = () => {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-        <Toaster position="top-right" />
+
 
         <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
           <div className="mx-auto max-w-4xl">

@@ -19,6 +19,7 @@ import { Link } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
 import { getAllDiscounts, deleteDiscount as deleteDiscountAPI } from "../../Api/discountApi";
+import toast from 'react-hot-toast'
 
 const Discount = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -78,18 +79,18 @@ const Discount = () => {
   const closeSidebar = () => setSidebarOpen(false);
 
   const deleteDiscount = async (id) => {
-    if (window.confirm("Are you sure you want to delete this discount?")) {
+    
       try {
         await deleteDiscountAPI(id);
         
-        alert("Discount deleted successfully!");
+        toast.success("Discount deleted successfully!");
         // Refresh the list after deletion
         fetchDiscounts();
       } catch (err) {
         console.error("Error deleting discount:", err);
-        alert("Failed to delete discount");
+        toast.error("Failed to delete discount");
       }
-    }
+    
   };
 
   // Filter discounts based on search (client-side filtering)

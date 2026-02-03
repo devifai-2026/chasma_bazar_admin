@@ -3,18 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { LockClosedIcon, EnvelopeIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { LoginApi } from '../../Api/authApi';
 import ForgotPasswordModal from '../ForgetPassword';
+import toast from 'react-hot-toast'
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false); // Add this state
 
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (token) {
@@ -57,13 +57,16 @@ const Login = () => {
         localStorage.setItem('refreshToken', responseData.data.tokens.refreshToken);
         localStorage.setItem('accessTokenExpiresAt', responseData.data.tokens.accessTokenExpiresAt);
         localStorage.setItem('refreshTokenExpiresAt', responseData.data.tokens.refreshTokenExpiresAt);
-
-        navigate('/dashboard');
+        toast.success('Login successful!')
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 800);
       }
 
     } catch (err) {
       console.log(err, "error");
       setError('Invalid email or password. Please try again.');
+      toast.error('Login failed. Please check your credentials.')
     } finally {
       setIsLoading(false);
     }

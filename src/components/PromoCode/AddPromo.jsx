@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { 
+import {
   ArrowLeftIcon,
   TicketIcon,
   DocumentTextIcon,
@@ -18,6 +18,7 @@ import { createPromoCode } from '../../Api/promoCodeApi'
 import { getAllProducts } from '../../Api/productApi'
 import { getFrames } from '../../Api/frameapi'
 import { getAllCompanies } from '../../Api/companyApi'
+import toast from 'react-hot-toast'
 
 const AddPromo = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -69,13 +70,13 @@ const AddPromo = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
-    
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : 
-               type === 'number' ? parseFloat(value) || '' : value
+      [name]: type === 'checkbox' ? checked :
+        type === 'number' ? parseFloat(value) || '' : value
     }))
-    
+
     // Clear error for this field if user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -85,15 +86,15 @@ const AddPromo = () => {
     }
   }
 
-  const validateForm = () => {
+   const validateForm = () => {
     const newErrors = {}
-    
+
     if (!formData.code.trim()) {
       newErrors.code = 'Promo code is required'
     } else if (!/^[A-Z0-9_-]+$/.test(formData.code)) {
       newErrors.code = 'Only uppercase letters, numbers, hyphens and underscores allowed'
     }
-    
+
     if (!formData.description.trim()) newErrors.description = 'Description is required'
     if (!formData.discountValue || formData.discountValue <= 0) newErrors.discountValue = 'Valid discount value is required'
     if (formData.discountType === 'percentage' && formData.discountValue > 100) newErrors.discountValue = 'Percentage cannot exceed 100%'
@@ -101,14 +102,11 @@ const AddPromo = () => {
     if (!formData.usageLimit || formData.usageLimit <= 0) newErrors.usageLimit = 'Usage limit is required'
     if (!formData.startDate) newErrors.startDate = 'Start date is required'
     if (!formData.endDate) newErrors.endDate = 'End date is required'
-    
-    // Date validation
+
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate)
       const end = new Date(formData.endDate)
-      if (end <= start) {
-        newErrors.endDate = 'End date must be after start date'
-      }
+      if (end <= start) newErrors.endDate = 'End date must be after start date'
     }
 
     return newErrors
@@ -125,10 +123,11 @@ const AddPromo = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     const validationErrors = validateForm()
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
+      toast.error('Please fix the highlighted errors') // ✅ ADDED
       return
     }
 
@@ -153,13 +152,14 @@ const AddPromo = () => {
 
     try {
       const response = await createPromoCode(newPromoCode)
-      alert('Promo code added successfully!')
+      toast.success('Promo code added successfully!')
       navigate('/promoCode')
     } catch (error) {
       console.error('Error saving promo code:', error)
-      const errorMessage = error.response?.data?.message || 'Error saving promo code. Please try again.'
+      const errorMessage =
+        error.response?.data?.message || 'Error saving promo code. Please try again.'
       setErrors({ submit: errorMessage })
-      alert(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -176,18 +176,18 @@ const AddPromo = () => {
   return (
     <div className="flex h-screen">
       <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} closeSidebar={closeSidebar} />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-        
+
         <main className={`flex-1 overflow-y-auto bg-gray-50 p-6 transition-all duration-300 ${sidebarOpen ? 'lg:pl-6' : 'lg:pl-6'}`}>
           <div className="mx-auto max-w-4xl">
             {/* Header */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
-                  <Link 
-                    to="/promoCode" 
+                  <Link
+                    to="/promoCode"
                     className="mr-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
                   >
                     <ArrowLeftIcon className="h-5 w-5" />
@@ -207,7 +207,7 @@ const AddPromo = () => {
                   <TicketIcon className="h-5 w-5 mr-2 text-blue-500" />
                   Promo Code Information
                 </h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Promo Code */}
                   <div className="md:col-span-2">
@@ -221,9 +221,8 @@ const AddPromo = () => {
                           name="code"
                           value={formData.code}
                           onChange={handleChange}
-                          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono ${
-                            errors.code ? 'border-red-300' : 'border-gray-300'
-                          }`}
+                          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono ${errors.code ? 'border-red-300' : 'border-gray-300'
+                            }`}
                           placeholder="e.g., SUMMER20"
                           style={{ textTransform: 'uppercase' }}
                         />
@@ -257,9 +256,8 @@ const AddPromo = () => {
                       value={formData.description}
                       onChange={handleChange}
                       rows="3"
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        errors.description ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.description ? 'border-red-300' : 'border-gray-300'
+                        }`}
                       placeholder="Describe the promo code offer..."
                     />
                     {errors.description && (
@@ -278,7 +276,7 @@ const AddPromo = () => {
                   <TagIcon className="h-5 w-5 mr-2 text-blue-500" />
                   Discount Details
                 </h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Discount Type */}
                   <div>
@@ -318,9 +316,8 @@ const AddPromo = () => {
                         step={formData.discountType === 'percentage' ? '0.1' : '1'}
                         min="0"
                         max={formData.discountType === 'percentage' ? '100' : undefined}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.discountValue ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.discountValue ? 'border-red-300' : 'border-gray-300'
+                          }`}
                         placeholder={formData.discountType === 'percentage' ? 'e.g., 20' : 'e.g., 100'}
                       />
                     </div>
@@ -374,9 +371,8 @@ const AddPromo = () => {
                         onChange={handleChange}
                         min="0"
                         step="1"
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.minOrderValue ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.minOrderValue ? 'border-red-300' : 'border-gray-300'
+                          }`}
                         placeholder="e.g., 2000"
                       />
                     </div>
@@ -396,7 +392,7 @@ const AddPromo = () => {
                   <UsersIcon className="h-5 w-5 mr-2 text-blue-500" />
                   Usage Limits
                 </h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Usage Limit */}
                   <div>
@@ -414,9 +410,8 @@ const AddPromo = () => {
                         onChange={handleChange}
                         min="1"
                         step="1"
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.usageLimit ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.usageLimit ? 'border-red-300' : 'border-gray-300'
+                          }`}
                         placeholder="e.g., 100"
                       />
                     </div>
@@ -451,7 +446,7 @@ const AddPromo = () => {
                   <TagIcon className="h-5 w-5 mr-2 text-blue-500" />
                   Applicable Items (Optional)
                 </h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Applicable Products */}
                   <div>
@@ -463,8 +458,8 @@ const AddPromo = () => {
                       value={formData.applicableProducts.length > 0 ? formData.applicableProducts[0] : ''}
                       onChange={(e) => {
                         if (e.target.value) {
-                          setFormData(prev => ({ 
-                            ...prev, 
+                          setFormData(prev => ({
+                            ...prev,
                             applicableProducts: [e.target.value]
                           }))
                         }
@@ -493,8 +488,8 @@ const AddPromo = () => {
                       value={formData.applicableFrames.length > 0 ? formData.applicableFrames[0] : ''}
                       onChange={(e) => {
                         if (e.target.value) {
-                          setFormData(prev => ({ 
-                            ...prev, 
+                          setFormData(prev => ({
+                            ...prev,
                             applicableFrames: [e.target.value]
                           }))
                         }
@@ -523,8 +518,8 @@ const AddPromo = () => {
                       value={formData.applicableCompanies.length > 0 ? formData.applicableCompanies[0] : ''}
                       onChange={(e) => {
                         if (e.target.value) {
-                          setFormData(prev => ({ 
-                            ...prev, 
+                          setFormData(prev => ({
+                            ...prev,
                             applicableCompanies: [e.target.value]
                           }))
                         }
@@ -551,7 +546,7 @@ const AddPromo = () => {
                   <CalendarIcon className="h-5 w-5 mr-2 text-blue-500" />
                   Date & Time Settings
                 </h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Start Date */}
                   <div>
@@ -568,9 +563,8 @@ const AddPromo = () => {
                         value={formData.startDate}
                         onChange={handleChange}
                         min={today}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.startDate ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.startDate ? 'border-red-300' : 'border-gray-300'
+                          }`}
                       />
                     </div>
                     {errors.startDate && (
@@ -596,9 +590,8 @@ const AddPromo = () => {
                         value={formData.endDate}
                         onChange={handleChange}
                         min={formData.startDate || today}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.endDate ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.endDate ? 'border-red-300' : 'border-gray-300'
+                          }`}
                       />
                     </div>
                     {errors.endDate && (
@@ -617,7 +610,7 @@ const AddPromo = () => {
                   <CheckCircleIcon className="h-5 w-5 mr-2 text-blue-500" />
                   Status Settings
                 </h2>
-                
+
                 <div className="grid grid-cols-1 gap-6">
                   {/* Active Status */}
                   <div>
@@ -678,9 +671,8 @@ const AddPromo = () => {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className={`px-6 py-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                      isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                    }`}
+                    className={`px-6 py-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
                   >
                     {isLoading ? 'Adding Promo Code...' : 'Add Promo Code'}
                   </button>

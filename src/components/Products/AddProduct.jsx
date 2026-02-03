@@ -18,7 +18,7 @@ import {getFrames} from '../../Api/frameapi';
 import {getAllCompanies} from '../../Api/companyApi';
 import {createProduct} from '../../Api/productApi';
 import uploadToCloudinary from '../../utils/cloudinary';
-import { toast, Toaster } from "react-hot-toast";
+import toast from 'react-hot-toast'
 
 const AddProduct = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -383,6 +383,7 @@ const AddProduct = () => {
     const validationErrors = validateForm()
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
+      toast.error('Please fix the errors in the form before submitting.', validationErrors)
       return
     }
 
@@ -469,15 +470,16 @@ const AddProduct = () => {
       // Send to API with Cloudinary URLs
       const response = await createProduct(newProduct)
       if (response.success) {
-        alert('Product created successfully!')
+        toast.success('Product created successfully!')
         navigate('/products')
       } else {
-        alert(response.message || 'Error creating product')
+        toast.error(response.message || 'Error creating product')
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Error creating product'
       console.error('Error creating product:', error)
-      alert(errorMessage)
+
+      toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
