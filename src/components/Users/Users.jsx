@@ -76,7 +76,6 @@ const Users = () => {
         }),
       };
 
-      console.log("API params:", params); // Debug log
 
       // Fetch users
       const usersResponse = await getUsers(params);

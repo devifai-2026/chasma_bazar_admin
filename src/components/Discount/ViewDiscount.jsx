@@ -389,51 +389,7 @@ const ViewDiscount = () => {
 
               {/* Right Column - Stats & Rules */}
               <div className="space-y-8">
-                {/* Statistics Card */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-                    <ChartBarIcon className="h-5 w-5 mr-2 text-blue-500" />
-                    Usage Statistics
-                  </h2>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-500">Times Used</label>
-                        <div className="text-2xl font-bold text-gray-900 mt-1">
-                          {discount.usageCount || 0}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <label className="block text-sm font-medium text-gray-500">Daily Usage Rate</label>
-                        <div className="text-2xl font-bold text-gray-900 mt-1">
-                          {usageRate}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500">Total Discount Given</label>
-                      <div className="text-2xl font-bold text-green-600 mt-1">
-                        ₹{discount.totalDiscountGiven?.toLocaleString() || '0'}
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t">
-                      <label className="block text-sm font-medium text-gray-500 mb-2">Created Information</label>
-                      <div className="space-y-2">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <UsersIcon className="h-4 w-4 mr-2 text-gray-400" />
-                          Created by: {discount.createdBy || 'System'}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-600">
-                          <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
-                          Created on: {formatDate(discount.createdAt)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                
 
                 {/* Stacking Rules Card */}
                 <div className="bg-white rounded-lg shadow p-6">

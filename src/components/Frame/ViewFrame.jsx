@@ -270,24 +270,7 @@ const ViewFrame = () => {
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">Specifications</h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <div className="flex items-center mb-4">
-                        <BeakerIcon className="h-5 w-5 text-blue-500 mr-2" />
-                        <h3 className="text-sm font-medium text-gray-900">Material Details</h3>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="text-sm text-gray-500">Primary Material</div>
-                        <div className="text-lg font-medium text-gray-900">
-                          {frame.material.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                        </div>
-                        <div className="text-sm text-gray-500 mt-2">
-                          {frame.material === 'acetate' && 'High-quality cellulose acetate, known for durability and flexibility.'}
-                          {frame.material === 'metal' && 'Sturdy metal alloy, lightweight and corrosion-resistant.'}
-                          {frame.material === 'titanium' && 'Premium titanium, extremely lightweight and hypoallergenic.'}
-                          {frame.material === 'plastic' && 'Lightweight plastic, affordable and versatile.'}
-                        </div>
-                      </div>
-                    </div>
+                    
                     
                     <div>
                       <div className="flex items-center mb-4">

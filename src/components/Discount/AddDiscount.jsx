@@ -175,7 +175,7 @@ const AddDiscount = () => {
     const userId = user?.id;
     
 
-    console.log(userId);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault()

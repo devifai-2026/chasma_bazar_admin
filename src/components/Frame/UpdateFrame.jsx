@@ -65,7 +65,6 @@ const UpdateFrame = () => {
   const loadFrame = async () => {
     try {
       const response = await getFrameById(id);
-      console.log({frameData: response});
       
       // Handle nested response structure
       const frameData = response.data ? response.data : response;

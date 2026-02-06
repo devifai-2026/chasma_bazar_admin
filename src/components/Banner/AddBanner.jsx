@@ -254,7 +254,6 @@ const AddBanner = () => {
                       Button Text *
                     </label>
                     <input
-                      readOnly
                       type="text"
                       name="buttonText"
                       value={formData.buttonText}
@@ -271,7 +270,6 @@ const AddBanner = () => {
                       Button Link *
                     </label>
                     <input
-                      readOnly
                       type="text"
                       name="buttonLink"
                       value={formData.buttonLink}

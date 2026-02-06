@@ -704,9 +704,7 @@ const ProductView = () => {
                       </div>
                     )}
 
-                    <button className="w-full mt-4 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-center">
-                      View Company Details
-                    </button>
+                    
                   </div>
                 </div>
 

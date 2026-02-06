@@ -178,7 +178,7 @@ const UserEdit = () => {
         updateData.gender = formData.gender?.toLowerCase();
       }
 
-      console.log('Sending update data:', updateData);
+    
 
       const response = await updateUser(id, updateData);
 
@@ -379,6 +379,7 @@ const UserEdit = () => {
                         errors.username ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="johndoe"
+                      disabled 
                     />
                     {errors.username && (
                       <p className="mt-1 text-sm text-red-600">{errors.username}</p>
@@ -404,6 +405,7 @@ const UserEdit = () => {
                           errors.email ? 'border-red-500' : 'border-gray-300'
                         }`}
                         placeholder="john@example.com"
+                        disabled
                       />
                     </div>
                     {errors.email && (
@@ -423,6 +425,7 @@ const UserEdit = () => {
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       placeholder="John"
+                      disabled
                     />
                   </div>
 
@@ -438,6 +441,7 @@ const UserEdit = () => {
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       placeholder="Doe"
+                      disabled
                     />
                   </div>
 
@@ -459,6 +463,7 @@ const UserEdit = () => {
                           errors.phone ? 'border-red-500' : 'border-gray-300'
                         }`}
                         placeholder="+1 234 567 8900"
+                        disabled
                       />
                     </div>
                     {errors.phone && (
@@ -477,6 +482,7 @@ const UserEdit = () => {
                       value={formData.dateOfBirth}
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      disabled
                     />
                   </div>
 
@@ -489,6 +495,7 @@ const UserEdit = () => {
                       name="gender"
                       value={formData.gender}
                       onChange={handleChange}
+                      disabled
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     >
                       <option value="">Select Gender</option>

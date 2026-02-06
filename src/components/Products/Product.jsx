@@ -267,6 +267,7 @@ const Products = () => {
                 value={filters.minPrice}
                 onChange={(e) => handleFilterChange('minPrice', e.target.value)}
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                min="0"
               />
               <input
                 type="number"
@@ -274,6 +275,7 @@ const Products = () => {
                 value={filters.maxPrice}
                 onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                min="0"
               />
               {/* <select
                 value={filters.material}
@@ -370,12 +372,6 @@ const Products = () => {
                           <tr key={product._id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
-                                <img
-                                  className="h-10 w-10 rounded-lg object-cover"
-                                  src={product.image || "N/A"}
-                                  alt={product.name}
-                                  
-                                />
                                 <div className="ml-4">
                                   <div className="text-sm font-medium text-gray-900">
                                     {product.name}

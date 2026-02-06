@@ -65,7 +65,6 @@ const ProductEdit = () => {
     ageGroup: 'all'
   });
 
-
   // Product type options
   const productTypes = ['optical', 'sunglasses', 'reading_glasses', 'sports_glasses'];
   const userCategories = ['Men', 'Women', 'Kids'];
@@ -107,7 +106,6 @@ const ProductEdit = () => {
     setLoading(true);
     try {
       const response = await getProductById(id);
-      console.log(response,"atanu");
       
       if (response.success && response.data) {
         const foundProduct = response.data;
@@ -138,7 +136,12 @@ const ProductEdit = () => {
             hexCode: color.hexCode || '#000000',
             imageSets: [
               {
-                normalImages: normalImages.length > 0 ? normalImages : [{ url: '', public_id: '', alt: '', file: null }],
+                normalImages: normalImages.length > 0 ? normalImages : [{ 
+                  url: '', 
+                  public_id: '', 
+                  alt: '', 
+                  file: null 
+                }],
                 image3d: image3d
               }
             ]
@@ -162,8 +165,18 @@ const ProductEdit = () => {
             hexCode: '#000000', 
             imageSets: [
               {
-                normalImages: [{ url: '', public_id: '', alt: '', file: null }],
-                image3d: { url: '', public_id: '', alt: '', file: null }
+                normalImages: [{ 
+                  url: '', 
+                  public_id: '', 
+                  alt: '', 
+                  file: null 
+                }],
+                image3d: { 
+                  url: '', 
+                  public_id: '', 
+                  alt: '', 
+                  file: null 
+                }
               }
             ]
           }],
@@ -178,6 +191,25 @@ const ProductEdit = () => {
           tags: Array.isArray(foundProduct.tags) ? foundProduct.tags.join(', ') : foundProduct.tags || '',
           ageGroup: foundProduct.ageGroup || 'all'
         });
+
+        // Load image previews from existing URLs
+        const previews = {};
+        transformedColors.forEach((color, colorIndex) => {
+          color.imageSets.forEach((imageSet, setIndex) => {
+            // Normal images previews
+            imageSet.normalImages.forEach((img, imgIndex) => {
+              if (img.url) {
+                previews[`normal-${colorIndex}-${setIndex}-${imgIndex}`] = img.url;
+              }
+            });
+            
+            // 3D image preview
+            if (imageSet.image3d.url) {
+              previews[`3d-${colorIndex}-${setIndex}`] = imageSet.image3d.url;
+            }
+          });
+        });
+        setImagePreviews(previews);
       } else {
         console.error('Product not found:', response.message);
         toast.error('Product not found');
@@ -281,7 +313,12 @@ const ProductEdit = () => {
     });
 
     const updatedColors = [...formData.colors];
-    updatedColors[colorIndex].imageSets[setIndex].normalImages[imageIndex].file = null;
+    updatedColors[colorIndex].imageSets[setIndex].normalImages[imageIndex] = {
+      url: '',
+      public_id: '',
+      alt: '',
+      file: null
+    };
     setFormData(prev => ({ ...prev, colors: updatedColors }));
   };
 
@@ -294,7 +331,12 @@ const ProductEdit = () => {
     });
 
     const updatedColors = [...formData.colors];
-    updatedColors[colorIndex].imageSets[setIndex].image3d.file = null;
+    updatedColors[colorIndex].imageSets[setIndex].image3d = {
+      url: '',
+      public_id: '',
+      alt: '',
+      file: null
+    };
     setFormData(prev => ({ ...prev, colors: updatedColors }));
   };
 
@@ -310,6 +352,13 @@ const ProductEdit = () => {
   };
 
   const removeNormalImage = (colorIndex, setIndex, imageIndex) => {
+    const key = `normal-${colorIndex}-${setIndex}-${imageIndex}`;
+    setImagePreviews(prev => {
+      const newPreviews = { ...prev };
+      delete newPreviews[key];
+      return newPreviews;
+    });
+
     const updatedColors = [...formData.colors];
     updatedColors[colorIndex].imageSets[setIndex].normalImages = 
       updatedColors[colorIndex].imageSets[setIndex].normalImages.filter((_, i) => i !== imageIndex);
@@ -319,13 +368,23 @@ const ProductEdit = () => {
   const addImageSet = (colorIndex) => {
     const updatedColors = [...formData.colors];
     updatedColors[colorIndex].imageSets.push({
-      normalImages: [{ url: '', public_id: '', alt: '' }],
-      image3d: { url: '', public_id: '', alt: '' }
+      normalImages: [{ url: '', public_id: '', alt: '', file: null }],
+      image3d: { url: '', public_id: '', alt: '', file: null }
     });
     setFormData(prev => ({ ...prev, colors: updatedColors }));
   };
 
   const removeImageSet = (colorIndex, setIndex) => {
+    // Remove all previews for this image set
+    const updatedPreviews = { ...imagePreviews };
+    Object.keys(updatedPreviews).forEach(key => {
+      if (key.startsWith(`normal-${colorIndex}-${setIndex}`) || 
+          key.startsWith(`3d-${colorIndex}-${setIndex}`)) {
+        delete updatedPreviews[key];
+      }
+    });
+    setImagePreviews(updatedPreviews);
+
     const updatedColors = [...formData.colors];
     updatedColors[colorIndex].imageSets = 
       updatedColors[colorIndex].imageSets.filter((_, i) => i !== setIndex);
@@ -340,8 +399,8 @@ const ProductEdit = () => {
         hexCode: '#000000', 
         imageSets: [
           {
-            normalImages: [{ url: '', public_id: '', alt: '' }],
-            image3d: { url: '', public_id: '', alt: '' }
+            normalImages: [{ url: '', public_id: '', alt: '', file: null }],
+            image3d: { url: '', public_id: '', alt: '', file: null }
           }
         ]
       }]
@@ -350,9 +409,54 @@ const ProductEdit = () => {
 
   const removeColor = (index) => {
     if (formData.colors.length > 1) {
+      // Remove all previews for this color
+      const updatedPreviews = { ...imagePreviews };
+      Object.keys(updatedPreviews).forEach(key => {
+        if (key.includes(`-${index}-`)) {
+          delete updatedPreviews[key];
+        }
+      });
+      setImagePreviews(updatedPreviews);
+
       const updatedColors = formData.colors.filter((_, i) => i !== index);
       setFormData(prev => ({ ...prev, colors: updatedColors }));
     }
+  };
+
+  const validateImages = () => {
+    for (let i = 0; i < formData.colors.length; i++) {
+      const color = formData.colors[i];
+      
+      // Skip validation if color name is empty
+      if (!color.color.trim()) {
+        continue;
+      }
+      
+      for (let j = 0; j < color.imageSets.length; j++) {
+        const imageSet = color.imageSets[j];
+        
+        // Check if at least one normal image exists
+        const hasNormalImage = imageSet.normalImages.some(img => 
+          img.url?.trim() || img.file || imagePreviews[`normal-${i}-${j}-${imageSet.normalImages.indexOf(img)}`]
+        );
+        
+        if (!hasNormalImage) {
+          toast.error(`At least one Normal Image is required for color: ${color.color}`);
+          return false;
+        }
+        
+        // Check if 3D image exists
+        const has3DImage = imageSet.image3d.url?.trim() || 
+                          imageSet.image3d.file || 
+                          imagePreviews[`3d-${i}-${j}`];
+        
+        if (!has3DImage) {
+          toast.error(`3D Image is required for color: ${color.color}`);
+          return false;
+        }
+      }
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
@@ -407,47 +511,104 @@ const ProductEdit = () => {
         return;
       }
 
-      // Upload images to Cloudinary
-      const processedColors = await Promise.all(formData.colors.map(async (color) => {
-        const processedImageSets = await Promise.all(color.imageSets.map(async (imageSet) => {
-          // Process normal images
-          const processedNormalImages = await Promise.all(
-            imageSet.normalImages.map(async (img) => {
-              if (img.file) {
-                const uploadedImage = await uploadToCloudinary(img.file);
-                return {
-                  url: uploadedImage.secure_url,
-                  public_id: uploadedImage.public_id,
-                  alt: img.alt || ''
-                };
-              }
-              return img;
-            })
-          );
+      // Validate that each color has both normal and 3D images
+      if (!validateImages()) {
+        setSaving(false);
+        return;
+      }
 
-          // Process 3D image
-          let processed3dImage = imageSet.image3d;
-          if (imageSet.image3d.file) {
-            const uploaded3dImage = await uploadToCloudinary(imageSet.image3d.file);
-            processed3dImage = {
-              url: uploaded3dImage.secure_url,
-              public_id: uploaded3dImage.public_id,
-              alt: imageSet.image3d.alt || ''
-            };
+      // Upload images to Cloudinary and process them
+      const processedColors = await Promise.all(
+        formData.colors.map(async (color, colorIndex) => {
+          const allImages = [];
+
+          // Process all image sets for this color
+          for (let setIndex = 0; setIndex < color.imageSets.length; setIndex++) {
+            const imageSet = color.imageSets[setIndex];
+
+            // Process normal images (type: 'normal')
+            for (let imgIndex = 0; imgIndex < imageSet.normalImages.length; imgIndex++) {
+              const img = imageSet.normalImages[imgIndex];
+              
+              if (img.file) {
+                // New file uploaded - upload to Cloudinary
+                try {
+                  const uploadedImage = await uploadToCloudinary(img.file);
+                  allImages.push({
+                    url: uploadedImage.secure_url,
+                    public_id: uploadedImage.public_id,
+                    alt: img.alt || color.color || 'product image',
+                    type: 'normal'
+                  });
+                } catch (uploadError) {
+                  console.error('Error uploading normal image:', uploadError);
+                  toast.error(`Failed to upload normal image for ${color.color}`);
+                  throw uploadError;
+                }
+              } else if (img.url && img.url.trim() !== '') {
+                // Keep existing image
+                allImages.push({
+                  url: img.url,
+                  public_id: img.public_id || '',
+                  alt: img.alt || color.color || 'product image',
+                  type: 'normal'
+                });
+              }
+            }
+
+            // Process 3D image (type: '3d') - MANDATORY
+            if (imageSet.image3d.file) {
+              try {
+                const uploaded3dImage = await uploadToCloudinary(imageSet.image3d.file);
+                allImages.push({
+                  url: uploaded3dImage.secure_url,
+                  public_id: uploaded3dImage.public_id,
+                  alt: imageSet.image3d.alt || `${color.color} 3D view`,
+                  type: '3d'
+                });
+              } catch (uploadError) {
+                console.error('Error uploading 3D image:', uploadError);
+                toast.error(`Failed to upload 3D image for ${color.color}`);
+                throw uploadError;
+              }
+            } else if (imageSet.image3d.url && imageSet.image3d.url.trim() !== '') {
+              // Keep existing 3D image
+              allImages.push({
+                url: imageSet.image3d.url,
+                public_id: imageSet.image3d.public_id || '',
+                alt: imageSet.image3d.alt || `${color.color} 3D view`,
+                type: '3d'
+              });
+            }
           }
 
           return {
-            normalImages: processedNormalImages,
-            image3d: processed3dImage
+            color: color.color,
+            hexCode: color.hexCode,
+            images: allImages
           };
-        }));
+        })
+      );
 
-        return {
-          color: color.color,
-          hexCode: color.hexCode,
-          imageSets: processedImageSets
-        };
-      }));
+      // Double-check that all colors have at least one normal image and one 3D image
+      const colorsWithMissingImages = [];
+      processedColors.forEach(color => {
+        const normalImages = color.images.filter(img => img.type === 'normal');
+        const threeDImages = color.images.filter(img => img.type === '3d');
+        
+        if (normalImages.length === 0) {
+          colorsWithMissingImages.push(`${color.color} (missing normal image)`);
+        }
+        if (threeDImages.length === 0) {
+          colorsWithMissingImages.push(`${color.color} (missing 3D image)`);
+        }
+      });
+
+      if (colorsWithMissingImages.length > 0) {
+        toast.error(`Missing required images for: ${colorsWithMissingImages.join(', ')}`);
+        setSaving(false);
+        return;
+      }
 
       // Prepare product data
       const updatedProductData = {
@@ -467,12 +628,22 @@ const ProductEdit = () => {
         model: formData.model,
         material: formData.material,
         weight: formData.weight,
-        dimensions: formData.dimensions,
-        warranty: formData.warranty,
+        dimensions: {
+          height: parseFloat(formData.dimensions.height) || 0,
+          width: parseFloat(formData.dimensions.width) || 0,
+          depth: parseFloat(formData.dimensions.depth) || 0
+        },
+        warranty: {
+          duration: parseInt(formData.warranty.duration) || 0,
+          durationType: formData.warranty.durationType,
+          description: formData.warranty.description
+        },
         isFeatured: formData.isFeatured,
-        tags: formData.tags,
+        tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '') : [],
         ageGroup: formData.ageGroup
       };
+
+
 
       // Call update API
       const response = await updateProduct(id, updatedProductData);
@@ -896,7 +1067,12 @@ const ProductEdit = () => {
               {/* Colors and Images */}
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Colors & Images</h2>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Colors & Images</h2>
+                    <p className="text-sm text-red-600 mt-1">
+                      * For each color: At least one Normal Image and one 3D Image are required
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={addColor}
@@ -908,166 +1084,310 @@ const ProductEdit = () => {
                 </div>
 
                 <div className="space-y-6">
-                  {formData.colors.map((color, colorIndex) => (
-                    <div key={colorIndex} className="p-4 border border-gray-200 rounded-lg">
-                      <div className="flex justify-between items-center mb-4">
-                        <div className="grid grid-cols-2 gap-4 flex-1">
+                  {formData.colors.map((color, colorIndex) => {
+                    // Check image requirements for this color
+                    const imageStatus = color.imageSets.map((imageSet, setIndex) => {
+                      const hasNormalImage = imageSet.normalImages.some(img => 
+                        img.url?.trim() || img.file || imagePreviews[`normal-${colorIndex}-${setIndex}-${imageSet.normalImages.indexOf(img)}`]
+                      );
+                      
+                      const has3DImage = imageSet.image3d.url?.trim() || 
+                                        imageSet.image3d.file || 
+                                        imagePreviews[`3d-${colorIndex}-${setIndex}`];
+                      
+                      return {
+                        hasNormalImage,
+                        has3DImage
+                      };
+                    });
+                    
+                    const allSetsValid = imageStatus.every(status => 
+                      status.hasNormalImage && status.has3DImage
+                    );
+                    
+                    return (
+                      <div key={colorIndex} className="p-4 border border-gray-200 rounded-lg">
+                        <div className="flex justify-between items-center mb-4">
+                          <div className="flex items-center">
+                            <div 
+                              className="w-6 h-6 rounded-full border border-gray-300 mr-3"
+                              style={{ backgroundColor: color.hexCode }}
+                            />
+                            <div>
+                              <h3 className="font-medium text-gray-700">
+                                {color.color || `Color ${colorIndex + 1}`}
+                                {color.color && !allSetsValid && (
+                                  <span className="ml-2 text-xs text-red-600">(Missing required images!)</span>
+                                )}
+                              </h3>
+                              <p className="text-xs text-gray-500">{color.hexCode}</p>
+                            </div>
+                          </div>
+                          {formData.colors.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeColor(colorIndex)}
+                              className="ml-4 p-2 text-red-600 hover:text-red-800"
+                              title="Remove color"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Color Name</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Color Name *
+                            </label>
                             <input
                               type="text"
                               value={color.color}
                               onChange={(e) => handleColorChange(colorIndex, 'color', e.target.value)}
                               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               placeholder="e.g., Black"
+                              required
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Hex Code</label>
-                            <input
-                              type="color"
-                              value={color.hexCode}
-                              onChange={(e) => handleColorChange(colorIndex, 'hexCode', e.target.value)}
-                              className="w-full h-10 border border-gray-300 rounded-lg"
-                            />
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Hex Code
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={color.hexCode}
+                                onChange={(e) => handleColorChange(colorIndex, 'hexCode', e.target.value)}
+                                className="w-16 h-10 border border-gray-300 rounded-lg cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={color.hexCode}
+                                onChange={(e) => handleColorChange(colorIndex, 'hexCode', e.target.value)}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              />
+                            </div>
                           </div>
                         </div>
-                        {formData.colors.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeColor(colorIndex)}
-                            className="ml-4 p-2 text-red-600 hover:text-red-800"
-                          >
-                            <TrashIcon className="h-5 w-5" />
-                          </button>
-                        )}
-                      </div>
 
-                      {/* Image Sets */}
-                      <div className="space-y-8">
-                        {color.imageSets.map((imageSet, setIndex) => (
-                          <div key={setIndex} className="p-3 bg-gray-50 rounded-lg">
-                            <div className="flex justify-between items-center mb-3">
-                              <h4 className="font-medium text-gray-700">Image Set {setIndex + 1}</h4>
-                              {color.imageSets.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => removeImageSet(colorIndex, setIndex)}
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  <XMarkIcon className="h-4 w-4" />
-                                </button>
-                              )}
-                            </div>
+                        {/* Image Sets */}
+                        <div className="space-y-6 mt-6">
+                          {color.imageSets.map((imageSet, setIndex) => {
+                            const hasNormalImage = imageSet.normalImages.some(img => 
+                              img.url?.trim() || img.file || imagePreviews[`normal-${colorIndex}-${setIndex}-${imageSet.normalImages.indexOf(img)}`]
+                            );
+                            
+                            const has3DImage = imageSet.image3d.url?.trim() || 
+                                              imageSet.image3d.file || 
+                                              imagePreviews[`3d-${colorIndex}-${setIndex}`];
+                            
+                            return (
+                              <div key={setIndex} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <div className="flex justify-between items-center mb-4">
+                                  <div className="flex items-center">
+                                    <PhotoIcon className="h-5 w-5 text-gray-500 mr-2" />
+                                    <h4 className="font-medium text-gray-700">
+                                      Image Set {setIndex + 1}
+                                      {(!hasNormalImage || !has3DImage) && (
+                                        <span className="ml-2 text-xs text-red-600">
+                                          {!hasNormalImage && "Need Normal Image"}
+                                          {!hasNormalImage && !has3DImage && " & "}
+                                          {!has3DImage && "Need 3D Image"}
+                                        </span>
+                                      )}
+                                    </h4>
+                                  </div>
+                                  {color.imageSets.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeImageSet(colorIndex, setIndex)}
+                                      className="text-red-600 hover:text-red-800"
+                                      title="Remove image set"
+                                    >
+                                      <TrashIcon className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                </div>
 
-                            {/* Normal Images */}
-                            <div className="mb-4">
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Normal Images</label>
-                              <div className="space-y-2">
-                                {imageSet.normalImages.map((img, imgIndex) => (
-                                  <div key={imgIndex} className="flex gap-2 items-center">
-                                    <div className="flex-1">
+                                {/* Normal Images - MANDATORY */}
+                                <div className="mb-6">
+                                  <div className="flex justify-between items-center mb-3">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                      Normal Images *
+                                    </label>
+                                    {!hasNormalImage && (
+                                      <span className="text-xs text-red-600">At least one Normal Image is required</span>
+                                    )}
+                                  </div>
+                                  <div className="space-y-4">
+                                    {imageSet.normalImages.map((img, imgIndex) => (
+                                      <div key={imgIndex} className="flex gap-4 items-start p-3 bg-white rounded-lg border border-gray-200">
+                                        <div className="flex-1 space-y-2">
+                                          <input
+                                            type="text"
+                                            value={img.url}
+                                            onChange={(e) => handleImageUrlChange(colorIndex, setIndex, imgIndex, 'url', e.target.value)}
+                                            placeholder="Image URL * (or upload file)"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                                            // required={imgIndex === 0}
+                                          />
+                                          <input
+                                            type="text"
+                                            value={img.alt}
+                                            onChange={(e) => handleImageUrlChange(colorIndex, setIndex, imgIndex, 'alt', e.target.value)}
+                                            placeholder="Image alt text"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                                          />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                          <div className="relative">
+                                            <input
+                                              type="file"
+                                              accept="image/*"
+                                              onChange={(e) => handleNormalImageUpload(colorIndex, setIndex, imgIndex, e.target.files)}
+                                              className="text-sm"
+                                              required={imgIndex === 0 && !img.url}
+                                            />
+                                            {(img.url || img.file || imagePreviews[`normal-${colorIndex}-${setIndex}-${imgIndex}`]) && (
+                                              <button
+                                                type="button"
+                                                onClick={() => removeNormalImagePreview(colorIndex, setIndex, imgIndex)}
+                                                className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1"
+                                                title="Remove image"
+                                              >
+                                                <XMarkIcon className="h-3 w-3" />
+                                              </button>
+                                            )}
+                                          </div>
+                                          {/* Show preview from file upload or existing URL */}
+                                          {imagePreviews[`normal-${colorIndex}-${setIndex}-${imgIndex}`] ? (
+                                            <img
+                                              src={imagePreviews[`normal-${colorIndex}-${setIndex}-${imgIndex}`]}
+                                              alt="Preview"
+                                              className="h-20 w-20 object-cover rounded border border-gray-200"
+                                            />
+                                          ) : img.url ? (
+                                            <img
+                                              src={img.url}
+                                              alt="Image preview"
+                                              className="h-20 w-20 object-cover rounded border border-gray-200"
+                                              onError={(e) => { e.target.style.display = 'none'; }}
+                                            />
+                                          ) : (
+                                            <div className="h-20 w-20 border-2 border-dashed border-gray-300 rounded flex items-center justify-center">
+                                              <PhotoIcon className="h-8 w-8 text-gray-400" />
+                                            </div>
+                                          )}
+                                        </div>
+                                        {imgIndex > 0 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => removeNormalImage(colorIndex, setIndex, imgIndex)}
+                                            className="text-red-600 hover:text-red-800"
+                                            title="Remove image field"
+                                          >
+                                            <TrashIcon className="h-5 w-5" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => addNormalImage(colorIndex, setIndex)}
+                                    className="mt-3 text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                                  >
+                                    <PlusIcon className="h-4 w-4 mr-1" />
+                                    Add Normal Image
+                                  </button>
+                                </div>
+
+                                {/* 3D Image - MANDATORY */}
+                                <div>
+                                  <div className="flex justify-between items-center mb-3">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                      3D Image *
+                                    </label>
+                                    {!has3DImage && (
+                                      <span className="text-xs text-red-600">3D Image is required</span>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-4 items-start p-3 bg-white rounded-lg border border-gray-200">
+                                    <div className="flex-1 space-y-2">
                                       <input
                                         type="text"
-                                        value={img.url}
-                                        onChange={(e) => handleImageUrlChange(colorIndex, setIndex, imgIndex, 'url', e.target.value)}
-                                        placeholder="Image URL"
+                                        value={imageSet.image3d.url}
+                                        onChange={(e) => handle3dImageUrlChange(colorIndex, setIndex, 'url', e.target.value)}
+                                        placeholder="3D Image URL * (or upload file)"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                                        // required={!imageSet.image3d.file}
+                                      />
+                                      <input
+                                        type="text"
+                                        value={imageSet.image3d.alt}
+                                        onChange={(e) => handle3dImageUrlChange(colorIndex, setIndex, 'alt', e.target.value)}
+                                        placeholder="3D Image alt text"
                                         className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                                       />
                                     </div>
-                                    <input
-                                      type="file"
-                                      accept="image/*"
-                                      onChange={(e) => handleNormalImageUpload(colorIndex, setIndex, imgIndex, e.target.files)}
-                                      className="text-sm"
-                                    />
-                                    {/* Show preview from file upload or existing URL */}
-                                    {imagePreviews[`normal-${colorIndex}-${setIndex}-${imgIndex}`] ? (
-                                      <img
-                                        src={imagePreviews[`normal-${colorIndex}-${setIndex}-${imgIndex}`]}
-                                        alt="Preview"
-                                        className="h-16 w-16 object-cover rounded border border-gray-200"
-                                      />
-                                    ) : img.url ? (
-                                      <img
-                                        src={img.url}
-                                        alt="Image preview"
-                                        className="h-16 w-16 object-cover rounded border border-gray-200"
-                                        onError={(e) => { e.target.style.display = 'none'; }}
-                                      />
-                                    ) : null}
-                                    {imgIndex > 0 && (
-                                      <button
-                                        type="button"
-                                        onClick={() => removeNormalImage(colorIndex, setIndex, imgIndex)}
-                                        className="text-red-600 hover:text-red-800"
-                                      >
-                                        <XMarkIcon className="h-4 w-4" />
-                                      </button>
-                                    )}
+                                    <div className="flex flex-col gap-2">
+                                      <div className="relative">
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          onChange={(e) => handle3dImageUpload(colorIndex, setIndex, e.target.files)}
+                                          className="text-sm"
+                                          // required={!imageSet.image3d.url}
+                                        />
+                                        {(imageSet.image3d.url || imageSet.image3d.file || imagePreviews[`3d-${colorIndex}-${setIndex}`]) && (
+                                          <button
+                                            type="button"
+                                            onClick={() => remove3dImagePreview(colorIndex, setIndex)}
+                                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1"
+                                            title="Remove 3D image"
+                                          >
+                                            <XMarkIcon className="h-3 w-3" />
+                                          </button>
+                                        )}
+                                      </div>
+                                      {/* Show preview from file upload or existing URL */}
+                                      {imagePreviews[`3d-${colorIndex}-${setIndex}`] ? (
+                                        <img
+                                          src={imagePreviews[`3d-${colorIndex}-${setIndex}`]}
+                                          alt="3D Preview"
+                                          className="h-20 w-20 object-cover rounded border border-gray-200"
+                                        />
+                                      ) : imageSet.image3d.url ? (
+                                        <img
+                                          src={imageSet.image3d.url}
+                                          alt="3D image preview"
+                                          className="h-20 w-20 object-cover rounded border border-gray-200"
+                                          onError={(e) => { e.target.style.display = 'none'; }}
+                                        />
+                                      ) : (
+                                        <div className="h-20 w-20 border-2 border-dashed border-gray-300 rounded flex items-center justify-center">
+                                          <CubeIcon className="h-8 w-8 text-gray-400" />
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                ))}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => addNormalImage(colorIndex, setIndex)}
-                                className="mt-2 text-sm text-blue-600 hover:text-blue-800 flex items-center"
-                              >
-                                <PlusIcon className="h-4 w-4 mr-1" />
-                                Add Image
-                              </button>
-                            </div>
-
-                            {/* 3D Image */}
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">3D Image</label>
-                              <div className="flex gap-2 items-center">
-                                <div className="flex-1">
-                                  <input
-                                    type="text"
-                                    value={imageSet.image3d.url}
-                                    onChange={(e) => handle3dImageUrlChange(colorIndex, setIndex, 'url', e.target.value)}
-                                    placeholder="3D Image URL"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                                  />
                                 </div>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => handle3dImageUpload(colorIndex, setIndex, e.target.files)}
-                                  className="text-sm"
-                                />
-                                {/* Show preview from file upload or existing URL */}
-                                {imagePreviews[`3d-${colorIndex}-${setIndex}`] ? (
-                                  <img
-                                    src={imagePreviews[`3d-${colorIndex}-${setIndex}`]}
-                                    alt="3D Preview"
-                                    className="h-16 w-16 object-cover rounded border border-gray-200"
-                                  />
-                                ) : imageSet.image3d.url ? (
-                                  <img
-                                    src={imageSet.image3d.url}
-                                    alt="3D image preview"
-                                    className="h-16 w-16 object-cover rounded border border-gray-200"
-                                    onError={(e) => { e.target.style.display = 'none'; }}
-                                  />
-                                ) : null}
                               </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                            );
+                          })}
+                        </div>
 
-                      <button
-                        type="button"
-                        onClick={() => addImageSet(colorIndex)}
-                        className="mt-3 text-sm text-blue-600 hover:text-blue-800 flex items-center"
-                      >
-                        <PlusIcon className="h-4 w-4 mr-1" />
-                        Add Image Set
-                      </button>
-                    </div>
-                  ))}
+                        <button
+                          type="button"
+                          onClick={() => addImageSet(colorIndex)}
+                          className="mt-4 text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                        >
+                          <PlusIcon className="h-4 w-4 mr-1" />
+                          Add Image Set
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

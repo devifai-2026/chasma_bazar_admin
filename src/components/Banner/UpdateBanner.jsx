@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeftIcon, PhotoIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Sidebar from "../Sidebar";
 import Navbar from "../Navbar";
-import {getBannerById , updateBanner} from "../../Api/bannerApi";
+import { getBannerById, updateBanner } from "../../Api/bannerApi";
+import uploadToCloudinary from '../../utils/cloudinary';
 import toast from 'react-hot-toast'
 
 const UpdateBanner = () => {
@@ -11,6 +12,8 @@ const UpdateBanner = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
@@ -21,32 +24,38 @@ const UpdateBanner = () => {
   const loadBannerData = async () => {
     try {
       const response = await getBannerById(id);
-      
+      let bannerData;
+
+      // Handle different API response structures
       if (response && response.data) {
-        const bannerToEdit = response.data;
-        
-        // Format dates for input fields
-        const startDate = bannerToEdit.startDate ? bannerToEdit.startDate.split('T')[0] : '';
-        const endDate = bannerToEdit.endDate ? bannerToEdit.endDate.split('T')[0] : '';
-
-        setFormData({
-          ...bannerToEdit,
-          startDate,
-          endDate
-        });
+        bannerData = response.data;
       } else if (response) {
-        const bannerToEdit = response;
-        
-        // Format dates for input fields
-        const startDate = bannerToEdit.startDate ? bannerToEdit.startDate.split('T')[0] : '';
-        const endDate = bannerToEdit.endDate ? bannerToEdit.endDate.split('T')[0] : '';
-
-        setFormData({
-          ...bannerToEdit,
-          startDate,
-          endDate
-        });
+        bannerData = response;
+      } else {
+        throw new Error("No banner data found");
       }
+
+      // Format dates for input fields
+      const startDate = bannerData.startDate ? bannerData.startDate.split('T')[0] : new Date().toISOString().split('T')[0];
+      const endDate = bannerData.endDate ? bannerData.endDate.split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      // Ensure pages is an array
+      const pages = Array.isArray(bannerData.pages) ? bannerData.pages : 
+                   (bannerData.pages ? [bannerData.pages] : ["home"]);
+
+      setFormData({
+        title: bannerData.title || "",
+        description: bannerData.description || "",
+        image: bannerData.image || "",
+        buttonText: bannerData.buttonText || "Shop Now",
+        buttonLink: bannerData.buttonLink || "/products",
+        pages: pages,
+        position: bannerData.position || "top",
+        priority: bannerData.priority || 5,
+        isActive: bannerData.isActive !== undefined ? bannerData.isActive : true,
+        startDate,
+        endDate,
+      });
     } catch (error) {
       console.error("Error loading banner:", error);
       toast.error('Error loading banner data');
@@ -63,7 +72,8 @@ const UpdateBanner = () => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : 
+              type === 'number' ? parseInt(value) : value
     }));
   };
 
@@ -84,29 +94,62 @@ const UpdateBanner = () => {
     });
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImageUploading(true);
+    setError("");
+
+    try {
+      const res = await uploadToCloudinary(file);
+      
+      setFormData(prev => ({
+        ...prev,
+        image: res.url
+      }));
+      toast.success('Image uploaded successfully!');
+    } catch (err) {
+      setError("Failed to upload image");
+      toast.error('Error uploading image. Please try again.');
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    setError("");
+
     try {
-      // Prepare the banner data for API
+      // Prepare banner data for API (matching AddBanner format)
       const bannerData = {
-        ...formData,
-        // Convert dates back to full ISO string
-        startDate: new Date(formData.startDate + 'T00:00:00.000Z').toISOString(),
-        endDate: new Date(formData.endDate + 'T23:59:59.000Z').toISOString(),
+        title: formData.title,
+        description: formData.description,
+        image: formData.image,
+        buttonText: formData.buttonText,
+        buttonLink: formData.buttonLink,
+        pages: formData.pages && formData.pages.length > 0 ? formData.pages : ['all'],
+        position: formData.position,
+        isActive: formData.isActive,
+        priority: formData.priority,
+        startDate: formData.startDate ? new Date(formData.startDate + 'T00:00:00.000Z') : null,
+        endDate: formData.endDate ? new Date(formData.endDate + 'T23:59:59.000Z') : null,
       };
 
-      // Call the update API
+      // Call API to update banner
       const response = await updateBanner(id, bannerData);
 
-      if (response.success || response.message) {
-        toast.success('Banner updated successfully!');
-        navigate("/banner");
-      }
-    } catch (error) {
-      console.error("Error updating banner:", error);
-      const errorMessage = error.response?.data?.message || error.message || "Failed to update banner";
-      toast.error('Error updating banner: ' + errorMessage);
+      // Show success message
+      toast.success('Banner updated successfully!');
+
+      // Navigate back to banners list
+      navigate("/banner");
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || "Failed to update banner";
+      setError(errorMessage);
+      console.error("Error updating banner:", err);
+      toast.error('Error updating banner. Please try again.');
     }
   };
 
@@ -129,6 +172,9 @@ const UpdateBanner = () => {
   if (!formData) {
     return null;
   }
+
+  const pageOptions = ['all', 'home', 'products', 'product-detail', 'cart', 'wishlist', 'checkout', 'orders', 'profile'];
+  const positionOptions = ["top", "middle", "bottom", "sidebar", "popup"];
 
   return (
     <div className="flex h-screen">
@@ -158,12 +204,12 @@ const UpdateBanner = () => {
                     <ArrowLeftIcon className="h-4 w-4 mr-2" />
                     Back to Banners
                   </Link>
-                    <div>
-                      <h1 className="text-2xl font-bold text-gray-900">Update Banner</h1>
-                      <p className="text-gray-600">
-                        Edit banner: {formData.title}
-                      </p>
-                    </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Update Banner</h1>
+                    <p className="text-gray-600">
+                      Edit banner: {formData.title}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -172,7 +218,13 @@ const UpdateBanner = () => {
               {/* Banner Details Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Banner Details</h2>
-                
+
+                {error && (
+                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-800">{error}</p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Title */}
                   <div className="md:col-span-2">
@@ -206,56 +258,63 @@ const UpdateBanner = () => {
                     />
                   </div>
 
-                  {/* Image URL */}
+                  {/* Image Upload */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Banner Image URL *
+                      Banner Image *
                     </label>
-                    <div className="flex space-x-4">
-                      <input
-                        type="url"
-                        name="image"
-                        value={formData.image}
-                        onChange={handleChange}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="https://example.com/banner-image.jpg"
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
-                        onClick={() => {
-                          const sampleImages = [
-                            "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200&h=400&fit=crop",
-                            "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=1200&h=400&fit=crop",
-                            "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200&h=400&fit=crop"
-                          ];
-                          setFormData(prev => ({ ...prev, image: sampleImages[Math.floor(Math.random() * sampleImages.length)] }));
-                        }}
-                      >
-                        <PhotoIcon className="h-5 w-5 mr-2" />
-                        Sample
-                      </button>
-                    </div>
-                    <p className="mt-2 text-sm text-gray-500">
-                      Enter a direct URL to your banner image (recommended size: 1200x400px)
-                    </p>
-                    {formData.image && (
-                      <div className="mt-4">
-                        <div className="text-sm text-gray-700 mb-2">Preview:</div>
-                        <div className="h-40 bg-gray-100 rounded-lg overflow-hidden">
-                          <img
-                            src={formData.image}
-                            alt="Preview"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "https://via.placeholder.com/1200x400/cccccc/969696?text=Invalid+Image+URL";
-                            }}
+                    <div className="space-y-4">
+                      {/* Current Image Preview */}
+                      {formData.image && (
+                        <div className="mb-4">
+                          <div className="text-sm text-gray-700 mb-2">Current Image:</div>
+                          <div className="h-40 bg-gray-100 rounded-lg overflow-hidden">
+                            <img
+                              src={formData.image}
+                              alt="Current banner"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "https://via.placeholder.com/1200x400/cccccc/969696?text=Invalid+Image";
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* File Upload */}
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-2">Upload New Image:</label>
+                        <div className="flex items-center space-x-4">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={imageUploading}
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                           />
+                          {imageUploading && (
+                            <span className="text-sm text-blue-600">Uploading...</span>
+                          )}
                         </div>
                       </div>
-                    )}
+
+                      {/* Or Direct URL Input */}
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-2">Or enter image URL:</label>
+                        <input
+                          type="url"
+                          name="image"
+                          value={formData.image}
+                          onChange={handleChange}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="https://example.com/banner-image.jpg"
+                        />
+                      </div>
+                    </div>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Recommended size: 1200x400px | Max file size: 5MB
+                    </p>
                   </div>
 
                   {/* Button Text */}
@@ -295,15 +354,15 @@ const UpdateBanner = () => {
               {/* Display Settings Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Display Settings</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Pages */}
+                  {/* Pages - Matching AddBanner */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       Display on Pages *
                     </label>
-                    <div className="space-y-2">
-                      {['home', 'products', 'cart', 'checkout', 'about'].map((page) => (
+                    <div className="space-y-2 max-h-64 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+                      {pageOptions.map((page) => (
                         <label key={page} className="flex items-center">
                           <input
                             type="checkbox"
@@ -313,7 +372,9 @@ const UpdateBanner = () => {
                             className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                           />
                           <span className="ml-3 text-sm text-gray-700 capitalize">
-                            {page} Page
+                            {page === 'product-detail' ? 'Product Detail' : 
+                             page === 'all' ? 'All Pages' : 
+                             (page.charAt(0).toUpperCase() + page.slice(1)) + ' Page'}
                           </span>
                         </label>
                       ))}
@@ -323,7 +384,7 @@ const UpdateBanner = () => {
                     </p>
                   </div>
 
-                  {/* Position and Priority */}
+                  {/* Position and Priority - Matching AddBanner */}
                   <div className="space-y-6">
                     {/* Position */}
                     <div>
@@ -336,9 +397,15 @@ const UpdateBanner = () => {
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        <option value="top">Top of Page</option>
-                        <option value="middle">Middle of Page</option>
-                        <option value="bottom">Bottom of Page</option>
+                        {positionOptions.map(position => (
+                          <option key={position} value={position}>
+                            {position === 'top' ? 'Top of Page' :
+                             position === 'middle' ? 'Middle of Page' :
+                             position === 'bottom' ? 'Bottom of Page' :
+                             position === 'sidebar' ? 'Sidebar' :
+                             position === 'popup' ? 'Popup' : position}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -352,13 +419,12 @@ const UpdateBanner = () => {
                         name="priority"
                         value={formData.priority}
                         onChange={handleChange}
-                        min="1"
-                        max="100"
+                        min="0"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
                       <p className="mt-2 text-sm text-gray-500">
-                        Lower numbers have higher priority (1 is highest)
+                        Higher numbers have higher priority in display order
                       </p>
                     </div>
                   </div>
@@ -368,7 +434,7 @@ const UpdateBanner = () => {
               {/* Schedule Card */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Schedule & Status</h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Start Date */}
                   <div>

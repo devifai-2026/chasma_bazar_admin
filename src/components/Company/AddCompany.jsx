@@ -235,7 +235,6 @@ const AddCompany = () => {
     // Required fields
     if (!formData.name.trim()) newErrors.name = 'Company name is required'
     if (!formData.description.trim()) newErrors.description = 'Description is required'
-    if (!formData.pinCode.trim()) newErrors.pinCode = 'PIN Code is required'
     if (!formData.email.trim()) newErrors.email = 'Email is required'
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required'
     if (!formData.address.street.trim()) newErrors.address_street = 'Street address is required'
@@ -275,21 +274,17 @@ const AddCompany = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log('Form submission started') // Debug
     
     // Clear previous errors
     setErrors({})
     setSubmitError('')
     
     const validationErrors = validateForm()
-    console.log('Validation errors:', validationErrors) // Debug
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       toast.error('Please fix the errors in the form before submitting.')
-      console.log('Form validation failed - Errors:', validationErrors) // Debug
       return
     }
-    console.log('Form validation passed') // Debug
 
     setIsSubmitting(true)
     
@@ -298,7 +293,6 @@ const AddCompany = () => {
       const newCompany = {
         name: formData.name,
         description: formData.description,
-        pinCode: formData.pinCode,
         email: formData.email,
         phone: formData.phone,
         address: {
@@ -319,9 +313,8 @@ const AddCompany = () => {
       }
 
       // Call the API
-      console.log('Calling createCompany with data:', newCompany) // Debug
+    
       const response = await createCompany(newCompany)
-      console.log('API Response:', response) // Debug
       
       if (response.success) {
         setSubmitSuccess(true)
@@ -412,7 +405,7 @@ const AddCompany = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
                   <Link 
-                    to="/companies" 
+                    to="/company" 
                     className="mr-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
                   >
                     <ArrowLeftIcon className="h-5 w-5" />
@@ -458,34 +451,7 @@ const AddCompany = () => {
                     )}
                   </div>
 
-                  {/* PIN Code */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      PIN Code *
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <MapPinIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        name="pinCode"
-                        value={formData.pinCode}
-                        onChange={handleChange}
-                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          errors.pinCode ? 'border-red-300' : 'border-gray-300'
-                        }`}
-                        placeholder="Enter PIN code"
-                        disabled={isSubmitting || submitSuccess}
-                      />
-                    </div>
-                    {errors.pinCode && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center">
-                        <ExclamationCircleIcon className="h-4 w-4 mr-1" />
-                        {errors.pinCode}
-                      </p>
-                    )}
-                  </div>
+                  
 
                   {/* Email */}
                   <div>

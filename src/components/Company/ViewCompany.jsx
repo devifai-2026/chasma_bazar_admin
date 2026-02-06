@@ -41,7 +41,6 @@ const ViewCompany = () => {
       
       // Fetch company data from API
       const response = await getCompanyById(id);
-      console.log("Fetched company data:", response);
       
       if (response && response.data) {
         setCompany(response.data);
@@ -60,12 +59,7 @@ const ViewCompany = () => {
     }
   };
 
-  const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this company?")) {
-      // Delete logic will be added when deleteCompany API is integrated
-      navigate("/company");
-    }
-  };
+ 
 
   if (loading) {
     return (
@@ -167,14 +161,7 @@ const ViewCompany = () => {
                           <BuildingOfficeIcon className="h-5 w-5 text-blue-600 mr-2" />
                           <span className="text-sm">Established: {company.establishedYear || "N/A"}</span>
                         </div>
-                        <div className="flex items-center">
-                          <UserGroupIcon className="h-5 w-5 text-blue-600 mr-2" />
-                          <span className="text-sm">Employees: {company.employees || "N/A"}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <DocumentTextIcon className="h-5 w-5 text-blue-600 mr-2" />
-                          <span className="text-sm">Revenue: {company.annualRevenue || "N/A"}</span>
-                        </div>
+                        
                       </div>
                     </div>
                   </div>
@@ -340,17 +327,7 @@ const ViewCompany = () => {
                 </div>
               </div>
               
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <GlobeAltIcon className="h-8 w-8 text-green-500 mr-3" />
-                  <div>
-                    <div className="text-sm text-gray-600">Market Presence</div>
-                    <div className="text-2xl font-bold mt-1">
-                      {company.shippingCountries?.length || 1} countries
-                    </div>
-                  </div>
-                </div>
-              </div>
+             
             </div>
 
             {/* Back Button */}

@@ -53,7 +53,6 @@ const UpdateDiscount = () => {
       setLoading(true);
       setLoadError(null);
       const response = await getDiscountById(id);
-      console.log({response});
       
       // API returns { success: true, discount: {...} }
       if (response && response.discount) {

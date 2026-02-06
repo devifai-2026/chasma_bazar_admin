@@ -32,9 +32,13 @@ const Banner = () => {
   const [totalBanners, setTotalBanners] = useState(0);
   const [pageSize] = useState(10);
 
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [selectedPromoId, setSelectedPromoId] = useState(null);
-    const [isDeleting, setIsDeleting] = useState(false);
+  // Helper function to check if banner is active now
+  const isActiveNowStatus = (banner) => {
+    const now = new Date();
+    const start = banner.startDate ? new Date(banner.startDate) : new Date(0);
+    const end = banner.endDate ? new Date(banner.endDate) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    return banner.isActive && start <= now && end >= now;
+  };
 
   // Load banners from API
   useEffect(() => {
@@ -56,6 +60,7 @@ const Banner = () => {
       } else if (filter === "inactive") {
         params.isActive = "false";
       }
+      // Note: "expired" filter is handled client-side since API might not support it
 
       const response = await getAllBanners(params);
 
@@ -86,27 +91,45 @@ const Banner = () => {
   const closeSidebar = () => setSidebarOpen(false);
 
   const deleteBannerHandler = async (id) => {
-    
-      try {
-        const response = await deleteBanner(id);
+    try {
+      const response = await deleteBanner(id);
 
-        if (response.success) {
-          toast.success('Banner deleted successfully');
-          // Refresh the products list
-          fetchBanners(currentPage);
-        }
-      } catch (error) {
-        console.error('Error deleting banner:', error);
-        toast.error('Failed to delete banner');
+      if (response.success) {
+        toast.success('Banner deleted successfully');
+        // Refresh the products list
+        fetchBanners(currentPage);
       }
-    
+    } catch (error) {
+      console.error('Error deleting banner:', error);
+      toast.error('Failed to delete banner');
+    }
   };
 
-  // Filter banners by search term (client-side)
+  // Filter banners by search term AND additional filters (client-side)
   const filteredBanners = banners.filter((banner) => {
+    // Apply search filter
     const matchesSearch =
+      searchTerm === "" ||
       banner.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      banner.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (banner.description && banner.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    // Apply additional client-side filters
+    if (filter === "expired") {
+      const isExpired = banner.endDate && new Date(banner.endDate) < new Date();
+      return matchesSearch && isExpired;
+    }
+
+    // For "active" and "inactive" filters, we rely on server-side filtering
+    // But we also need to handle them client-side for search functionality
+    if (filter === "active") {
+      const isActiveNow = isActiveNowStatus(banner);
+      return matchesSearch && isActiveNow;
+    }
+
+    if (filter === "inactive") {
+      const isActiveNow = isActiveNowStatus(banner);
+      return matchesSearch && !isActiveNow;
+    }
 
     return matchesSearch;
   });
@@ -115,13 +138,13 @@ const Banner = () => {
   const calculateStats = () => {
     const activeBanners = banners.filter((b) => b.isActive).length;
     const expiredBanners = banners.filter(
-      (b) => new Date(b.endDate || Date.now() + 365 * 24 * 60 * 60 * 1000) < new Date()
+      (b) => b.endDate && new Date(b.endDate) < new Date()
     ).length;
     const currentBanners = banners.filter(
       (b) =>
         b.isActive &&
-        new Date(b.startDate || 0) <= new Date() &&
-        new Date(b.endDate || Date.now() + 365 * 24 * 60 * 60 * 1000) >= new Date()
+        (!b.startDate || new Date(b.startDate) <= new Date()) &&
+        (!b.endDate || new Date(b.endDate) >= new Date())
     ).length;
 
     return {
@@ -146,6 +169,7 @@ const Banner = () => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return "No date";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
@@ -154,22 +178,19 @@ const Banner = () => {
     });
   };
 
-  const isActiveNow = (banner) => {
-    const now = new Date();
-    const start = new Date(banner.startDate || 0);
-    const end = new Date(banner.endDate || Date.now() + 365 * 24 * 60 * 60 * 1000);
-    return banner.isActive && start <= now && end >= now;
-  };
-
   const getDaysRemaining = (endDate) => {
-    const end = new Date(endDate || Date.now() + 365 * 24 * 60 * 60 * 1000);
+    if (!endDate) return "No end date";
+    const end = new Date(endDate);
     const now = new Date();
     const diffTime = end - now;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 0 ? diffDays : 0;
   };
 
-  
+  const handleFilterChange = (e) => {
+    setFilter(e.target.value);
+    setCurrentPage(1); // Reset to page 1 when filter changes
+  };
 
   return (
     <div className="flex h-screen">
@@ -291,12 +312,12 @@ const Banner = () => {
               <select
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={filter}
-                onChange={(e) => setFilter(e.target.value)}
+                onChange={handleFilterChange}
               >
                 <option value="all">All Banners</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="expired">Expired</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+                <option value="expired">Expired Only</option>
               </select>
               {/* <button className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                 <FunnelIcon className="h-5 w-5 mr-2" />
@@ -327,13 +348,15 @@ const Banner = () => {
                       No banners found
                     </div>
                     <p className="text-gray-600 mb-4">
-                      Click "Add Banner" to create your first banner
+                      {searchTerm || filter !== "all" 
+                        ? "Try changing your search or filter criteria" 
+                        : 'Click "Add Banner" to create your first banner'}
                     </p>
                   </div>
                 </div>
               ) : (
                 filteredBanners.map((banner) => {
-                  const activeNow = isActiveNow(banner);
+                  const activeNow = isActiveNowStatus(banner);
                   const daysRemaining = getDaysRemaining(banner.endDate);
 
                   return (
@@ -360,7 +383,7 @@ const Banner = () => {
                               banner.position
                             )}`}
                           >
-                            {banner.position.toUpperCase()}
+                            {banner.position?.toUpperCase() || "UNKNOWN"}
                           </span>
                         </div>
                       </div>
@@ -372,33 +395,37 @@ const Banner = () => {
                             {banner.title}
                           </h3>
                           <span className="text-sm text-gray-500">
-                            Priority: {banner.priority}
+                            Priority: {banner.priority || 0}
                           </span>
                         </div>
 
                         <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                          {banner.description}
+                          {banner.description || "No description"}
                         </p>
 
                         {/* Button Info */}
                         <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-medium text-gray-700">
-                              {banner.buttonText}
+                              {banner.buttonText || "No button"}
                             </span>
-                            <a
-                              href={banner.buttonLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800"
-                              title="Preview Link"
-                            >
-                              <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-                            </a>
+                            {banner.buttonLink && (
+                              <a
+                                href={banner.buttonLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800"
+                                title="Preview Link"
+                              >
+                                <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                              </a>
+                            )}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1 truncate">
-                            {banner.buttonLink}
-                          </div>
+                          {banner.buttonLink && (
+                            <div className="text-xs text-gray-500 mt-1 truncate">
+                              {banner.buttonLink}
+                            </div>
+                          )}
                         </div>
 
                         {/* Pages */}
@@ -407,14 +434,18 @@ const Banner = () => {
                             Display Pages:
                           </div>
                           <div className="flex flex-wrap gap-1">
-                            {banner.pages.map((page, index) => (
-                              <span
-                                key={index}
-                                className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
-                              >
-                                {page}
-                              </span>
-                            ))}
+                            {banner.pages && banner.pages.length > 0 ? (
+                              banner.pages.map((page, index) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
+                                >
+                                  {page}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-gray-500">No pages specified</span>
+                            )}
                           </div>
                         </div>
 
@@ -422,8 +453,7 @@ const Banner = () => {
                         <div className="space-y-2 text-sm">
                           <div className="flex items-center text-gray-600">
                             <CalendarIcon className="h-4 w-4 mr-2 text-gray-400" />
-                            {banner.startDate ? formatDate(banner.startDate) : "No start date"} -{" "}
-                            {banner.endDate ? formatDate(banner.endDate) : "No end date"}
+                            {formatDate(banner.startDate)} - {formatDate(banner.endDate)}
                           </div>
 
                           <div className="flex items-center justify-between">
@@ -434,9 +464,9 @@ const Banner = () => {
                                   <span className="text-green-600 font-medium">
                                     Active
                                   </span>
-                                  {banner.endDate && (
+                                  {banner.endDate && daysRemaining > 0 && (
                                     <span className="ml-2 text-xs text-green-500">
-                                      {getDaysRemaining(banner.endDate)} days left
+                                      {daysRemaining} days left
                                     </span>
                                   )}
                                 </>
@@ -497,7 +527,7 @@ const Banner = () => {
             {/* Pagination */}
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-gray-700">
-                Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to{" "}
+                Showing <span className="font-medium">{Math.min((currentPage - 1) * pageSize + 1, totalBanners)}</span> to{" "}
                 <span className="font-medium">
                   {Math.min(currentPage * pageSize, totalBanners)}
                 </span>{" "}
