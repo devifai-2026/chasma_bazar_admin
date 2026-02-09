@@ -166,29 +166,7 @@ const UpdateCompany = () => {
     }
   };
 
-  const handleArrayFieldChange = (field, index, value) => {
-    const updatedArray = [...formData[field]];
-    updatedArray[index] = value;
-    setFormData(prev => ({
-      ...prev,
-      [field]: updatedArray
-    }));
-  };
-
-  const addArrayField = (field) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: [...prev[field], ""]
-    }));
-  };
-
-  const removeArrayField = (field, index) => {
-    const updatedArray = formData[field].filter((_, i) => i !== index);
-    setFormData(prev => ({
-      ...prev,
-      [field]: updatedArray
-    }));
-  };
+  
 
   const uploadToCloudinary = async (file, customPublicId = '') => {
     setIsUploading(true);
@@ -859,49 +837,7 @@ const UpdateCompany = () => {
                     )}
                   </div>
 
-                  {/* Logo Public ID */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Logo Public ID
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <DocumentTextIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        name="logo.public_id"
-                        value={formData.logo.public_id}
-                        onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="e.g., logo_123 or leave empty for auto-generation"
-                        disabled={isUploading || saving}
-                      />
-                    </div>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Optional: Enter a custom Public ID for Cloudinary. If left empty, one will be auto-generated.
-                    </p>
-                  </div>
-
-                  {/* Logo URL */}
-                  {formData.logo.url && (
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Cloudinary URL
-                      </label>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <GlobeAltIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                          type="text"
-                          value={formData.logo.url}
-                          readOnly
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                        />
-                      </div>
-                    </div>
-                  )}
+                  
                 </div>
               </div>
 
