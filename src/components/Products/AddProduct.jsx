@@ -1360,15 +1360,32 @@ const AddProduct = () => {
                 <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
                   <Link
                     to="/products"
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-center"
+                    className={`px-6 py-2 border border-gray-300 text-gray-700 rounded-lg text-center transition-colors ${
+                      isSubmitting 
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50' 
+                        : 'hover:bg-gray-50 cursor-pointer'
+                    }`}
+                    onClick={(e) => isSubmitting && e.preventDefault()}
                   >
                     Cancel
                   </Link>
                   <button
                     type="submit"
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    disabled={isSubmitting}
+                    className={`px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center justify-center min-w-[140px] ${
+                      isSubmitting
+                        ? 'bg-blue-400 text-white cursor-not-allowed opacity-75'
+                        : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                    }`}
                   >
-                    Add Product
+                    {isSubmitting ? (
+                      <>
+                        <div className="inline-block animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      'Add Product'
+                    )}
                   </button>
                 </div>
               </div>
