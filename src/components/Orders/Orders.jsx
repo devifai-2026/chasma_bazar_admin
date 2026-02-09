@@ -207,10 +207,7 @@ const Orders = () => {
     return stats;
   };
 
-  // Function to handle viewing order details
-  const handleViewOrder = (orderId) => {
-    navigate(`/orders/view/${orderId}`);
-  };
+  
 
   // Function to print order invoice
   const handlePrintOrder = (order) => {
@@ -682,6 +679,9 @@ const Orders = () => {
                           Product & Details
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Order Address
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Date & Tracking
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -708,11 +708,6 @@ const Orders = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center">
-                              <img
-                                className="h-8 w-8 rounded-full"
-                                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${order.userId?.username || "user"}`}
-                                alt={order.userId?.username}
-                              />
                               <div className="ml-3">
                                 <div className="text-sm font-medium text-gray-900">
                                   {order.userId?.username || "N/A"}
@@ -730,17 +725,18 @@ const Orders = () => {
                             <div className="text-sm text-gray-500">
                               Color: {order.color || "N/A"}
                             </div>
+                            
+                          </td>
+                          <td className="px-6 py-4">
                             <div className="text-sm text-gray-500">
-                              Address: {order.address?.substring(0, 30)}...
+                              Address: {order.address}
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <div className="text-sm text-gray-900">
                               {formatDate(order.createdAt)}
                             </div>
-                            <div className="text-sm text-gray-500">
-                              Tracking: {order.trackingNumber || "N/A"}
-                            </div>
+                            
                             {order.expectedDeliveryDate && (
                               <div className="text-sm text-gray-500">
                                 Expected: {formatDate(order.expectedDeliveryDate)}
