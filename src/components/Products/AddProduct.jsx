@@ -357,18 +357,12 @@ const AddProduct = () => {
           if (!imageSet.normalImages || imageSet.normalImages.length === 0 || !imageSet.normalImages.some(img => img.file)) {
             newErrors[`normal_images_${index}_${setIndex}`] = 'At least one normal image is required'
           }
-          imageSet.normalImages?.forEach((img, imgIndex) => {
-            if (img.file && !img.alt.trim()) {
-              newErrors[`normal_image_alt_${index}_${setIndex}_${imgIndex}`] = 'Image alt text is required'
-            }
-          })
+          // Alt text is optional
           // Validate 3D image (exactly one required)
           if (!imageSet.image3d?.file) {
             newErrors[`image_3d_${index}_${setIndex}`] = '3D image is required'
           }
-          if (imageSet.image3d?.file && !imageSet.image3d.alt.trim()) {
-            newErrors[`image_3d_alt_${index}_${setIndex}`] = '3D image alt text is required'
-          }
+          // Alt text is optional for 3D image as well
         })
       }
     })
@@ -1068,20 +1062,11 @@ const AddProduct = () => {
                                   
                                   <input
                                     type="text"
-                                    value={image.public_id}
-                                    onChange={(e) => handleImageUrlChange(colorIndex, setIndex, imageIndex, 'public_id', e.target.value)}
-                                    disabled={isSubmitting}
-                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                                    placeholder="Public ID"
-                                  />
-                                  
-                                  <input
-                                    type="text"
                                     value={image.alt}
                                     onChange={(e) => handleImageUrlChange(colorIndex, setIndex, imageIndex, 'alt', e.target.value)}
                                     disabled={isSubmitting}
                                     className="w-full px-2 py-1 text-xs border rounded"
-                                    placeholder="Alt text *"
+                                    placeholder="Alt text (optional)"
                                   />
                                   
                                   {imagePreviews[`normal-${colorIndex}-${setIndex}-${imageIndex}`] && (
@@ -1134,20 +1119,11 @@ const AddProduct = () => {
                               
                               <input
                                 type="text"
-                                value={imageSet.image3d?.public_id || ''}
-                                onChange={(e) => handle3dImageUrlChange(colorIndex, setIndex, 'public_id', e.target.value)}
-                                disabled={isSubmitting}
-                                className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                                placeholder="Public ID"
-                              />
-                              
-                              <input
-                                type="text"
                                 value={imageSet.image3d?.alt || ''}
                                 onChange={(e) => handle3dImageUrlChange(colorIndex, setIndex, 'alt', e.target.value)}
                                 disabled={isSubmitting}
                                 className="w-full px-2 py-1 text-xs border rounded"
-                                placeholder="Alt text *"
+                                placeholder="Alt text (optional)"
                               />
                               
                               {imagePreviews[`3d-${colorIndex}-${setIndex}`] && (

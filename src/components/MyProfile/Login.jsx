@@ -11,7 +11,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false); // Add this state
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
 
   const navigate = useNavigate();
 
@@ -23,7 +23,17 @@ const Login = () => {
   }, [navigate]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    // Prevent default form submission and event propagation
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // Return if already loading to prevent multiple submissions
+    if (isLoading) {
+      return;
+    }
+
     setError('');
 
     // Simple validation
@@ -57,22 +67,33 @@ const Login = () => {
         localStorage.setItem('refreshToken', responseData.data.tokens.refreshToken);
         localStorage.setItem('accessTokenExpiresAt', responseData.data.tokens.accessTokenExpiresAt);
         localStorage.setItem('refreshTokenExpiresAt', responseData.data.tokens.refreshTokenExpiresAt);
+        
         toast.success('Login successful!')
+        
+        // Clear form only on successful login
+        setEmail('');
+        setPassword('');
+        
         setTimeout(() => {
           navigate('/dashboard');
         }, 800);
+      } else {
+        // On error, keep form values and show error message
+        const errorMessage = responseData.message || 'Login failed. Please try again.';
+        setError(errorMessage);
+        toast.error(errorMessage);
+        setIsLoading(false);
       }
 
     } catch (err) {
       console.log(err, "error");
-      setError('Invalid email or password. Please try again.');
+      const errorMessage = 'Invalid email or password. Please try again.';
+      setError(errorMessage);
       toast.error('Login failed. Please check your credentials.')
-    } finally {
       setIsLoading(false);
     }
   };
 
-  // Update this function
   const handleForgotPassword = () => {
     setShowForgotPasswordModal(true);
   };
@@ -93,7 +114,7 @@ const Login = () => {
             </p>
           </div>
 
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate>
             {error && (
               <div className="rounded-md bg-red-50 p-4">
                 <div className="flex">
@@ -200,10 +221,12 @@ const Login = () => {
       </div>
 
       {/* Add the Forgot Password Modal */}
-      <ForgotPasswordModal
-        isOpen={showForgotPasswordModal}
-        onClose={() => setShowForgotPasswordModal(false)}
-      />
+      {showForgotPasswordModal && (
+        <ForgotPasswordModal
+          isOpen={showForgotPasswordModal}
+          onClose={() => setShowForgotPasswordModal(false)}
+        />
+      )}
     </>
   );
 };

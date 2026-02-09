@@ -68,7 +68,7 @@ export const refreshToken = async () => {
   } catch (error) {
     console.error('Token refresh error:', error);
     clearAuthData();
-    window.location.href = '/login';
+    window.location.href = '/';
     throw error;
   }
 };
