@@ -28,6 +28,13 @@ const Orders = () => {
     total: 0,
     limit: 10,
   });
+  const [statusCounts, setStatusCounts] = useState({
+    pending: 0,
+    processing: 0,
+    shipped: 0,
+    delivered: 0,
+    cancelled: 0,
+  });
   const [filters, setFilters] = useState({
     status: "",
     page: 1,
@@ -64,6 +71,16 @@ const Orders = () => {
           total: response.total,
           limit: response.data.length,
         });
+        // Set status counts from API response
+        if (response.statusCounts) {
+          setStatusCounts({
+            pending: response.statusCounts.pending || 0,
+            processing: response.statusCounts.processing || 0,
+            shipped: response.statusCounts.shipped || 0,
+            delivered: response.statusCounts.delivered || 0,
+            cancelled: response.statusCounts.cancelled || 0,
+          });
+        }
       }
     } catch (err) {
       setError("Failed to fetch orders. Please try again.");
@@ -187,24 +204,6 @@ const Orders = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
-  };
-
-  const getStatusStats = () => {
-    const stats = {
-      pending: 0,
-      processing: 0,
-      shipped: 0,
-      delivered: 0,
-      cancelled: 0,
-    };
-
-    orders.forEach((order) => {
-      if (stats[order.status] !== undefined) {
-        stats[order.status]++;
-      }
-    });
-
-    return stats;
   };
 
   
@@ -526,12 +525,9 @@ const Orders = () => {
     setFilters({ ...filters, status: status || "", page: 1 });
   };
 
-  // Handle pagination
   const handlePageChange = (page) => {
     setFilters({ ...filters, page });
   };
-
-  const stats = getStatusStats();
 
   if (loading) {
     return (
@@ -654,7 +650,7 @@ const Orders = () => {
                             {status}
                           </div>
                           <div className="text-2xl font-bold mt-1">
-                            {stats[status]}
+                            {statusCounts[status]}
                           </div>
                         </div>
                       </div>
