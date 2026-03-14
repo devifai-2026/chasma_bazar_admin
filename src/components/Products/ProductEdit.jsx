@@ -66,7 +66,7 @@ const ProductEdit = () => {
   });
 
   // Product type options
-  const productTypes = ['optical', 'sunglasses', 'reading_glasses', 'sports_glasses'];
+  const productTypes = ['eyeglasses', 'optical', 'sunglasses', 'reading_glasses', 'sports_glasses'];
   const userCategories = ['Men', 'Women', 'Kids'];
   const materialOptions = ['Metal', 'Plastic', 'Acetate', 'Titanium', 'Stainless Steel', 'Aluminum', 'TR90', 'Carbon Fiber', 'Wood', 'Nylon', 'Polycarbonate', 'Mixed Materials'];
   const specTypes = ['eyeglasses', 'sunglasses', 'computer_glasses', 'reading_glasses'];
